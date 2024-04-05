@@ -7,8 +7,10 @@ import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 
-@Route("reset-password/:status[invalid-token|token-expired]?")
+@Route("reset-password/:status?")
+@AnonymousAllowed
 public class ResetPasswordView extends VerticalLayout implements BeforeEnterObserver, AfterNavigationObserver {
     private boolean invalidToken;
     private boolean tokenExpired;

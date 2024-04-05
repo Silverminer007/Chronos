@@ -20,32 +20,41 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import de.kjgstbarbara.data.Board;
 import de.kjgstbarbara.data.Date;
-import de.kjgstbarbara.data.Organisation;
+import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.data.Role;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.BoardsView;
-import de.kjgstbarbara.views.OrganisationsView;
 import de.kjgstbarbara.views.nav.ModuleNavigationView;
 import jakarta.annotation.security.PermitAll;
 import lombok.NonNull;
+import org.springframework.security.core.userdetails.UserDetails;
 
-@Route(value = "/org/:orgID/board/:boardID/dates", layout = ModuleNavigationView.class)
+@Route(value = "board/:boardID/dates", layout = ModuleNavigationView.class)
 @PermitAll
 public class DatesView extends VerticalLayout implements BeforeEnterObserver, AfterNavigationObserver {
-    private final OrganisationRepository organisationRepository;
     private final BoardsRepository boardsRepository;
     private final DateRepository dateRepository;
 
+    private final Person person;
+
     private Board board;
-    private Organisation organisation;
     private final Grid<Date> grid = new Grid<>(Date.class, false);
 
-    public DatesView(OrganisationsService organisationsService, BoardsService boardsService, DatesService datesService) {
-        this.organisationRepository = organisationsService.getOrganisationRepository();
+    public DatesView(BoardsService boardsService, DatesService datesService, PersonsService personsService, AuthenticationContext authenticationContext) {
         this.boardsRepository = boardsService.getBoardsRepository();
         this.dateRepository = datesService.getDateRepository();
+
+        PersonsRepository personsRepository = personsService.getPersonsRepository();
+        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
+                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername())).orElse(null);
+        if (this.person == null) {
+            authenticationContext.logout();
+            throw new IllegalStateException("No user is allowed to be logged in if not in database");
+        }
 
         grid.addColumn("title").setHeader("Termin")
                 .setAutoWidth(true).setResizable(true);
@@ -66,9 +75,8 @@ public class DatesView extends VerticalLayout implements BeforeEnterObserver, Af
                         confirmDialog.setHeader(date.getTitle() + " am " + date.getStart() + " löschen?");
                         confirmDialog.setCancelable(true);
                         confirmDialog.addConfirmListener(___ -> {
-                            board.getDateList().remove(date);
-                            boardsRepository.save(board);
-                            grid.setItems(board.getDateList().stream().sorted().toList());
+                            dateRepository.delete(date);
+                            updateGrid();
                         });
                         confirmDialog.open();
                     }
@@ -93,12 +101,9 @@ public class DatesView extends VerticalLayout implements BeforeEnterObserver, Af
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        organisation = beforeEnterEvent.getRouteParameters().get("orgID").flatMap(organisationRepository::findById).orElse(null);
         board = beforeEnterEvent.getRouteParameters().get("boardID").map(Long::valueOf).flatMap(boardsRepository::findById).orElse(null);
-        if (organisation == null) {
-            beforeEnterEvent.forwardTo(OrganisationsView.class);
-        } else if (board == null) {
-            beforeEnterEvent.forwardTo(BoardsView.class, new RouteParameters("orgID", organisation.getId()));
+        if (board == null) {
+            beforeEnterEvent.forwardTo(BoardsView.class);
         }
     }
 
@@ -135,12 +140,10 @@ public class DatesView extends VerticalLayout implements BeforeEnterObserver, Af
         confirmButton.addClickListener(event -> {
             try {
                 binder.writeBean(date);
+                date.setBoard(this.board);
                 dateRepository.save(date);
-                if (!board.getDateList().contains(date)) {
-                    board.getDateList().add(date);
-                }
                 boardsRepository.save(board);
-                grid.setItems(board.getDateList().stream().sorted().toList());
+                updateGrid();
                 dialog.close();
             } catch (ValidationException e) {
                 for (ValidationResult result : e.getValidationErrors()) {
@@ -169,6 +172,10 @@ public class DatesView extends VerticalLayout implements BeforeEnterObserver, Af
 
     @Override
     public void afterNavigation(AfterNavigationEvent afterNavigationEvent) {
-        grid.setItems(board.getDateList().stream().sorted().toList());
+        updateGrid();
+    }
+
+    private void updateGrid() {
+        grid.setItems(dateRepository.hasAuthorityOn(Role.Type.MEMBER, this.person).stream().filter(date -> date.getBoard().equals(this.board)).toList());
     }
 }

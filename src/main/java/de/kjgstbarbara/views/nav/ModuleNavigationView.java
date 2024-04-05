@@ -1,47 +1,34 @@
 package de.kjgstbarbara.views.nav;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
-import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.BoardsService;
-import de.kjgstbarbara.service.OrganisationsService;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.BoardsView;
-import de.kjgstbarbara.views.NotFoundView;
 import de.kjgstbarbara.views.modules.DatesView;
 import de.kjgstbarbara.views.modules.MembersView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.data.util.Pair;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.vaadin.lineawesome.LineAwesomeIcon;
-
-import java.util.Objects;
-import java.util.Optional;
 
 @PermitAll
 public class ModuleNavigationView extends NavigationView {
 
-    public ModuleNavigationView(OrganisationsService organisationsService, BoardsService boardsService, PersonsService personsService, AuthenticationContext authenticationContext) {
-        super(organisationsService, boardsService, personsService, authenticationContext);
+    public ModuleNavigationView(BoardsService boardsService, PersonsService personsService, AuthenticationContext authenticationContext) {
+        super(boardsService, personsService, authenticationContext);
     }
 
     @Override
     MenuItemInfo[] createMenuItems() {
-        RouteParameters routeParameters = new RouteParameters(new RouteParam("orgID", organisation.getId()), new RouteParam("boardID", board.getId()));
+        RouteParameters routeParameters = new RouteParameters(new RouteParam("boardID", board.getId()));
         return new MenuItemInfo[]{
                 new MenuItemInfo(board.getMemberTitle(), LineAwesomeIcon.PERSON_BOOTH_SOLID.create(), MembersView.class, routeParameters),
                 new MenuItemInfo(board.getDateTitle(), LumoIcon.CALENDAR.create(), DatesView.class, routeParameters)
         };
-    }
-
-    @Override
-    boolean orgRequired() {
-        return true;
     }
 
     @Override
@@ -51,12 +38,12 @@ public class ModuleNavigationView extends NavigationView {
 
     @Override
     Pair<Class<? extends Component>, RouteParameters> back(AuthenticationContext authenticationContext) {
-        return Pair.of(BoardsView.class, new RouteParameters(new RouteParam("orgID", organisation.getId())));
+        return Pair.of(BoardsView.class, new RouteParameters());
     }
 
     @Override
-    String title() {
-        return board.getTitle();
+    Component title() {
+        return new H1(board.getTitle());
     }
 
     @Override

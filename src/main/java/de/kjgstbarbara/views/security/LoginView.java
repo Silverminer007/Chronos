@@ -12,11 +12,8 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 @Route("login")
 @PageTitle("Login | Vaadin CRM")
 @AnonymousAllowed
-public class LoginView extends VerticalLayout implements BeforeEnterObserver {
-
+public class LoginView extends VerticalLayout implements BeforeEnterObserver {// OGvhC9oIMTMUHKO
     private final LoginForm login = new LoginForm();
-
-
 
     public LoginView(){
         addClassName("login-view");

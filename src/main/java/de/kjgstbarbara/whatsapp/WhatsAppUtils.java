@@ -1,5 +1,6 @@
-package de.kjgstbarbara;
+package de.kjgstbarbara.whatsapp;
 
+import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.data.PasswordReset;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.security.SecurityUtils;
@@ -8,14 +9,17 @@ import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.chat.Chat;
 import it.auties.whatsapp.model.jid.Jid;
 import lombok.Getter;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
-public class WhatsAppUtils {
+@Component
+public class WhatsAppUtils implements CommandLineRunner {
     private static final long PHONE_NUMBER = 4915752657194L;
     @Getter
-    private static final WhatsAppUtils instance = new WhatsAppUtils();
+    private static WhatsAppUtils instance;
     private final transient Whatsapp whatsapp;
 
     private WhatsAppUtils() {
@@ -31,10 +35,17 @@ public class WhatsAppUtils {
         System.out.println("WhatsApp init");
     }
 
-    static void init() {
-    }
+    public static final String RESET = "Hey %s %s,%ndu hast angefragt dein Passwort zurückzusetzen." +
+            "%nWenn du das nicht getan hast klicke auf keinen Fall auf den Link unten, " +
+            "sondern lösche diese Nachricht." +
+            "%nUm dein Passwort zurückzusetzen, klicke auf diesen Link:" +
+            "%nhttp://%s/password-reset/%s";
 
-    public PasswordReset sendPasswordResetMessage(Person requester) throws FriendlyError {
+    public static final String CREATED = "Hey %s %s,%nfür dich wurde ein neuer Account im Termintool der KjG angelegt.%n" +
+            "Um deinen Account zu aktivieren klicke auf diesen Link:%n" +
+            "http://%s/password-reset/%s";
+
+    public PasswordReset sendPasswordResetMessage(Person requester, String messageFormat) throws FriendlyError {
         PasswordReset passwordReset = new PasswordReset();
         passwordReset.setRequester(requester);
         String token;
@@ -44,11 +55,7 @@ public class WhatsAppUtils {
             throw new FriendlyError(e.getMessage());
         }
         passwordReset.setToken(token);
-        String message = String.format("Hey %s %s,%ndu hast angefragt dein Passwort zurückzusetzen." +
-                "%nWenn du das nicht getan hast klicke auf keinen Fall auf den Link unten, " +
-                "sondern lösche diese Nachricht." +
-                "%nUm dein Passwort zurückzusetzen, klicke auf diesen Link:" +
-                "%nhttps://%s/password-reset/%s", requester.getFirstName(), requester.getLastName(), "localhost:8080", token);
+        String message = String.format(messageFormat, requester.getFirstName(), requester.getLastName(), "localhost:8080", token);
         System.out.println(message);
         Optional<Chat> optionalChat = whatsapp.store().findChatByJid(Jid.of(requester.getPhoneNumber()));
         if (optionalChat.isPresent()) {
@@ -59,4 +66,9 @@ public class WhatsAppUtils {
         return passwordReset;
     }
 
+    @Override
+    public void run(String... args) {
+        System.out.println("WhatsApp Utils init");
+        instance = new WhatsAppUtils();
+    }
 }

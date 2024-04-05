@@ -24,42 +24,49 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.data.Board;
-import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.data.Role;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.BoardsView;
-import de.kjgstbarbara.views.NotFoundView;
-import de.kjgstbarbara.views.OrganisationsView;
 import de.kjgstbarbara.views.components.LongNumberField;
 import de.kjgstbarbara.views.nav.ModuleNavigationView;
+import de.kjgstbarbara.whatsapp.WhatsAppUtils;
 import jakarta.annotation.security.PermitAll;
 import lombok.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
-@Route(value = "org/:orgID/board/:boardID/members", layout = ModuleNavigationView.class)
-@RouteAlias(value = "org/:orgID/board/:boardID")
+@Route(value = "board/:boardID/members", layout = ModuleNavigationView.class)
+@RouteAlias(value = "board/:boardID", layout = ModuleNavigationView.class)
 @PermitAll
 public class MembersView extends VerticalLayout implements BeforeEnterObserver, AfterNavigationObserver {
-    private final transient AuthenticationContext authenticationContext;
-    private final OrganisationRepository organisationRepository;
     private final BoardsRepository boardsRepository;
     private final PersonsRepository personsRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordResetRepository passwordResetRepository;
+
+    private final Person person;
 
     private Board board;
-    private Organisation organisation;
     private final Grid<Person> grid = new Grid<>(Person.class, false);
 
-    public MembersView(OrganisationsService organisationsService, BoardsService boardsService, PersonsService personsService, AuthenticationContext authenticationContext) {
-        this.organisationRepository = organisationsService.getOrganisationRepository();
+    public MembersView(BoardsService boardsService, PersonsService personsService, RoleService roleService, PasswordResetService passwordResetService, AuthenticationContext authenticationContext) {
         this.boardsRepository = boardsService.getBoardsRepository();
         this.personsRepository = personsService.getPersonsRepository();
-        this.authenticationContext = authenticationContext;
+        this.roleRepository = roleService.getRoleRepository();
+        this.passwordResetRepository = passwordResetService.getPasswordResetRepository();
+
+        PersonsRepository personsRepository = personsService.getPersonsRepository();
+        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
+                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername())).orElse(null);
+        if (this.person == null) {
+            authenticationContext.logout();
+            throw new IllegalStateException("No user is allowed to be logged in if not in database");
+        }
 
         grid.addColumn("firstName").setHeader("Vorname")
                 .setAutoWidth(true).setResizable(true);
@@ -67,22 +74,35 @@ public class MembersView extends VerticalLayout implements BeforeEnterObserver, 
         grid.addColumn("birthDate").setHeader("Geburtsdatum").setAutoWidth(true).setResizable(true);
         grid.addColumn(person -> "+" + person.getPhoneNumber()).setHeader("Telefonnummer").setAutoWidth(true).setResizable(true);
         grid.addComponentColumn(person ->
-                createStatusIcon(board.isAdmin(person))).setHeader("Board Admin");
+                createStatusIcon(person.hasRole(Role.Type.ADMIN, Role.Scope.BOARD, board.getId()))).setHeader("Board Admin");
+        grid.addComponentColumn(person ->
+                createStatusIcon(!person.getUsername().isBlank())).setHeader("Aktiv");
         grid.addComponentColumn(person -> {
             Button edit = new Button(LumoIcon.EDIT.create());
             edit.addClickListener(event -> editMemberDialog(person, "Mitglied bearbeiten", true));
             return edit;
         }).setFlexGrow(0);
-        grid.addComponentColumn(person -> {
+        grid.addComponentColumn(deletedPerson -> {
             Button delete = new Button(VaadinIcon.TRASH.create());
             delete.addClickListener(event -> {
                         ConfirmDialog confirmDialog = new ConfirmDialog();
-                        confirmDialog.setHeader(person.getFirstName() + " " + person.getLastName() + " löschen?");
+                        confirmDialog.setHeader(deletedPerson.getFirstName() + " " + deletedPerson.getLastName() + " löschen?");
                         confirmDialog.setCancelable(true);
                         confirmDialog.addConfirmListener(___ -> {
-                            board.getMembers().remove(person);
+                            deletedPerson.removeRole(Role.Type.MEMBER, Role.Scope.BOARD, this.board.getId());
+                            deletedPerson.removeRole(Role.Type.ADMIN, Role.Scope.BOARD, this.board.getId());
+                            if (this.person.hasAuthority(Role.Type.ADMIN, Role.Scope.ORGANISATION, null)
+                                    && boardsRepository.hasAuthorityOn(Role.Type.MEMBER, deletedPerson).isEmpty()) {
+                                ConfirmDialog confirmDialog1 = new ConfirmDialog();
+                                confirmDialog1.setHeader("Soll " + deletedPerson.getFirstName() + " " + deletedPerson.getLastName() + " unwiderruflich gelöscht werden?");
+                                confirmDialog1.setCancelButton("Nein", ____ -> {
+                                });
+                                confirmDialog1.setConfirmButton("Ja", ____ -> personsRepository.delete(deletedPerson));
+                                confirmDialog1.open();
+                            }
                             boardsRepository.save(board);
-                            grid.setItems(board.getMembers());
+                            personsRepository.save(deletedPerson);
+                            updateGrid();
                         });
                         confirmDialog.open();
                     }
@@ -107,16 +127,9 @@ public class MembersView extends VerticalLayout implements BeforeEnterObserver, 
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        organisation = beforeEnterEvent.getRouteParameters().get("orgID").flatMap(organisationRepository::findById).orElse(null);
-        /*organisation = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
-                .map(Person::getOrganisation)
-                .orElse(null);*/
         board = beforeEnterEvent.getRouteParameters().get("boardID").map(Long::valueOf).flatMap(boardsRepository::findById).orElse(null);
-        if (organisation == null) {
-            beforeEnterEvent.forwardTo(OrganisationsView.class);
-        } else if (board == null) {
-            beforeEnterEvent.forwardTo(BoardsView.class, new RouteParameters("orgID", organisation.getId()));
+        if (board == null) {
+            beforeEnterEvent.forwardTo(BoardsView.class);
         }
     }
 
@@ -127,8 +140,11 @@ public class MembersView extends VerticalLayout implements BeforeEnterObserver, 
 
         VerticalLayout verticalLayout = new VerticalLayout();
 
-        List<Person> existingPersons = new ArrayList<>(personsRepository.findByOrg(organisation));
-        existingPersons.removeAll(board.getMembers());
+        List<Person> existingPersons = new ArrayList<>(
+                this.person.hasAuthority(Role.Type.ADMIN, Role.Scope.ALL, null) ?
+                        personsRepository.findAll() :
+                        personsRepository.hasAuthorityOn(Role.Type.MEMBER, board.getOrganisation()));
+        existingPersons.removeAll(personsRepository.hasRoleOn(Role.Type.MEMBER, this.board));
         if (!edit && !existingPersons.isEmpty()) {
             verticalLayout.add(new H3("Bestehendes Mitglied zu Board hinzufügen"));
             MultiSelectListBox<Person> select = new MultiSelectListBox<>();
@@ -142,19 +158,11 @@ public class MembersView extends VerticalLayout implements BeforeEnterObserver, 
             Button addExisting = new Button("Hinzufügen");
             addExisting.addClickListener(event -> {
                 for (Person p : select.getValue()) {
-                    if (!board.getMembers().contains(p)) {
-                        board.getMembers().add(p);
-                    }
-                    if (existingAdmin.getValue()) {
-                        if (!p.getRoles().contains(board.getRequiredRole())) {
-                            p.getRoles().add(board.getRequiredRole());
-                        }
-                    } else {
-                        p.getRoles().remove(board.getRequiredRole());
-                    }
+                    addMember(board, p, existingAdmin.getValue());
+                    personsRepository.save(p);
                 }
                 boardsRepository.save(board);
-                grid.setItems(board.getMembers());
+                updateGrid();
                 dialog.close();
             });
             verticalLayout.add(addExisting);
@@ -185,7 +193,7 @@ public class MembersView extends VerticalLayout implements BeforeEnterObserver, 
         verticalLayout.add(line2);
 
         Checkbox checkbox = new Checkbox("Board Admin");
-        checkbox.setValue(board.isAdmin(member));
+        checkbox.setValue(member.hasRole(Role.Type.ADMIN, Role.Scope.BOARD, board.getId()));
         verticalLayout.add(checkbox);
 
         dialog.add(verticalLayout);
@@ -200,31 +208,35 @@ public class MembersView extends VerticalLayout implements BeforeEnterObserver, 
         confirmButton.addClickListener(event -> {
             try {
                 binder.writeBean(member);
-                member.setOrganisation(organisation);
+                addMember(board, member, checkbox.getValue());
                 personsRepository.save(member);
-                if (!board.getMembers().contains(member)) {
-                    board.getMembers().add(member);
-                }
-                if (checkbox.getValue()) {
-                    if (!member.getRoles().contains(board.getRequiredRole())) {
-                        member.getRoles().add(board.getRequiredRole());
-                    }
-                } else {
-                    member.getRoles().remove(board.getRequiredRole());
-                }
                 boardsRepository.save(board);
-                grid.setItems(board.getMembers());
+                passwordResetRepository.save(WhatsAppUtils.getInstance().sendPasswordResetMessage(member, WhatsAppUtils.CREATED));
+                updateGrid();
                 dialog.close();
             } catch (ValidationException e) {
                 for (ValidationResult result : e.getValidationErrors()) {
                     Notification.show(result.getErrorMessage());
                 }
+            } catch (FriendlyError e) {
+                Notification.show(e.getMessage());
             }
         });
         dialog.getFooter().add();
 
         binder.readBean(member);
         dialog.open();
+    }
+
+    private void addMember(Board board, Person person, boolean admin) {
+        person.grantRole(Role.Type.MEMBER, Role.Scope.BOARD, board.getId());
+        if (admin) {
+            person.grantRole(Role.Type.ADMIN, Role.Scope.BOARD, board.getId());
+        } else {
+            person.removeRole(Role.Type.ADMIN, Role.Scope.BOARD, board.getId());
+        }
+        person.grantRole(Role.Type.MEMBER, Role.Scope.ORGANISATION, board.getOrganisation().getId());
+        person.saveRoles(roleRepository);
     }
 
     private Icon createStatusIcon(boolean status) {
@@ -242,6 +254,10 @@ public class MembersView extends VerticalLayout implements BeforeEnterObserver, 
 
     @Override
     public void afterNavigation(AfterNavigationEvent afterNavigationEvent) {
-        grid.setItems(board.getMembers());
+        updateGrid();
+    }
+
+    private void updateGrid() {
+        grid.setItems(personsRepository.hasRoleOn(Role.Type.MEMBER, this.board));
     }
 }

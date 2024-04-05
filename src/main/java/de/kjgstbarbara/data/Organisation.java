@@ -1,7 +1,6 @@
 package de.kjgstbarbara.data;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,8 +12,12 @@ import lombok.NonNull;
 @NoArgsConstructor
 public class Organisation {
     @Id
-    @NonNull
-    private String id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private long id;
     @NonNull
     private String name;
+
+    public String toString() {
+        return name;
+    }
 }

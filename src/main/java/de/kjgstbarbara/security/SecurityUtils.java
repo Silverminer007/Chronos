@@ -1,13 +1,10 @@
 package de.kjgstbarbara.security;
 
-import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.service.PersonsRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Optional;
 
 public class SecurityUtils {
     public static String generatePassword(int length) throws NoSuchAlgorithmException {
@@ -32,9 +29,5 @@ public class SecurityUtils {
             }
         }
         return false;
-    }
-
-    public static Optional<Person> getPerson(UserDetails userDetails, PersonsRepository personsRepository) {
-
     }
 }

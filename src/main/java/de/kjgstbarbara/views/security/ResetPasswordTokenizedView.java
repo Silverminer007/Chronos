@@ -40,7 +40,8 @@ public class ResetPasswordTokenizedView extends VerticalLayout implements Before
         this.personsRepository = personsService.getPersonsRepository();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
-        setWidth(200, Unit.MM);
+        VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidth(200, Unit.MM);
         username.setWidthFull();
         PasswordField password = new PasswordField("Passwort");
         password.setWidthFull();
@@ -113,7 +114,8 @@ public class ResetPasswordTokenizedView extends VerticalLayout implements Before
         });
         HorizontalLayout pass = new HorizontalLayout(password, retypepassword);
         pass.setWidthFull();
-        add(title, username, pass, confirm);
+        wrapper.add(title, username, pass, confirm);
+        add(wrapper);
     }
 
     private PasswordReset passwordReset;
@@ -122,9 +124,10 @@ public class ResetPasswordTokenizedView extends VerticalLayout implements Before
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         Optional<PasswordReset> passwordResetOptional = beforeEnterEvent.getRouteParameters().get("token").flatMap(passwordResetRepository::findById);
         if (passwordResetOptional.isEmpty()) {
+            beforeEnterEvent.getUI().navigate(ResetPasswordView.class, new RouteParameters("status", "invalid-token"));
             beforeEnterEvent.rerouteTo(ResetPasswordView.class, new RouteParameters("status", "invalid-token"));
         } else if (passwordResetOptional.get().expired()) {
-            beforeEnterEvent.rerouteTo(ResetPasswordView.class, new RouteParameters("status", "token-expired"));
+            beforeEnterEvent.getUI().navigate(ResetPasswordView.class, new RouteParameters("status", "token-expired"));
         } else {
             this.passwordReset = passwordResetOptional.get();
         }

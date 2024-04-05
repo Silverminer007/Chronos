@@ -13,7 +13,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.FriendlyError;
-import de.kjgstbarbara.WhatsAppUtils;
+import de.kjgstbarbara.whatsapp.WhatsAppUtils;
 import de.kjgstbarbara.data.PasswordReset;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PasswordResetRepository;
@@ -22,6 +22,7 @@ import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.components.LongNumberField;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Route("request-password-reset")
@@ -33,40 +34,44 @@ public class RequestPasswordResetView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
         VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidthFull();
+        wrapper.setHeightFull();
         wrapper.setAlignItems(Alignment.CENTER);
         wrapper.setJustifyContentMode(JustifyContentMode.CENTER);
-        setWidth(200, Unit.MM);
-        wrapper.add(new H1("Passwort zurücksetzen"));
-        wrapper.add(new NativeLabel("Bitte gib deine Telefonnummer an," +
+        VerticalLayout inner = new VerticalLayout();
+        wrapper.add(inner);
+        inner.setWidth(200, Unit.MM);
+        inner.add(new H1("Passwort zurücksetzen"));
+        inner.add(new NativeLabel("Bitte gib deine Telefonnummer an," +
                 " um dir einen Code zum Zurücksetzen deines Passworts zuschicken zu lassen" +
                 " und gib dein Geburtsdatum als Bestätigung deiner Identität ein"));
         LongNumberField phoneNumber = new LongNumberField("Telefonnummer"); // TODO Vorwahl Auswahlfeld daneben
         phoneNumber.setWidthFull();
-        wrapper.add(phoneNumber);
+        inner.add(phoneNumber);
         DatePicker datePicker = new DatePicker("Geburtsdatum");
-        wrapper.add(datePicker);
+        inner.add(datePicker);
         datePicker.setWidthFull();
         Button confirm = new Button("Bestätigen");
         confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         confirm.addClickShortcut(Key.ENTER);
         confirm.addClickListener(event -> {
-            if(phoneNumber.getValue() == null) {
+            if (phoneNumber.getValue() == null) {
                 phoneNumber.setInvalid(true);
                 phoneNumber.setErrorMessage("Bitte gib eine Telefonnummer an");
                 return;
             }
-            if(datePicker.getValue() == null) {
+            if (datePicker.getValue() == null) {
                 datePicker.setInvalid(true);
                 datePicker.setErrorMessage("Bitte gib dein Geburtsdatum an");
                 return;
             }
             Optional<Person> optionalPerson = personsRepository.findByPhoneNumber(phoneNumber.getValue());
-            if(optionalPerson.isPresent()) {
+            if (optionalPerson.isPresent()) {
                 phoneNumber.setInvalid(false);
-                if(optionalPerson.get().getBirthDate().equals(datePicker.getValue())) {
+                if (Objects.equals(optionalPerson.get().getBirthDate(), datePicker.getValue())) {
                     datePicker.setInvalid(false);
                     try {
-                        PasswordReset passwordReset = WhatsAppUtils.getInstance().sendPasswordResetMessage(optionalPerson.get());
+                        PasswordReset passwordReset = WhatsAppUtils.getInstance().sendPasswordResetMessage(optionalPerson.get(), WhatsAppUtils.RESET);
                         passwordResetRepository.save(passwordReset);
                         event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
                     } catch (FriendlyError e) {
@@ -84,7 +89,7 @@ public class RequestPasswordResetView extends VerticalLayout {
             }
         });
         confirm.setWidthFull();
-        wrapper.add(confirm);
+        inner.add(confirm);
         add(wrapper);
     }
 
