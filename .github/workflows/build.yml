@@ -9,11 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ayltai/setup-graalvm@v1
+      - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: 21
-          graalvm-version: 21.1.0
-          native-image: true
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - run: java -version
       - run: mvn -Pproduction -Pnative native:compile
       - name: Create Release
