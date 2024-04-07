@@ -1,10 +1,7 @@
 package de.kjgstbarbara.views;
 
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
@@ -17,7 +14,6 @@ import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.DateWidget;
 import de.kjgstbarbara.views.nav.MainNavigationView;
-import github.tobsef.vaadin.paperfab.SpeedDial;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UserDetails;
 
