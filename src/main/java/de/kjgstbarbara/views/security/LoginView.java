@@ -2,8 +2,7 @@ package de.kjgstbarbara.views.security;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.login.LoginForm;
+import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -25,11 +24,34 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
+        LoginI18n i18n = LoginI18n.createDefault();
+
+        LoginI18n.Header i18nHeader = new LoginI18n.Header();
+        i18nHeader.setTitle("KjG Termine");
+        i18nHeader.setDescription("Aktuell in Beta (Justus Henze)");
+        i18n.setHeader(i18nHeader);
+
+        LoginI18n.Form i18nForm = i18n.getForm();
+        i18nForm.setTitle("Anmelden");
+        i18nForm.setUsername("Benutzername");
+        i18nForm.setPassword("Passwort");
+        i18nForm.setSubmit("Anmelden");
+        i18nForm.setForgotPassword("Passwort vergessen?");
+        i18n.setForm(i18nForm);
+
+        LoginI18n.ErrorMessage i18nErrorMessage = i18n.getErrorMessage();
+        i18nErrorMessage.setTitle("Anmelden fehlgeschlagen");
+        i18nErrorMessage.setMessage(
+                "Der Benutzername oder das Passwort ist falsch");
+        i18n.setErrorMessage(i18nErrorMessage);
+
+        login.setI18n(i18n);
+
         login.setAction("login");
         login.addForgotPasswordListener(event ->
                 event.getSource().getUI().ifPresent(ui ->
                         ui.navigate(RequestPasswordResetView.class)));
-        Button register = new Button("Register");
+        Button register = new Button("Account erstellen");
         register.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         register.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(RegisterView.class)));
         register.setWidthFull();
