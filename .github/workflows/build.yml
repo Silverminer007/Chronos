@@ -14,7 +14,6 @@ jobs:
           java-version: '21'
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - run: java -version
       - run: mvn -Pproduction -Pnative native:compile
       - name: Create Release
