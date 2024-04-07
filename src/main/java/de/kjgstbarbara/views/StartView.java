@@ -1,7 +1,10 @@
 package de.kjgstbarbara.views;
 
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
@@ -11,10 +14,10 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.data.Role;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.DateWidget;
 import de.kjgstbarbara.views.nav.MainNavigationView;
+import github.tobsef.vaadin.paperfab.SpeedDial;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -28,14 +31,16 @@ import java.util.List;
 public class StartView extends VerticalLayout implements AfterNavigationObserver {
     private final PersonsRepository personsRepository;
     private final DateRepository dateRepository;
+    private final BoardsRepository boardsRepository;
     private final FeedbackRepository feedbackRepository;
 
     private final Person person;
     private final Grid<Date> grid = new Grid<>(Date.class, false);
 
-    public StartView(PersonsService personsService, DatesService datesService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
+    public StartView(PersonsService personsService, DatesService datesService, BoardsService boardsService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.dateRepository = datesService.getDateRepository();
+        this.boardsRepository = boardsService.getBoardsRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
@@ -66,7 +71,8 @@ public class StartView extends VerticalLayout implements AfterNavigationObserver
     }
 
     private List<Date> getDates() {
-        List<Date> dates = new ArrayList<>(dateRepository.hasAuthorityOn(Role.Type.MEMBER, this.person));
+        List<Date> dates = new ArrayList<>();
+        boardsRepository.findByPerson(this.person).stream().map(dateRepository::findByBoard).forEach(dates::addAll);
         return dates.stream().distinct().sorted().toList();
     }
 

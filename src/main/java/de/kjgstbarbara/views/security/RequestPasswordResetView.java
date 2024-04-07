@@ -13,6 +13,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.FriendlyError;
+import de.kjgstbarbara.views.components.ReCaptcha;
 import de.kjgstbarbara.whatsapp.WhatsAppUtils;
 import de.kjgstbarbara.data.PasswordReset;
 import de.kjgstbarbara.data.Person;
@@ -51,10 +52,15 @@ public class RequestPasswordResetView extends VerticalLayout {
         DatePicker datePicker = new DatePicker("Geburtsdatum");
         inner.add(datePicker);
         datePicker.setWidthFull();
+        ReCaptcha reCaptcha = new ReCaptcha();
+        inner.add(reCaptcha);
         Button confirm = new Button("Bestätigen");
         confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         confirm.addClickShortcut(Key.ENTER);
         confirm.addClickListener(event -> {
+            if (reCaptcha.isValid()) {
+                confirm.setAriaLabel("Bitte löse zuerst das Captcha");
+            }
             if (phoneNumber.getValue() == null) {
                 phoneNumber.setInvalid(true);
                 phoneNumber.setErrorMessage("Bitte gib eine Telefonnummer an");

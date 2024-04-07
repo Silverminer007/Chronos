@@ -21,13 +21,4 @@ public class SecurityUtils {
         return password.length() > 10;
         //return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(.{2,})");
     }
-
-    public static boolean isGlobalAdmin(UserDetails userDetails) {
-        for(GrantedAuthority authority : userDetails.getAuthorities()) {
-            if(authority.getAuthority().equals("ADMIN")) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

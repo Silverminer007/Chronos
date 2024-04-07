@@ -66,27 +66,6 @@ public class SecurityConfiguration extends VaadinWebSecurity {
         return new CustomUserDetailsService();
     }
 
-    /*@Bean
-    public UserDetailsManager userDetailsService() {
-        UserDetails user =
-                User.withUsername("user")
-                        .password("{noop}user")
-                        .roles("USER")
-                        .build();
-        UserDetails admin =
-                User.withUsername("admin")
-                        .password("{noop}admin")
-                        .roles("ADMIN")
-                        .build();
-        InMemoryUserDetailsManager userDetailsManager = new InMemoryUserDetailsManager();
-        userDetailsManager.createUser(user);
-        userDetailsManager.createUser(admin);
-        //return new InMemoryUserDetailsManager(user, admin);
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.
-        return userDetailsManager;
-    }*/
-
     @Bean
     public PasswordEncoder getPasswordEncoder() {
         return new BCryptPasswordEncoder();
