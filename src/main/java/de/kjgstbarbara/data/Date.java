@@ -1,5 +1,6 @@
 package de.kjgstbarbara.data;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,6 +17,8 @@ public class Date implements Comparable<Date> {
     private long id;
     private String title;
     private LocalDateTime start;
+    @Nullable
+    private LocalDateTime end;
     private String attachment;
     private boolean internal = true;
     @ManyToOne

@@ -1,5 +1,7 @@
 package de.kjgstbarbara.data;
 
+import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.avatar.AvatarGroup;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,6 +28,7 @@ public class Person {
     private LocalDate birthDate;
     private long phoneNumber = 0L;
     private String password;
+    private String profileImage;
 
     public String toString() {
         return firstName + " " + lastName;
@@ -41,5 +44,22 @@ public class Person {
             return Objects.equals(p.getId(), this.getId());
         }
         return false;
+    }
+
+    public Avatar getAvatar() {
+        String name = this.getFirstName() + " " + this.getLastName();
+        if (profileImage == null) {
+            return new Avatar(name);
+        } else {
+            return new Avatar(name, profileImage);
+        }
+    }
+    public AvatarGroup.AvatarGroupItem getAvatarGroupItem() {
+        String name = this.getFirstName() + " " + this.getLastName();
+        if (profileImage == null) {
+            return new AvatarGroup.AvatarGroupItem(name);
+        } else {
+            return new AvatarGroup.AvatarGroupItem(name, profileImage);
+        }
     }
 }

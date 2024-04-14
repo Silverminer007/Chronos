@@ -11,4 +11,8 @@ public interface BoardsRepository extends JpaRepository<Board, Long> {
     default List<Board> findByPerson(Person person) {
         return findAll().stream().filter(board -> board.getMembers().contains(person)).toList();
     }
+
+    default List<Board> findByAdmin(Person person) {
+        return findAll().stream().filter(board -> board.getAdmins().contains(person)).toList();
+    }
 }

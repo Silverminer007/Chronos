@@ -2,13 +2,17 @@ package de.kjgstbarbara.views.nav;
 
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
+import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Header;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
@@ -16,7 +20,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.views.StartView;
+import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.service.PersonsService;
+import de.kjgstbarbara.views.BoardView;
+import de.kjgstbarbara.views.DateView;
+import de.kjgstbarbara.views.ProfileView;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
 /**
@@ -26,9 +35,16 @@ public class MainNavigationView extends AppLayout {
     private final transient AuthenticationContext authenticationContext;
 
     private H2 viewTitle;
+    private final Person person;
 
-    public MainNavigationView(AuthenticationContext authenticationContext) {
+    public MainNavigationView(PersonsService personsService, AuthenticationContext authenticationContext) {
         this.authenticationContext = authenticationContext;
+        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
+                .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
+                .orElse(null);
+        if(person == null) {
+            authenticationContext.logout();
+        }
         setPrimarySection(Section.DRAWER);
         addDrawerContent();
         addHeaderContent();
@@ -41,11 +57,18 @@ public class MainNavigationView extends AppLayout {
         viewTitle = new H2();
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
 
-        addToNavbar(true, toggle, viewTitle);
+        Avatar avatar = this.person.getAvatar();
+        avatar.addThemeVariants(AvatarVariant.LUMO_LARGE);
+        HorizontalLayout button = new HorizontalLayout(avatar);
+        button.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(ProfileView.class)));
+        HorizontalLayout title = new HorizontalLayout(button);
+        title.setWidthFull();
+        title.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        addToNavbar(true, toggle, viewTitle, title);
     }
 
     private void addDrawerContent() {
-        H1 appName = new H1("My Time is gone");
+        H1 appName = new H1("KjG Termine");
         appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
         Header header = new Header(appName);
 
@@ -57,7 +80,8 @@ public class MainNavigationView extends AppLayout {
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
 
-        nav.addItem(new SideNavItem("Meine Termine", StartView.class, LineAwesomeIcon.CALENDAR.create()));
+        nav.addItem(new SideNavItem("Meine Termine", DateView.class, VaadinIcon.CALENDAR_USER.create()));
+        nav.addItem(new SideNavItem("Meine Boards", BoardView.class, VaadinIcon.GROUP.create()));
 
         return nav;
     }

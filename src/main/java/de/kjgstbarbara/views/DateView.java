@@ -1,18 +1,22 @@
 package de.kjgstbarbara.views;
 
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.AfterNavigationEvent;
-import com.vaadin.flow.router.AfterNavigationObserver;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.DateWidget;
+import de.kjgstbarbara.views.createdate.CreateDateView;
+import de.kjgstbarbara.views.createdate.SelectBoardView;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,10 +25,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Route(value = "", layout = MainNavigationView.class)
+@Route(value = "dates", layout = MainNavigationView.class)
+@RouteAlias(value = "", layout = MainNavigationView.class)
 @PageTitle("Meine Termine")
 @PermitAll
-public class StartView extends VerticalLayout implements AfterNavigationObserver {
+public class DateView extends VerticalLayout implements AfterNavigationObserver {
     private final PersonsRepository personsRepository;
     private final DateRepository dateRepository;
     private final BoardsRepository boardsRepository;
@@ -33,7 +38,7 @@ public class StartView extends VerticalLayout implements AfterNavigationObserver
     private final Person person;
     private final Grid<Date> grid = new Grid<>(Date.class, false);
 
-    public StartView(PersonsService personsService, DatesService datesService, BoardsService boardsService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
+    public DateView(PersonsService personsService, DatesService datesService, BoardsService boardsService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.dateRepository = datesService.getDateRepository();
         this.boardsRepository = boardsService.getBoardsRepository();
@@ -47,6 +52,7 @@ public class StartView extends VerticalLayout implements AfterNavigationObserver
 
         this.setHeightFull();
         grid.addClassName("styling");
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
         grid.setHeightFull();
         grid.addComponentColumn(date -> new DateWidget(date, feedbackRepository, this.person));
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
@@ -63,7 +69,24 @@ public class StartView extends VerticalLayout implements AfterNavigationObserver
             }
             return null;
         });
-        add(grid);
+
+        HorizontalLayout footer = new HorizontalLayout();
+        HorizontalLayout leftFooter = new HorizontalLayout();
+        leftFooter.setWidth("50%");
+        HorizontalLayout rightFooter = new HorizontalLayout();
+        rightFooter.setWidth("50%");
+        footer.setWidthFull();
+        Button filter = new Button(VaadinIcon.FILTER.create());
+        filter.addThemeVariants(ButtonVariant.LUMO_LARGE);
+        leftFooter.add(filter);
+        Button add = new Button(VaadinIcon.PLUS_SQUARE_O.create());
+        add.addThemeVariants(ButtonVariant.LUMO_LARGE);
+        add.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(SelectBoardView.class)));
+        rightFooter.add(add);
+        rightFooter.setAlignItems(Alignment.END);
+        rightFooter.setJustifyContentMode(JustifyContentMode.END);
+        footer.add(leftFooter, rightFooter);
+        add(grid, new Hr(), footer);
     }
 
     private List<Date> getDates() {

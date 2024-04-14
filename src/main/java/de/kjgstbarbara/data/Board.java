@@ -3,6 +3,7 @@ package de.kjgstbarbara.data;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -16,7 +17,11 @@ public class Board {
     @NonNull
     private String title;
     @ManyToMany(fetch = FetchType.EAGER)
-    private List<Person> members;
+    private final List<Person> members = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
-    private List<Person> admins;
+    private final List<Person> admins = new ArrayList<>();
+
+    public String toString() {
+        return title;
+    }
 }

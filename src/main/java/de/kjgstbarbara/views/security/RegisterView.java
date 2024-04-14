@@ -88,6 +88,9 @@ public class RegisterView extends VerticalLayout {
                 username.setErrorMessage("Dieses Feld ist erforderlich");
                 createAccount.setEnabled(false);
                 return;
+            } else if (!username.getValue().matches("[a-z]") || username.getValue().contains(" ")) {
+                username.setInvalid(true);
+                username.setErrorMessage("Der Benutzername darf nur aus Kleinbuchstaben bestehen");
             } else if (personsService.getPersonsRepository().findByUsername(username.getValue()).isPresent()) {
                 username.setInvalid(true);
                 username.setErrorMessage("Der Benutzername ist bereits vergeben");
@@ -132,7 +135,7 @@ public class RegisterView extends VerticalLayout {
                 reTypePassword.setInvalid(false);
                 reTypePassword.setErrorMessage("");
             }
-                createAccount.setEnabled(true);
+            createAccount.setEnabled(true);
         };
         firstName.addValueChangeListener(event -> validateFields.run());
         lastName.addValueChangeListener(event -> validateFields.run());
@@ -167,7 +170,7 @@ public class RegisterView extends VerticalLayout {
         buttons.setWidthFull();
         buttons.setJustifyContentMode(JustifyContentMode.CENTER);
 
-        VerticalLayout wrapper = new VerticalLayout(title, name, username, birthDate, phoneNumber, password, reTypePassword,reCaptcha, buttons);
+        VerticalLayout wrapper = new VerticalLayout(title, name, username, birthDate, phoneNumber, password, reTypePassword, reCaptcha, buttons);
         wrapper.setWidth(name.getWidth());
         add(wrapper);
     }

@@ -12,7 +12,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route("login")
-@PageTitle("Login | Vaadin CRM")
+@PageTitle("Login | KjG Termine")
 @AnonymousAllowed
 public class LoginView extends VerticalLayout implements BeforeEnterObserver {
     private final LoginOverlay login = new LoginOverlay();
@@ -57,7 +57,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         register.setWidthFull();
 
         login.getFooter().add(register);
-        login.setTitle("Date Crisis");
+        login.setTitle("KjG Termine");
         add(login);
         login.setOpened(true);
     }

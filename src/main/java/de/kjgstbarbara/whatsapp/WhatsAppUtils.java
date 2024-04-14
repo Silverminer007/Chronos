@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
-@Component
+//@Component
 public class WhatsAppUtils implements CommandLineRunner {
     private static final long PHONE_NUMBER = 4915752657194L;
     @Getter
