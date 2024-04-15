@@ -2,6 +2,7 @@ package de.kjgstbarbara.data;
 
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
+import de.kjgstbarbara.FileHelper;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,7 +29,7 @@ public class Person {
     private LocalDate birthDate;
     private long phoneNumber = 0L;
     private String password;
-    private String profileImage;
+    private boolean hasProfilePicture = false;
 
     public String toString() {
         return firstName + " " + lastName;
@@ -48,18 +49,23 @@ public class Person {
 
     public Avatar getAvatar() {
         String name = this.getFirstName() + " " + this.getLastName();
-        if (profileImage == null) {
-            return new Avatar(name);
+        Avatar avatar = new Avatar(name);
+        if (hasProfilePicture) {
+            avatar.setImageResource(FileHelper.getProfileImage(this.getUsername()));
         } else {
-            return new Avatar(name, profileImage);
+            avatar.setColorIndex((int) (id % 7));
         }
+        return avatar;
     }
+
     public AvatarGroup.AvatarGroupItem getAvatarGroupItem() {
         String name = this.getFirstName() + " " + this.getLastName();
-        if (profileImage == null) {
-            return new AvatarGroup.AvatarGroupItem(name);
+        AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(name);
+        if (hasProfilePicture) {
+            avatarGroupItem.setImageResource(FileHelper.getProfileImage(this.getUsername()));
         } else {
-            return new AvatarGroup.AvatarGroupItem(name, profileImage);
+            avatarGroupItem.setColorIndex((int) (id % 7));
         }
+        return avatarGroupItem;
     }
 }

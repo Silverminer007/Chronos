@@ -56,6 +56,7 @@ public class BoardView extends VerticalLayout implements AfterNavigationObserver
         rightFooter.setWidth("50%");
         footer.setWidthFull();
         Button filter = new Button(VaadinIcon.FILTER.create());
+        filter.setVisible(false);//TODO Implement
         leftFooter.add(filter);
         Button add = new Button(VaadinIcon.PLUS_SQUARE_O.create());
         add.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(CreateBoardView.class)));

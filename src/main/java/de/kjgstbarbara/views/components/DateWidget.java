@@ -11,6 +11,7 @@ import com.vaadin.flow.component.details.DetailsVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -58,7 +59,8 @@ public class DateWidget extends VerticalLayout {
         }
         Button edit = new Button(VaadinIcon.PENCIL.create());
         edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-        edit.setVisible(date.getBoard().getAdmins().contains(this.person));
+        //edit.setVisible(date.getBoard().getAdmins().contains(this.person));
+        edit.setVisible(false);//TODO Implement
         rightSidePrimaryLine.add(edit);
         rightSidePrimaryLine.setWidthFull();
         rightSidePrimaryLine.setVerticalComponentAlignment(Alignment.START);
@@ -73,13 +75,19 @@ public class DateWidget extends VerticalLayout {
 
             HorizontalLayout feedbacks = new HorizontalLayout();
             AvatarGroup confirmed = new AvatarGroup();
-            confirmed.setWidth("50%");
             confirmed.setMaxItemsVisible(4);
             confirmed.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
+            HorizontalLayout confirmedLayout = new HorizontalLayout(new NativeLabel("Zusagen:"), confirmed);
+            confirmedLayout.setJustifyContentMode(JustifyContentMode.START);
+            confirmedLayout.setAlignItems(Alignment.CENTER);
+            confirmedLayout.setWidth("50%");
             AvatarGroup declined = new AvatarGroup();
-            declined.setWidth("50%");
             declined.setMaxItemsVisible(4);
             declined.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
+            HorizontalLayout declinedLayout = new HorizontalLayout(new NativeLabel("Absagen:"), declined);
+            declinedLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+            declinedLayout.setAlignItems(Alignment.CENTER);
+            declinedLayout.setWidth("50%");
             List<Feedback> feedbacksForDate = feedbackRepository.findByDate(date);
             for (Feedback f : feedbacksForDate) {
                 if (Feedback.Status.IN.equals(f.getStatus())) {
@@ -89,7 +97,7 @@ public class DateWidget extends VerticalLayout {
                 }
             }
             feedbacks.setWidthFull();
-            feedbacks.add(confirmed, declined);
+            feedbacks.add(confirmedLayout, declinedLayout);
             feedbacks.addClickListener(event -> {
                 Dialog dialog = new Dialog("Rückmeldungen zu \"" + date.getTitle() + "\"");
                 Accordion accordion = new Accordion();

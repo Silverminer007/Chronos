@@ -15,7 +15,6 @@ import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.DateWidget;
-import de.kjgstbarbara.views.createdate.CreateDateView;
 import de.kjgstbarbara.views.createdate.SelectBoardView;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
@@ -77,6 +76,7 @@ public class DateView extends VerticalLayout implements AfterNavigationObserver 
         rightFooter.setWidth("50%");
         footer.setWidthFull();
         Button filter = new Button(VaadinIcon.FILTER.create());
+        filter.setVisible(false);//TODO Implement
         filter.addThemeVariants(ButtonVariant.LUMO_LARGE);
         leftFooter.add(filter);
         Button add = new Button(VaadinIcon.PLUS_SQUARE_O.create());

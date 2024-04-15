@@ -5,9 +5,9 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import de.kjgstbarbara.data.Board;
 import de.kjgstbarbara.data.Person;
@@ -54,12 +54,14 @@ public class BoardWidget extends VerticalLayout {
             if(admin) {
                 Button delete = new Button("Löschen");
                 delete.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+                delete.addClickListener(event -> Notification.show("Diese Funktion wurde noch nicht programmiert").addThemeVariants(NotificationVariant.LUMO_WARNING));
                 delete.setWidth("50%");
                 footer.add(delete);
             }
             Button leave = new Button("Verlassen");
             leave.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_CONTRAST);
             leave.setWidth(admin ? "50%" : "100%");
+            leave.addClickListener(event -> Notification.show("Diese Funktion wurde noch nicht programmiert").addThemeVariants(NotificationVariant.LUMO_WARNING));
             footer.add(leave);
             height += leave.getHeight();
 

@@ -4,11 +4,8 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
-import com.vaadin.flow.component.datetimepicker.DateTimePickerVariant;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
@@ -17,8 +14,6 @@ import de.kjgstbarbara.data.Board;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.views.BoardView;
-import de.kjgstbarbara.views.CreateBoardView;
 import de.kjgstbarbara.views.DateView;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
@@ -52,9 +47,7 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
         boardTitle.setRequired(true);
         DateTimePicker startPicker = new DateTimePicker("Startzeitpunkt");
         startPicker.setRequiredIndicatorVisible(true);
-        startPicker.setWidthFull();
         DateTimePicker endPicker = new DateTimePicker("Endzeitpunkt (optional)");
-        endPicker.setWidthFull();
         Checkbox publish = new Checkbox("Publish to Website etc.");
         publish.setValue(false);
         publish.setWidthFull();
@@ -64,7 +57,6 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
         back.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(DateView.class)));
         Button confirmNClose = new Button("Termin erstellen & schließen");
         confirmNClose.setWidthFull();
-        //confirmNClose.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         confirmNClose.addClickShortcut(Key.ENTER);
         Supplier<Boolean> create = () -> {
             if (boardTitle.getValue().isBlank()) {
@@ -106,14 +98,16 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
             }
         });
         VerticalLayout form = new VerticalLayout(boardTitle, startPicker, endPicker);
+        form.setWidth(startPicker.getWidth());
         form.setHeightFull();
         VerticalLayout wrapper = new VerticalLayout(form, publish, confirmNClose, confirmNProceed, back);
         wrapper.setHeightFull();
         wrapper.setJustifyContentMode(JustifyContentMode.END);
+        wrapper.setWidth(startPicker.getWidth());
         this.setJustifyContentMode(JustifyContentMode.CENTER);
         this.setAlignItems(Alignment.CENTER);
         this.add(wrapper);
-
+        this.setWidthFull();
     }
 
     @Override
