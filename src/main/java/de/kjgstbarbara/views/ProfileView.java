@@ -86,62 +86,7 @@ public class ProfileView extends VerticalLayout {
             birthDate.setWidthFull();
             binder.forField(birthDate).bind(Person::getBirthDate, Person::setBirthDate);
 
-            Button changePassword = new Button("Passwort ändern");
-            changePassword.setWidthFull();
-            changePassword.addClickListener(event -> {
-                Dialog dialog = new Dialog();
-                PasswordField password = new PasswordField("Altes Passwort");
-                password.setRequired(true);
-                password.setWidthFull();
-                PasswordField newPassword = new PasswordField("Neues Passwort");
-                newPassword.setRequired(true);
-                newPassword.setWidthFull();
-                PasswordField reTypePassword = new PasswordField("Neues Passwort wiederholen");
-                reTypePassword.setRequired(true);
-                reTypePassword.setWidthFull();
-                ReCaptcha reCaptcha = new ReCaptcha();
-                dialog.add(password, newPassword, reTypePassword, reCaptcha);
-                dialog.setHeaderTitle("Passwort ändern");
-                Button save = new Button("Speichern");
-                save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                save.addClickListener(e -> {
-                    if (reCaptcha.isValid()) {
-                        if (passwordEncoder.encode(password.getValue()).equals(person.getPassword())) {
-                            if (newPassword.getValue().length() >= 8) {
-                                if (newPassword.getValue().equals(reTypePassword.getValue())) {
-                                    person.setPassword(passwordEncoder.encode(password.getValue()));
-                                    personsRepository.save(person);
-                                    dialog.close();
-                                    Notification.show("Passwort geändert");
-                                } else {
-                                    reTypePassword.setInvalid(true);
-                                    reTypePassword.setErrorMessage("Die Passwörter stimmen nicht überein");
-                                }
-                            } else {
-                                newPassword.setInvalid(true);
-                                newPassword.setErrorMessage("Das Passwort muss aus mindestens 8 Zeichen bestehen");
-                            }
-                        } else {
-                            password.setInvalid(true);
-                            password.setErrorMessage("Das Passwort ist falsch");
-                        }
-                    } else {
-                        Notification.show("Bitte löse zuerst das Captcha");
-                    }
-                });
-                Button cancel = new Button("Zurück");
-                cancel.addClickListener(e -> dialog.close());
-                HorizontalLayout cancelLayout = new HorizontalLayout(cancel);
-                cancelLayout.setWidth("50%");
-                cancelLayout.setJustifyContentMode(JustifyContentMode.START);
-                HorizontalLayout saveLayout = new HorizontalLayout(save);
-                saveLayout.setWidth("50%");
-                saveLayout.setJustifyContentMode(JustifyContentMode.END);
-                HorizontalLayout footer = new HorizontalLayout(cancelLayout, saveLayout);
-                footer.setWidthFull();
-                dialog.getFooter().add(footer);
-                dialog.open();
-            });
+            Button changePassword = getChangePasswordButton(passwordEncoder, person, personsRepository);
 
             Button save = new Button("Speichern");
             save.addClickShortcut(Key.ENTER);
@@ -173,6 +118,66 @@ public class ProfileView extends VerticalLayout {
             wrapper.setWidth(name.getWidth());
             add(wrapper);
         }
+    }
+
+    private static Button getChangePasswordButton(PasswordEncoder passwordEncoder, Person person, PersonsRepository personsRepository) {
+        Button changePassword = new Button("Passwort ändern");
+        changePassword.setWidthFull();
+        changePassword.addClickListener(event -> {
+            Dialog dialog = new Dialog();
+            PasswordField password = new PasswordField("Altes Passwort");
+            password.setRequired(true);
+            password.setWidthFull();
+            PasswordField newPassword = new PasswordField("Neues Passwort");
+            newPassword.setRequired(true);
+            newPassword.setWidthFull();
+            PasswordField reTypePassword = new PasswordField("Neues Passwort wiederholen");
+            reTypePassword.setRequired(true);
+            reTypePassword.setWidthFull();
+            ReCaptcha reCaptcha = new ReCaptcha();
+            dialog.add(password, newPassword, reTypePassword, reCaptcha);
+            dialog.setHeaderTitle("Passwort ändern");
+            Button save = new Button("Speichern");
+            save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            save.addClickListener(e -> {
+                if (reCaptcha.isValid()) {
+                    if (passwordEncoder.encode(password.getValue()).equals(person.getPassword())) {
+                        if (newPassword.getValue().length() >= 8) {
+                            if (newPassword.getValue().equals(reTypePassword.getValue())) {
+                                person.setPassword(passwordEncoder.encode(password.getValue()));
+                                personsRepository.save(person);
+                                dialog.close();
+                                Notification.show("Passwort geändert");
+                            } else {
+                                reTypePassword.setInvalid(true);
+                                reTypePassword.setErrorMessage("Die Passwörter stimmen nicht überein");
+                            }
+                        } else {
+                            newPassword.setInvalid(true);
+                            newPassword.setErrorMessage("Das Passwort muss aus mindestens 8 Zeichen bestehen");
+                        }
+                    } else {
+                        password.setInvalid(true);
+                        password.setErrorMessage("Das Passwort ist falsch");
+                    }
+                } else {
+                    Notification.show("Bitte löse zuerst das Captcha");
+                }
+            });
+            Button cancel = new Button("Zurück");
+            cancel.addClickListener(e -> dialog.close());
+            HorizontalLayout cancelLayout = new HorizontalLayout(cancel);
+            cancelLayout.setWidth("50%");
+            cancelLayout.setJustifyContentMode(JustifyContentMode.START);
+            HorizontalLayout saveLayout = new HorizontalLayout(save);
+            saveLayout.setWidth("50%");
+            saveLayout.setJustifyContentMode(JustifyContentMode.END);
+            HorizontalLayout footer = new HorizontalLayout(cancelLayout, saveLayout);
+            footer.setWidthFull();
+            dialog.getFooter().add(footer);
+            dialog.open();
+        });
+        return changePassword;
     }
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {
