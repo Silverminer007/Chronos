@@ -3,12 +3,9 @@ package de.kjgstbarbara.views.nav;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Header;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -18,7 +15,6 @@ import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsService;
@@ -26,7 +22,6 @@ import de.kjgstbarbara.views.BoardView;
 import de.kjgstbarbara.views.DateView;
 import de.kjgstbarbara.views.ProfileView;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.vaadin.lineawesome.LineAwesomeIcon;
 
 /**
  * The main view is a top-level placeholder for other views.
@@ -34,7 +29,7 @@ import org.vaadin.lineawesome.LineAwesomeIcon;
 public class MainNavigationView extends AppLayout {
     private final transient AuthenticationContext authenticationContext;
 
-    private H2 viewTitle;
+    private H1 viewTitle;
     private final Person person;
 
     public MainNavigationView(PersonsService personsService, AuthenticationContext authenticationContext) {
@@ -54,17 +49,32 @@ public class MainNavigationView extends AppLayout {
         DrawerToggle toggle = new DrawerToggle();
         toggle.setAriaLabel("Menu toggle");
 
-        viewTitle = new H2();
+        viewTitle = new H1();
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
 
+        HorizontalLayout header = new HorizontalLayout();
+        header.setWidthFull();
+
+        HorizontalLayout title = new HorizontalLayout(viewTitle);
+        title.setWidth("50%");
+        title.setAlignItems(FlexComponent.Alignment.CENTER);
+
+        HorizontalLayout avatarWrapper = createAvatarButton();
+
+        header.add(title, avatarWrapper);
+        addToNavbar(true, toggle, header);
+    }
+
+    private HorizontalLayout createAvatarButton() {
         Avatar avatar = this.person.getAvatar();
-        avatar.addThemeVariants(AvatarVariant.LUMO_LARGE);
         HorizontalLayout button = new HorizontalLayout(avatar);
+        button.setPadding(true);
         button.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(ProfileView.class)));
-        HorizontalLayout title = new HorizontalLayout(button);
-        title.setWidthFull();
-        title.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        addToNavbar(true, toggle, viewTitle, title);
+        HorizontalLayout avatarWrapper = new HorizontalLayout(button);
+        avatarWrapper.setWidth("50%");
+        avatarWrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        avatarWrapper.setAlignItems(FlexComponent.Alignment.END);
+        return avatarWrapper;
     }
 
     private void addDrawerContent() {
