@@ -10,9 +10,9 @@ Group=kjgtermine
 
 Type=simple
 
-Environment="JAVA_HOME=$JAVA_HOME"
+Environment="JAVA_HOME=/root/.sdkman/candidates/java/current"
 WorkingDirectory=/opt/kjgtermine
-ExecStart=${JAVA_HOME}/bin/java -jar kjgtermine.jar
+ExecStart=/root/.sdkman/candidates/java/current/bin/java -jar kjgtermine.jar
 ExecStop=/bin/kill -15 $MAINPID
 
 [Install]
