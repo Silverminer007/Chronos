@@ -20,7 +20,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/*
+          path: target
           tag: ${{ github.ref }}
           overwrite: true
   build-docker:
@@ -39,6 +39,6 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/*.jar
+          path: target/
           tag: ${{ github.ref }}
           overwrite: true
