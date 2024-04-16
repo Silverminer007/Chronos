@@ -5,25 +5,25 @@ on:
     tags:
       - 'v*'
 jobs:
-  build-natives:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '21'
-          distribution: 'graalvm'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - run: java -version
-      - run: mvn -Pproduction -Pnative native:compile
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/*
-          tag: ${{ github.ref }}
-          overwrite: true
-          file_glob: true
+  #build-natives:
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - uses: actions/checkout@v4
+  #    - uses: graalvm/setup-graalvm@v1
+  #      with:
+  #        java-version: '21'
+  #        distribution: 'graalvm'
+  #        github-token: ${{ secrets.GITHUB_TOKEN }}
+  #    - run: java -version
+  #    - run: mvn -Pproduction -Pnative native:compile
+  #    - name: Upload binaries to release
+  #      uses: svenstaro/upload-release-action@v2
+  #      with:
+  #        repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #        file: target/*
+  #        tag: ${{ github.ref }}
+  #        overwrite: true
+  #        file_glob: true
   build-docker:
     runs-on: ubuntu-latest
     steps:
