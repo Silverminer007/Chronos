@@ -1,6 +1,7 @@
 systemctl stop kjgtermine
 GITHUB_PAT=$(<github.pat)
 cd ..
+rm -r Gruppentool
 echo "https://""$GITHUB_PAT""@github.com/Silverminer007/Gruppentool.git"
 git clone "https://""$GITHUB_PAT""@github.com/Silverminer007/Gruppentool.git"
 cd Gruppentool || echo "Update failed" | exit
