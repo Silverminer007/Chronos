@@ -21,7 +21,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/*
-          asset_name: ubuntu-native-image
           tag: ${{ github.ref }}
           overwrite: true
   build-docker:
@@ -41,6 +40,5 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/*.jar
-          asset_name: ubuntu-native-image
           tag: ${{ github.ref }}
           overwrite: true
