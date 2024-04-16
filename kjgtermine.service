@@ -1,0 +1,19 @@
+[Unit]
+Description=Eine Vaadin Anwendung um im Web Termine zu managen
+After=syslog.target network.target
+
+[Service]
+SuccessExitStatus=143
+
+User=kjgtermine
+Group=kjgtermine
+
+Type=simple
+
+Environment="JAVA_HOME=$JAVA_HOME"
+WorkingDirectory=/opt/kjgtermine
+ExecStart=${JAVA_HOME}/bin/java -jar kjgtermine.jar
+ExecStop=/bin/kill -15 $MAINPID
+
+[Install]
+WantedBy=multi-user.target

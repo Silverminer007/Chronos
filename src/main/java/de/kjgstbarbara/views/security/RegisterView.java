@@ -53,7 +53,7 @@ public class RegisterView extends VerticalLayout {
         TextField username = new TextField("Benutzername");
         binder.forField(username)
                 .withValidator((s, valueContext) -> s.isBlank() ? ValidationResult.error("Der Benutzername darf nicht leer sein") : ValidationResult.ok())
-                .withValidator(((s, valueContext) -> s.matches("[a-z]") ? ValidationResult.ok() : ValidationResult.error("Der Benutzername darf nur aus Kleinbuchstaben bestehen")))
+                .withValidator(((s, valueContext) -> s.equals(s.replaceAll("[^a-z]", "")) ? ValidationResult.ok() : ValidationResult.error("Der Benutzername darf nur aus Kleinbuchstaben bestehen")))
                 .withValidator((value, context) -> personsService.getPersonsRepository().findByUsername(value).isPresent() ? ValidationResult.error("Der Benutzername ist bereits vergeben") : ValidationResult.ok())
                 .bind(Person::getUsername, Person::setUsername);
         username.setRequired(true);
@@ -96,10 +96,9 @@ public class RegisterView extends VerticalLayout {
                 try {
                     binder.writeBean(person);
                 } catch (ValidationException e) {
-                    throw new RuntimeException(e);
+                    personsService.getPersonsRepository().save(person);
+                    event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
                 }
-                personsService.getPersonsRepository().save(person);
-                event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
             } else {
                 Notification.show("Bitte löse zuerst das Captcha").addThemeVariants(NotificationVariant.LUMO_ERROR);
             }

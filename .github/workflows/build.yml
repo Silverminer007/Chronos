@@ -5,42 +5,43 @@ on:
     tags:
       - 'v*'
 jobs:
-  #build-natives:
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: actions/checkout@v4
-  #    - uses: graalvm/setup-graalvm@v1
-  #      with:
-  #        java-version: '21'
-  #        distribution: 'graalvm'
-  #        github-token: ${{ secrets.GITHUB_TOKEN }}
-  #    - run: java -version
-  #    - run: mvn -Pproduction -Pnative native:compile
-  #    - name: Upload binaries to release
-  #      uses: svenstaro/upload-release-action@v2
-  #      with:
-  #        repo_token: ${{ secrets.GITHUB_TOKEN }}
-  #        file: target/*
-  #        tag: ${{ github.ref }}
-  #        overwrite: true
-  #        file_glob: true
-  build-docker:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: graalvm/setup-graalvm@v1
+      - uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: '21'
-          distribution: 'graalvm'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - run: java -version
       - run: mvn clean package -Pproduction
-      - run: docker build . -t gruppentool:latest
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/*
+          file: target/kjgtermine-${{ github.ref }}.jar
+          asset-name: kjgtermine.jar
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+      - name: Upload update.sh
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: update.sh
+          tag: ${{ github.ref }}
+          overwrite: true
+      - name: Upload install.sh
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: install.sh
+          tag: ${{ github.ref }}
+          overwrite: true
+      - name: Upload kjgtermine.service
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: kjgtermine.service
           tag: ${{ github.ref }}
           overwrite: true
           file_glob: true
