@@ -6,7 +6,7 @@
     <groupId>de.kjgstbarbara</groupId>
     <artifactId>kjgtermine</artifactId>
     <name>kjgtermine</name>
-    <version>v0.1.1</version>
+    <version>v0.1.2</version>
     <packaging>jar</packaging>
 
     <properties>
