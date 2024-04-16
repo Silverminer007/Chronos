@@ -37,7 +37,7 @@ public class BoardWidget extends VerticalLayout {
             boolean admin = board.getAdmins().contains(person);
             String height = title.getHeight();
             if(admin) {
-                TextField invitationLink = new TextField();
+                TextField invitationLink = new TextField("Einladungslink");
                 invitationLink.setEnabled(false);
                 invitationLink.setValue("http://localhost:8080/boards/join/" + this.board.getId());
                 Button copyInvitationLink = new Button(VaadinIcon.COPY.create());
@@ -45,6 +45,7 @@ public class BoardWidget extends VerticalLayout {
                 copyInvitationLink.addClickListener(event -> Notification.show("Clipboard"));
                 invitationLink.setWidth("100%");
                 HorizontalLayout invite = new HorizontalLayout(invitationLink, clipboardHelper);
+                invite.setAlignItems(Alignment.END);
                 invite.setWidthFull();
                 this.add(invite);
                 height += invite.getHeight();

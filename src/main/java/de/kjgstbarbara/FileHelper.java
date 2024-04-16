@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public class FileHelper {
     public static void saveProfileImage(BufferedImage bufferedImage, String username) throws IOException {
@@ -24,17 +25,15 @@ public class FileHelper {
     }
 
     public static Path getProfileImagePath(String username) {
-        return Path.of(System.getenv("HOME")).resolve(".kjgtermine").resolve(username).resolve("profile-image.png");
+        return Path.of(System.getenv("HOME")).resolve(".kjgtermine").resolve("profile-image").resolve(username + ".png");
     }
 
-    public static StreamResource getProfileImage(String username) {
-        return new StreamResource("profile-picture.png", () -> {
-            try {
-                return new FileInputStream(getProfileImagePath(username).toFile());
-            } catch (FileNotFoundException e) {
-                Notification.show(e.getLocalizedMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);// TODO
-                return null;
-            }
-        });
+    public static Optional<StreamResource> getProfileImage(String username) {
+        try (FileInputStream fileInputStream = new FileInputStream(getProfileImagePath(username).toFile())) {
+            return Optional.of(new StreamResource("profile-picture.png", () -> fileInputStream));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+
     }
 }

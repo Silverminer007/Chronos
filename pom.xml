@@ -6,7 +6,7 @@
     <groupId>de.kjgstbarbara</groupId>
     <artifactId>gruppentool</artifactId>
     <name>gruppentool</name>
-    <version>0.0.5</version>
+    <version>0.1.0</version>
     <packaging>jar</packaging>
 
     <properties>

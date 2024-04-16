@@ -2,6 +2,7 @@ package de.kjgstbarbara.data;
 
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
+import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.FileHelper;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +15,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.Optional;
 
 @Entity
 @Data
@@ -29,7 +31,6 @@ public class Person {
     private LocalDate birthDate;
     private long phoneNumber = 0L;
     private String password;
-    private boolean hasProfilePicture = false;
 
     public String toString() {
         return firstName + " " + lastName;
@@ -50,8 +51,9 @@ public class Person {
     public Avatar getAvatar() {
         String name = this.getFirstName() + " " + this.getLastName();
         Avatar avatar = new Avatar(name);
-        if (hasProfilePicture) {
-            avatar.setImageResource(FileHelper.getProfileImage(this.getUsername()));
+        Optional<StreamResource> pp = FileHelper.getProfileImage(this.getUsername());
+        if (pp.isPresent()) {
+            avatar.setImageResource(pp.get());
         } else {
             avatar.setColorIndex((int) (id % 7));
         }
@@ -61,8 +63,9 @@ public class Person {
     public AvatarGroup.AvatarGroupItem getAvatarGroupItem() {
         String name = this.getFirstName() + " " + this.getLastName();
         AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(name);
-        if (hasProfilePicture) {
-            avatarGroupItem.setImageResource(FileHelper.getProfileImage(this.getUsername()));
+        Optional<StreamResource> pp = FileHelper.getProfileImage(this.getUsername());
+        if (pp.isPresent()) {
+            avatarGroupItem.setImageResource(pp.get());
         } else {
             avatarGroupItem.setColorIndex((int) (id % 7));
         }

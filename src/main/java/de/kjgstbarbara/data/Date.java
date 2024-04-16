@@ -21,6 +21,7 @@ public class Date implements Comparable<Date> {
     private LocalDateTime end;
     private String attachment;
     private boolean internal = true;
+    private boolean pollRunning = true;
     @ManyToOne
     private Board board;
 

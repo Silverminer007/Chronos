@@ -53,7 +53,7 @@ public class DateView extends VerticalLayout implements AfterNavigationObserver 
         grid.addClassName("styling");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
         grid.setHeightFull();
-        grid.addComponentColumn(date -> new DateWidget(date, feedbackRepository, this.person));
+        grid.addComponentColumn(date -> new DateWidget(date, feedbackRepository, dateRepository, this.person));
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
         grid.setPartNameGenerator(date -> {
             Feedback.Status status = feedbackRepository.findById(Feedback.Key.create(this.person, date)).map(Feedback::getStatus).orElse(null);

@@ -5,10 +5,16 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.RequiredFieldConfigurator;
+import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -18,14 +24,14 @@ import de.kjgstbarbara.views.components.LongNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Objects;
-
 @Route("register")
-@PageTitle("Register | Date Crisis")
+@PageTitle("Registrieren | KjG Termine")
 @AnonymousAllowed
 public class RegisterView extends VerticalLayout {
 
     public RegisterView(PersonsService personsService, PasswordEncoder passwordEncoder) {
+        Binder<Person> binder = new Binder<>();
+        Person person = new Person();
         addClassName("login-view");
         setSizeFull();
 
@@ -33,27 +39,48 @@ public class RegisterView extends VerticalLayout {
         setJustifyContentMode(JustifyContentMode.CENTER);
 
         Button createAccount = new Button("Account erstellen");
-        createAccount.setEnabled(false);
         H2 title = new H2("Account erstellen");
         TextField firstName = new TextField("Vorname");
+        binder.forField(firstName)
+                .withValidator((s, valueContext) -> s.isBlank() ? ValidationResult.error("Der Vorname darf nicht leer sein") : ValidationResult.ok())
+                .bind(Person::getFirstName, Person::setFirstName);
         firstName.setRequired(true);
         TextField lastName = new TextField("Nachname");
+        binder.forField(lastName)
+                .withValidator((s, valueContext) -> s.isBlank() ? ValidationResult.error("Der Nachname darf nicht leer sein") : ValidationResult.ok())
+                .bind(Person::getLastName, Person::setLastName);
         lastName.setRequired(true);
         TextField username = new TextField("Benutzername");
+        binder.forField(username)
+                .withValidator((s, valueContext) -> s.isBlank() ? ValidationResult.error("Der Benutzername darf nicht leer sein") : ValidationResult.ok())
+                .withValidator(((s, valueContext) -> s.matches("[a-z]") ? ValidationResult.ok() : ValidationResult.error("Der Benutzername darf nur aus Kleinbuchstaben bestehen")))
+                .withValidator((value, context) -> personsService.getPersonsRepository().findByUsername(value).isPresent() ? ValidationResult.error("Der Benutzername ist bereits vergeben") : ValidationResult.ok())
+                .bind(Person::getUsername, Person::setUsername);
         username.setRequired(true);
         username.setWidthFull();
         LongNumberField phoneNumber = new LongNumberField("Telefonnummer");
-        phoneNumber.setRequired(true);
+        binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
         phoneNumber.setWidthFull();
         DatePicker birthDate = new DatePicker("Geburtsdatum");
+        binder.forField(birthDate)
+                .withValidator((s, valueContext) -> s == null ? ValidationResult.error("Es ist ein Geburtsdatum erforderlich") : ValidationResult.ok())
+                .bind(Person::getBirthDate, Person::setBirthDate);
         birthDate.setRequired(true);
         birthDate.setWidthFull();
         PasswordField password = new PasswordField("Passwort");
+        binder.forField(password)
+                .withValidator((s, context) -> s.isBlank() ? ValidationResult.error("Das Passwort darf nicht leer sein") : ValidationResult.ok())
+                .withValidator((s, valueContext) -> s.length() > 7 ? ValidationResult.ok() : ValidationResult.error("Das Passwort muss mindestens 8 zeichen enthalten"))
+                .bind(p -> "", (s, c) -> {
+                });
         password.setRequired(true);
         password.setWidthFull();
         PasswordField reTypePassword = new PasswordField("Passwort wiederholen");
         reTypePassword.setRequired(true);
         reTypePassword.setWidthFull();
+        binder.forField(reTypePassword)
+                .withValidator((s, context) -> s.equals(password.getValue()) ? ValidationResult.ok() : ValidationResult.error("Die Passwörter stimmen nicht überein"))
+                .bind(p -> "", (p, value) -> p.setPassword(passwordEncoder.encode(value)));
         ReCaptcha reCaptcha = new ReCaptcha();
 
         Button back = new Button("zurück");
@@ -64,105 +91,20 @@ public class RegisterView extends VerticalLayout {
         createAccount.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         createAccount.setWidth("65%");
 
-        Runnable validateFields = () -> {
-            if (firstName.getValue().isBlank()) {
-                firstName.setInvalid(true);
-                firstName.setErrorMessage("Dieses Feld ist erforderlich");
-                createAccount.setEnabled(false);
-                return;
-            } else {
-                firstName.setInvalid(false);
-                firstName.setErrorMessage("");
-            }
-            if (lastName.getValue().isBlank()) {
-                lastName.setInvalid(true);
-                lastName.setErrorMessage("Dieses Feld ist erforderlich");
-                createAccount.setEnabled(false);
-                return;
-            } else {
-                lastName.setInvalid(false);
-                lastName.setErrorMessage("");
-            }
-            if (username.getValue().isBlank()) {
-                username.setInvalid(true);
-                username.setErrorMessage("Dieses Feld ist erforderlich");
-                createAccount.setEnabled(false);
-                return;
-            } else if (!username.getValue().matches("[a-z]") || username.getValue().contains(" ")) {
-                username.setInvalid(true);
-                username.setErrorMessage("Der Benutzername darf nur aus Kleinbuchstaben bestehen");
-            } else if (personsService.getPersonsRepository().findByUsername(username.getValue()).isPresent()) {
-                username.setInvalid(true);
-                username.setErrorMessage("Der Benutzername ist bereits vergeben");
-            } else {
-                username.setInvalid(false);
-                username.setErrorMessage("");
-            }
-            if (birthDate.getValue() == null) {
-                birthDate.setInvalid(true);
-                birthDate.setErrorMessage("Dieses Feld ist erforderlich");
-                createAccount.setEnabled(false);
-                return;
-            } else {
-                birthDate.setInvalid(false);
-                birthDate.setErrorMessage("");
-            }
-            if (phoneNumber.getValue() == null) {
-                phoneNumber.setInvalid(true);
-                phoneNumber.setErrorMessage("Dieses Feld ist erforderlich");
-                createAccount.setEnabled(false);
-                return;
-            } else {
-                phoneNumber.setInvalid(false);
-                phoneNumber.setErrorMessage("");
-            }
-            if (password.getValue().isBlank() || password.getValue().length() < 8) {
-                password.setInvalid(true);
-                password.setErrorMessage("Das Passwort darf nicht leer sein und muss mindestens 8 Zeichen enthalten");
-                createAccount.setEnabled(false);
-                return;
-            } else {
-                password.setInvalid(false);
-                password.setErrorMessage("");
-            }
-            if (!Objects.equals(reTypePassword.getValue(), password.getValue())) {
-                reTypePassword.setInvalid(true);
-                reTypePassword.setErrorMessage("Die Passwörter stimmen nicht überein");
-                createAccount.setEnabled(false);
-                createAccount.setEnabled(false);
-                return;
-            } else {
-                reTypePassword.setInvalid(false);
-                reTypePassword.setErrorMessage("");
-            }
-            createAccount.setEnabled(true);
-        };
-        firstName.addValueChangeListener(event -> validateFields.run());
-        lastName.addValueChangeListener(event -> validateFields.run());
-        username.addValueChangeListener(event -> validateFields.run());
-        birthDate.addValueChangeListener(event -> validateFields.run());
-        phoneNumber.addValueChangeListener(event -> validateFields.run());
-        password.addValueChangeListener(event -> validateFields.run());
-        reTypePassword.addValueChangeListener(event -> validateFields.run());
-
         createAccount.addClickListener(event -> {
-            validateFields.run();
-            if (createAccount.isEnabled()) {
-                if (reCaptcha.isValid()) {
-                    Person newPerson = new Person();
-                    newPerson.setFirstName(firstName.getValue());
-                    newPerson.setLastName(lastName.getValue());
-                    newPerson.setUsername(username.getValue());
-                    newPerson.setBirthDate(birthDate.getValue());
-                    newPerson.setPhoneNumber(phoneNumber.getValue());
-                    newPerson.setPassword(passwordEncoder.encode(password.getValue()));
-                    personsService.getPersonsRepository().save(newPerson);
-                    event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
-                } else {
-                    createAccount.setAriaLabel("Bitte löse zuerst das Captcha");
+            if (reCaptcha.isValid()) {
+                try {
+                    binder.writeBean(person);
+                } catch (ValidationException e) {
+                    throw new RuntimeException(e);
                 }
+                personsService.getPersonsRepository().save(person);
+                event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
+            } else {
+                Notification.show("Bitte löse zuerst das Captcha").addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         });
+        binder.readBean(person);
 
         HorizontalLayout name = new HorizontalLayout(firstName, lastName);
 
@@ -172,6 +114,7 @@ public class RegisterView extends VerticalLayout {
 
         VerticalLayout wrapper = new VerticalLayout(title, name, username, birthDate, phoneNumber, password, reTypePassword, reCaptcha, buttons);
         wrapper.setWidth(name.getWidth());
+
         add(wrapper);
     }
 }

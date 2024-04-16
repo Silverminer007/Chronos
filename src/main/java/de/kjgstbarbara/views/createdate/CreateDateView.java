@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -29,6 +30,7 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
     private final BoardsRepository boardsRepository;
 
     private Board board;
+    private final H3 title;
 
     public CreateDateView(PersonsService personsService, BoardsService boardsService, DatesService datesService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
@@ -42,6 +44,7 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
         }
 
         this.setHeightFull();
+        title = new H3();
         TextField boardTitle = new TextField("Titel des Termins");
         boardTitle.setWidthFull();
         boardTitle.setRequired(true);
@@ -97,7 +100,7 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
                 Notification.show("Diese Funktion ist noch nicht implementiert");
             }
         });
-        VerticalLayout form = new VerticalLayout(boardTitle, startPicker, endPicker);
+        VerticalLayout form = new VerticalLayout(title, boardTitle, startPicker, endPicker);
         form.setWidth(startPicker.getWidth());
         form.setHeightFull();
         VerticalLayout wrapper = new VerticalLayout(form, publish, confirmNClose, confirmNProceed, back);
@@ -117,6 +120,7 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
             beforeEnterEvent.rerouteTo(SelectBoardView.class);
         } else {
             this.board = board;
+            this.title.setText("Neuer Termin für: " + this.board.getTitle());
         }
     }
 }

@@ -20,6 +20,7 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FileHelper;
 import de.kjgstbarbara.data.Person;
@@ -38,6 +39,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 @Route(value = "profile", layout = MainNavigationView.class)
 @PageTitle("Profil")
@@ -181,7 +183,12 @@ public class ProfileView extends VerticalLayout {
     }
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {
-        Image profileImage = new Image(FileHelper.getProfileImage(person.getUsername()), "Profilbild");
+        Optional<StreamResource> profileImageStreamResource = FileHelper.getProfileImage(person.getUsername());
+        Image profileImage = profileImageStreamResource
+                .map(streamResource ->
+                        new Image(streamResource, "Profilbild"))
+                .orElseGet(() ->
+                        new Image("/images/no-profile-image.png", "Profilbild"));
         profileImage.setWidth("150px");
 
         MemoryBuffer memoryBuffer = new MemoryBuffer();
@@ -199,7 +206,6 @@ public class ProfileView extends VerticalLayout {
                 g2.setClip(new Ellipse2D.Float(0, 0, width, width));
                 g2.drawImage(image.getSubimage(0, 0, Math.min(image.getHeight(), image.getWidth()), Math.min(image.getHeight(), image.getWidth())), 0, 0, width, width, null);
                 FileHelper.saveProfileImage(circleBuffer, person.getUsername());
-                person.setHasProfilePicture(true);
                 personsRepository.save(person);
                 event.getSource().getUI().ifPresent(ui -> ui.getPage().reload());
             } catch (IOException e) {
