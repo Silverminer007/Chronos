@@ -5,7 +5,7 @@ on:
     tags:
       - 'v*'
 jobs:
-  build:
+  build-natives:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,12 +15,32 @@ jobs:
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: java -version
-      - run: mvn -Pproduction -Pnative -march=compatibility native:compile
+      - run: mvn -Pproduction -Pnative native:compile
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/*
+          asset_name: ubuntu-native-image
+          tag: ${{ github.ref }}
+          overwrite: true
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: java -version
+      - run: mvn clean package -Pproduction
+      - run: docker build . -t gruppentool:latest
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/gruppentool-*.jar
           asset_name: ubuntu-native-image
           tag: ${{ github.ref }}
           overwrite: true
