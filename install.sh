@@ -8,4 +8,6 @@ PASSWORD=$('keyword' | sha1sum)
 mkdir /etc/config
 echo "spring.datasource.password = ""$PASSWORD" > /etc/config/kjgtermine.properties
 # shellcheck disable=SC2027
-mysql -u root --execute="CREATE DATABASE kjgtermine; CREATE USER 'kjgtermine'@'localhost' IDENTIFIED BY '""$PASSWORD""';GRANT ALL ON *.* TO 'kjgtermine'@'localhost';"
+mysql -u root --execute="CREATE DATABASE kjgtermine;"
+mysql -u root --execute="CREATE USER 'kjgtermine'@'localhost' IDENTIFIED BY '""$PASSWORD""';"
+mysql -u root --execute="GRANT ALL ON *.* TO 'kjgtermine'@'localhost';"
