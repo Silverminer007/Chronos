@@ -15,3 +15,4 @@ mysql -u root --execute="FLUSH PRIVILEGES;"
 mysql -u root --execute="CREATE USER 'kjgtermine'@'localhost' IDENTIFIED BY '""$PASSWORD""';"
 mysql -u root --execute="GRANT ALL ON *.* TO 'kjgtermine'@'localhost';"
 systemctl start kjgtermine
+systemctl status kjgtermine
