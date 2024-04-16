@@ -19,10 +19,9 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/kjgtermine-${{ github.ref }}.jar
-          asset-name: kjgtermine.jar
+          asset_name: kjgtermine.jar
           tag: ${{ github.ref }}
           overwrite: true
-          file_glob: true
       - name: Upload update.sh
         uses: svenstaro/upload-release-action@v2
         with:
