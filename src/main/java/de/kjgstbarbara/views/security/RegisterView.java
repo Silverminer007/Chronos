@@ -94,9 +94,10 @@ public class RegisterView extends VerticalLayout {
             if (reCaptcha.isValid()) {
                 try {
                     binder.writeBean(person);
-                } catch (ValidationException e) {
                     personsService.getPersonsRepository().save(person);
                     event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
+                } catch (ValidationException e) {
+                    Notification.show("Ein Fehler ist ausgetreten, der Account konnte nicht erstellt werdne").addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             } else {
                 Notification.show("Bitte löse zuerst das Captcha").addThemeVariants(NotificationVariant.LUMO_ERROR);

@@ -16,4 +16,6 @@ mysql -u root --execute="CREATE USER 'kjgtermine'@'localhost' IDENTIFIED BY '""$
 mysql -u root --execute="GRANT ALL ON *.* TO 'kjgtermine'@'localhost';"
 systemctl start kjgtermine
 systemctl status kjgtermine
+chmod +x ./update.sh
+chmod +x ./install.sh
 # TODO Permission Error auf dem Server ...
