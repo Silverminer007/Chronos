@@ -15,7 +15,7 @@ jobs:
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: java -version
-      - run: mvn -Pproduction -Pnative native:compile
+      - run: mvn -Pproduction -Pnative -march=compatibility native:compile
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
