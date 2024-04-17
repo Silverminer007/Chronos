@@ -1,8 +1,8 @@
-systemctl stop kjgtermine
 GITHUB_PAT=$(<../../github.pat)
 git stash
 git pull "https://""$GITHUB_PAT""@github.com/Silverminer007/Gruppentool.git"
 mvn clean package -Pproduction
+systemctl stop kjgtermine
 cp kjgtermine.service /etc/systemd/system/
 systemctl daemon-reload
 mv target/kjgtermine-ALPHA.jar ../../kjgtermine.jar
