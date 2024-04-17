@@ -1,13 +1,16 @@
 package de.kjgstbarbara.views;
 
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.AfterNavigationEvent;
@@ -47,10 +50,12 @@ public class CreateBoardView extends VerticalLayout {
         }
 
         this.setHeightFull();
+        H3 title = new H3("Neues Board");
         TextField boardTitle = new TextField("Name des Boards");
+        boardTitle.setWidthFull();
         Button back = new Button("Zurück");
         back.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        back.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(BoardView.class)));
+        back.addClickListener(event -> UI.getCurrent().getPage().getHistory().back());
         Button confirm = new Button("Board erstellen");
         confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         confirm.addClickShortcut(Key.ENTER);
@@ -65,13 +70,22 @@ public class CreateBoardView extends VerticalLayout {
                 newBoard.getAdmins().add(person);
                 boardsRepository.save(newBoard);
                 System.out.println(boardsRepository.findAll());
-                event.getSource().getUI().ifPresent(ui -> ui.navigate(BoardView.class));
+                UI.getCurrent().getPage().getHistory().back();
             }
         });
+        VerticalLayout form = new VerticalLayout(title, boardTitle);
+        form.setHeightFull();
         HorizontalLayout buttons = new HorizontalLayout(back, confirm);
-        VerticalLayout wrapper = new VerticalLayout(boardTitle, buttons);
+        buttons.setWidthFull();
+        buttons.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        VerticalLayout wrapper = new VerticalLayout(form, buttons);
+        wrapper.setWidth("300px");
+        wrapper.setHeightFull();
+        wrapper.setJustifyContentMode(JustifyContentMode.END);
+        wrapper.setAlignItems(Alignment.END);
         this.setJustifyContentMode(JustifyContentMode.CENTER);
         this.setAlignItems(Alignment.CENTER);
+        this.setSizeFull();
         this.add(wrapper);
 
     }

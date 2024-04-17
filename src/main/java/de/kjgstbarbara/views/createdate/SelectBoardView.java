@@ -5,6 +5,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -20,6 +22,7 @@ import de.kjgstbarbara.service.BoardsRepository;
 import de.kjgstbarbara.service.BoardsService;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
+import de.kjgstbarbara.views.CreateBoardView;
 import de.kjgstbarbara.views.DateView;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
@@ -45,9 +48,13 @@ public class SelectBoardView extends VerticalLayout {
         }
 
         this.setHeightFull();
+        H2 title = new H2("In welchem Board soll ein neuer Termin erstellt werden?");
         Grid<Board> selectBoard = new Grid<>();
         selectBoard.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
-        selectBoard.addColumn(Board::getTitle).setHeader("In welchem Board soll ein neuer Termin erstellt werden?");
+        Button createBoard = new Button("Neues Board", VaadinIcon.PLUS.create());
+        createBoard.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        createBoard.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(CreateBoardView.class)));
+        selectBoard.addColumn(Board::getTitle).setHeader("Boards").setFooter(createBoard);
         selectBoard.setItems(boardsRepository.findByAdmin(person));
         selectBoard.setSelectionMode(Grid.SelectionMode.SINGLE);
         Button back = new Button("Zurück");
@@ -64,7 +71,7 @@ public class SelectBoardView extends VerticalLayout {
                 Notification.show("Bitte wähle zuerst ein Board aus").addThemeVariants(NotificationVariant.LUMO_WARNING);
             }
         });
-        VerticalLayout form = new VerticalLayout(selectBoard);
+        VerticalLayout form = new VerticalLayout(title, selectBoard);
         form.setHeightFull();
         HorizontalLayout navigation = new HorizontalLayout(back, cont);
         navigation.setWidthFull();

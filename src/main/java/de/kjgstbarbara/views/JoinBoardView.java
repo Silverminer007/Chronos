@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
@@ -47,11 +48,18 @@ public class JoinBoardView extends Div implements BeforeEnterObserver {
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         Board board = beforeEnterEvent.getRouteParameters().get("boardID").map(Long::valueOf).flatMap(boardsRepository::findById).orElse(null);
         if (board != null) {
-            if (!board.getMembers().contains(person)) {
-                board.getMembers().add(person);
-                boardsRepository.save(board);
+            if(!board.getRequests().contains(person)) {
+                if (!board.getMembers().contains(person)) {
+                    board.getRequests().add(person);
+                    boardsRepository.save(board);
+                    Notification.show("Deine Beitrittsanfrage für " + board.getTitle() + " wurde verschickt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                } else {
+                    Notification.show("Du gehörst schon zu den Mitgliedern dieses Boards: " + board.getTitle()).addThemeVariants(NotificationVariant.LUMO_WARNING);
+                }
+            } else {
+                Notification.show("Deine Beitrittsanfrage zu diesem Board läuft noch: " + board.getTitle());
             }
         }
-        beforeEnterEvent.rerouteTo("");
+        beforeEnterEvent.rerouteTo(BoardView.class);
     }
 }

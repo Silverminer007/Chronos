@@ -5,8 +5,8 @@ After=syslog.target network.target
 [Service]
 SuccessExitStatus=143
 
-User=kjgtermine
-Group=kjgtermine
+User=root
+Group=root
 
 Type=simple
 

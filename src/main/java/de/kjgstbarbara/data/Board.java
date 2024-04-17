@@ -20,6 +20,8 @@ public class Board {
     private final List<Person> members = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
     private final List<Person> admins = new ArrayList<>();
+    @ManyToMany(fetch = FetchType.EAGER)
+    private final List<Person> requests = new ArrayList<>();
 
     public String toString() {
         return title;

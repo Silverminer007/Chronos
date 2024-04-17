@@ -14,10 +14,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Board;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.service.BoardsRepository;
-import de.kjgstbarbara.service.BoardsService;
-import de.kjgstbarbara.service.PersonsRepository;
-import de.kjgstbarbara.service.PersonsService;
+import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.BoardWidget;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
@@ -33,19 +30,19 @@ public class BoardView extends VerticalLayout implements AfterNavigationObserver
     private final Person person;
     private final Grid<Board> grid = new Grid<>(Board.class, false);
 
-    public BoardView(PersonsService personsService, BoardsService boardsService, AuthenticationContext authenticationContext) {
+    public BoardView(PersonsService personsService, BoardsService boardsService, DatesService datesService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.boardsRepository = boardsService.getBoardsRepository();
         this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
                 .orElse(null);
-        if(person == null) {
+        if (person == null) {
             authenticationContext.logout();
         }
 
         this.setHeightFull();
         grid.setHeightFull();
-        grid.addComponentColumn(board -> new BoardWidget(board, this.person));
+        grid.addComponentColumn(board -> new BoardWidget(board, this.person, this.boardsRepository, datesService.getDateRepository()));
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
         grid.setSelectionMode(Grid.SelectionMode.NONE);
 

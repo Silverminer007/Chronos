@@ -57,7 +57,7 @@ public class DateWidget extends VerticalLayout {
         primaryLine.setWidthFull();
         H3 title = new H3();
         primaryLine.addClickListener(event -> this.toggle());
-        title.setText(date.getTitle());
+        title.setText("(" + date.getBoard().getTitle() + ") " + date.getTitle());
         primaryLine.setJustifyContentMode(JustifyContentMode.CENTER);
         primaryLine.setAlignItems(Alignment.CENTER);
         HorizontalLayout rightSidePrimaryLine = new HorizontalLayout();

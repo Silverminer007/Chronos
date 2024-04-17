@@ -48,9 +48,12 @@ public class Person {
         return false;
     }
 
+    public String getName() {
+        return this.getFirstName() + " " + this.getLastName();
+    }
+
     public Avatar getAvatar() {
-        String name = this.getFirstName() + " " + this.getLastName();
-        Avatar avatar = new Avatar(name);
+        Avatar avatar = new Avatar(getName());
         Optional<StreamResource> pp = FileHelper.getProfileImage(this.getUsername());
         if (pp.isPresent()) {
             avatar.setImageResource(pp.get());
@@ -61,8 +64,7 @@ public class Person {
     }
 
     public AvatarGroup.AvatarGroupItem getAvatarGroupItem() {
-        String name = this.getFirstName() + " " + this.getLastName();
-        AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(name);
+        AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(getName());
         Optional<StreamResource> pp = FileHelper.getProfileImage(this.getUsername());
         if (pp.isPresent()) {
             avatarGroupItem.setImageResource(pp.get());
