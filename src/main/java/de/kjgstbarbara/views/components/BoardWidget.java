@@ -51,7 +51,7 @@ public class BoardWidget extends VerticalLayout {
         title.setText(board.getTitle());
         primaryLine.add(title);
 
-        Button editTitle = new Button(LumoIcon.EDIT.create());
+        Button editTitle = new Button(VaadinIcon.PENCIL.create());
         editTitle.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         editTitle.addClickListener(event -> editTitleDialog());
         primaryLine.add(editTitle);

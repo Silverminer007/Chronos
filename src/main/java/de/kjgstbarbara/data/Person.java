@@ -13,7 +13,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,7 +27,6 @@ public class Person {
     private String firstName;
     private String lastName;
     private String username = "";
-    private LocalDate birthDate;
     private long phoneNumber = 0L;
     private String password;
 

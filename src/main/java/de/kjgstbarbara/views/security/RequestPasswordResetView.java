@@ -4,7 +4,6 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.NativeLabel;
@@ -23,7 +22,6 @@ import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.components.LongNumberField;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @Route("request-password-reset")
@@ -49,9 +47,6 @@ public class RequestPasswordResetView extends VerticalLayout {
         LongNumberField phoneNumber = new LongNumberField("Telefonnummer"); // TODO Vorwahl Auswahlfeld daneben
         phoneNumber.setWidthFull();
         inner.add(phoneNumber);
-        DatePicker datePicker = new DatePicker("Geburtsdatum");
-        inner.add(datePicker);
-        datePicker.setWidthFull();
         ReCaptcha reCaptcha = new ReCaptcha();
         inner.add(reCaptcha);
         Button confirm = new Button("Bestätigen");
@@ -66,28 +61,17 @@ public class RequestPasswordResetView extends VerticalLayout {
                 phoneNumber.setErrorMessage("Bitte gib eine Telefonnummer an");
                 return;
             }
-            if (datePicker.getValue() == null) {
-                datePicker.setInvalid(true);
-                datePicker.setErrorMessage("Bitte gib dein Geburtsdatum an");
-                return;
-            }
             Optional<Person> optionalPerson = personsRepository.findByPhoneNumber(phoneNumber.getValue());
             if (optionalPerson.isPresent()) {
                 phoneNumber.setInvalid(false);
-                if (Objects.equals(optionalPerson.get().getBirthDate(), datePicker.getValue())) {
-                    datePicker.setInvalid(false);
-                    try {
-                        PasswordReset passwordReset = WhatsAppUtils.getInstance().sendPasswordResetMessage(optionalPerson.get(), WhatsAppUtils.RESET);
-                        passwordResetRepository.save(passwordReset);
-                        event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
-                    } catch (FriendlyError e) {
-                        phoneNumber.setInvalid(true);
-                        phoneNumber.setErrorMessage("Es ist ein Fehler beim versenden der Nachricht aufgetreten");
-                        Notification.show(e.getMessage());
-                    }
-                } else {
-                    datePicker.setInvalid(true);
-                    datePicker.setErrorMessage("Das Geburtsdatum passt nicht zur eingegebenen Telefonnummer");
+                try {
+                    PasswordReset passwordReset = WhatsAppUtils.getInstance().sendPasswordResetMessage(optionalPerson.get(), WhatsAppUtils.RESET);
+                    passwordResetRepository.save(passwordReset);
+                    event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
+                } catch (FriendlyError e) {
+                    phoneNumber.setInvalid(true);
+                    phoneNumber.setErrorMessage("Es ist ein Fehler beim versenden der Nachricht aufgetreten");
+                    Notification.show(e.getMessage());
                 }
             } else {
                 phoneNumber.setInvalid(true);

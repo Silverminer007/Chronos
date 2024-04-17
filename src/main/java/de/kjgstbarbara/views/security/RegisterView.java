@@ -3,7 +3,6 @@ package de.kjgstbarbara.views.security;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -60,12 +59,6 @@ public class RegisterView extends VerticalLayout {
         LongNumberField phoneNumber = new LongNumberField("Telefonnummer");
         binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
         phoneNumber.setWidthFull();
-        DatePicker birthDate = new DatePicker("Geburtsdatum");
-        binder.forField(birthDate)
-                .withValidator((s, valueContext) -> s == null ? ValidationResult.error("Es ist ein Geburtsdatum erforderlich") : ValidationResult.ok())
-                .bind(Person::getBirthDate, Person::setBirthDate);
-        birthDate.setRequired(true);
-        birthDate.setWidthFull();
         PasswordField password = new PasswordField("Passwort");
         binder.forField(password)
                 .withValidator((s, context) -> s.isBlank() ? ValidationResult.error("Das Passwort darf nicht leer sein") : ValidationResult.ok())
@@ -111,7 +104,7 @@ public class RegisterView extends VerticalLayout {
         buttons.setWidthFull();
         buttons.setJustifyContentMode(JustifyContentMode.CENTER);
 
-        VerticalLayout wrapper = new VerticalLayout(title, name, username, birthDate, phoneNumber, password, reTypePassword, reCaptcha, buttons);
+        VerticalLayout wrapper = new VerticalLayout(title, name, username, phoneNumber, password, reTypePassword, reCaptcha, buttons);
         wrapper.setWidth(name.getWidth());
 
         add(wrapper);

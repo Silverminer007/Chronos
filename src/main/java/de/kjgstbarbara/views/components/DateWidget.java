@@ -55,18 +55,22 @@ public class DateWidget extends VerticalLayout {
         this.removeAll();
         HorizontalLayout primaryLine = new HorizontalLayout();
         primaryLine.setWidthFull();
-        H3 title = new H3();
         primaryLine.addClickListener(event -> this.toggle());
-        title.setText("(" + date.getBoard().getTitle() + ") " + date.getTitle());
         primaryLine.setJustifyContentMode(JustifyContentMode.CENTER);
         primaryLine.setAlignItems(Alignment.CENTER);
-        HorizontalLayout rightSidePrimaryLine = new HorizontalLayout();
+
         H3 startDate = new H3(date.getStart().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)));
         startDate.addClickListener(event -> this.toggle());
         if (!expanded) {
             primaryLine.add(startDate);
         }
+
+        H3 title = new H3();
+        title.setText("(" + date.getBoard().getTitle() + ") " + date.getTitle());
         primaryLine.add(title);
+
+        HorizontalLayout rightSidePrimaryLine = new HorizontalLayout();
+
         Button edit = new Button(VaadinIcon.PENCIL.create());
         edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
         //edit.setVisible(date.getBoard().getAdmins().contains(this.person));

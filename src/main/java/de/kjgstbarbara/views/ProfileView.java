@@ -83,10 +83,6 @@ public class ProfileView extends VerticalLayout {
             phoneNumber.setWidthFull();
             binder.forField(phoneNumber)
                     .bind(Person::getPhoneNumber, Person::setPhoneNumber);
-            DatePicker birthDate = new DatePicker("Geburtsdatum");
-            birthDate.setRequired(true);
-            birthDate.setWidthFull();
-            binder.forField(birthDate).bind(Person::getBirthDate, Person::setBirthDate);
 
             Button changePassword = getChangePasswordButton(passwordEncoder, person, personsRepository);
 
@@ -106,7 +102,7 @@ public class ProfileView extends VerticalLayout {
 
             HorizontalLayout name = new HorizontalLayout(firstName, lastName);
 
-            VerticalLayout form = new VerticalLayout(profilePic, name, birthDate, phoneNumber);
+            VerticalLayout form = new VerticalLayout(profilePic, name, phoneNumber);
             form.setHeightFull();
             form.setAlignItems(Alignment.START);
             form.setJustifyContentMode(JustifyContentMode.START);
