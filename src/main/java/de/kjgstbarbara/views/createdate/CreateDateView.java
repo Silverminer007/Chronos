@@ -6,7 +6,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
@@ -58,9 +57,6 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
         back.setWidthFull();
         back.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         back.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(DateView.class)));
-        Button confirmNClose = new Button("Termin erstellen & schließen");
-        confirmNClose.setWidthFull();
-        confirmNClose.addClickShortcut(Key.ENTER);
         Supplier<Boolean> create = () -> {
             if (boardTitle.getValue().isBlank()) {
                 boardTitle.setInvalid(true);
@@ -80,30 +76,22 @@ public class CreateDateView extends VerticalLayout implements BeforeEnterObserve
                 date.setInternal(!publish.getValue());
                 date.setTitle(boardTitle.getValue());
                 dateRepository.save(date);
-                System.out.println(dateRepository.findAll());
-                System.out.println(dateRepository.findByBoard(board));
-                System.out.println(boardsRepository.findByPerson(person));
                 return true;
             }
         };
-        confirmNClose.addClickListener(event -> {
+        Button save = new Button("Termin speichern");
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        save.setWidthFull();
+        save.addClickShortcut(Key.ENTER);
+        save.addClickListener(event -> {
             if (create.get()) {
                 event.getSource().getUI().ifPresent(ui -> ui.navigate(DateView.class));
-            }
-        });
-        Button confirmNProceed = new Button("Weiter");
-        confirmNProceed.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        confirmNProceed.setWidthFull();
-        confirmNProceed.addClickShortcut(Key.ENTER);
-        confirmNClose.addClickListener(event -> {
-            if (create.get()) {
-                Notification.show("Diese Funktion ist noch nicht implementiert");
             }
         });
         VerticalLayout form = new VerticalLayout(title, boardTitle, startPicker, endPicker);
         form.setWidth(startPicker.getWidth());
         form.setHeightFull();
-        VerticalLayout wrapper = new VerticalLayout(form, publish, confirmNClose, confirmNProceed, back);
+        VerticalLayout wrapper = new VerticalLayout(form, publish, save, back);
         wrapper.setHeightFull();
         wrapper.setJustifyContentMode(JustifyContentMode.END);
         wrapper.setWidth(startPicker.getWidth());
