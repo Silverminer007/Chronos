@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @Entity
@@ -20,7 +18,9 @@ public class Date implements Comparable<Date> {
     @Nullable
     private LocalDateTime end;
     private String attachment;
-    private boolean internal = true;
+    @Deprecated
+    private boolean internal = false;
+    private boolean publish = false;
     private boolean pollRunning = true;
     @ManyToOne
     private Board board;

@@ -19,7 +19,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.BoardView;
-import de.kjgstbarbara.views.DateView;
+import de.kjgstbarbara.views.CalendarView;
 import de.kjgstbarbara.views.ProfileView;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -90,7 +90,7 @@ public class MainNavigationView extends AppLayout {
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
 
-        nav.addItem(new SideNavItem("Meine Termine", DateView.class, VaadinIcon.CALENDAR_USER.create()));
+        nav.addItem(new SideNavItem("Meine Termine", CalendarView.class, VaadinIcon.CALENDAR_USER.create()));
         nav.addItem(new SideNavItem("Meine Boards", BoardView.class, VaadinIcon.GROUP.create()));
 
         return nav;

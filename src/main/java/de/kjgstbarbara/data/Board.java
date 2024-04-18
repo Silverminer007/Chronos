@@ -22,6 +22,7 @@ public class Board {
     private final List<Person> admins = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
     private final List<Person> requests = new ArrayList<>();
+    private String color = "0x0000ff";
 
     public String toString() {
         return title;

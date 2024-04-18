@@ -20,9 +20,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import de.kjgstbarbara.data.Board;
+import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.BoardsRepository;
 import de.kjgstbarbara.service.DateRepository;
+import de.kjgstbarbara.service.FeedbackRepository;
 import org.vaadin.olli.ClipboardHelper;
 
 public class BoardWidget extends VerticalLayout {
@@ -30,13 +32,15 @@ public class BoardWidget extends VerticalLayout {
     private final Person person;
     private final BoardsRepository boardsRepository;
     private final DateRepository dateRepository;
+    private final FeedbackRepository feedbackRepository;
     private boolean expanded = false;
 
-    public BoardWidget(Board board, Person person, BoardsRepository boardsRepository, DateRepository dateRepository) {
+    public BoardWidget(Board board, Person person, BoardsRepository boardsRepository, DateRepository dateRepository, FeedbackRepository feedbackRepository) {
         this.board = board;
         this.person = person;
         this.boardsRepository = boardsRepository;
         this.dateRepository = dateRepository;
+        this.feedbackRepository = feedbackRepository;
         this.update();
     }
 
@@ -52,6 +56,7 @@ public class BoardWidget extends VerticalLayout {
         primaryLine.add(title);
 
         Button editTitle = new Button(VaadinIcon.PENCIL.create());
+        editTitle.setVisible(this.board.getAdmins().contains(this.person));
         editTitle.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         editTitle.addClickListener(event -> editTitleDialog());
         primaryLine.add(editTitle);
@@ -90,6 +95,11 @@ public class BoardWidget extends VerticalLayout {
                             "Bist du sicher, dass du dieses Board löschen möchtest?",
                             "Alle Termine in diesem Board werden auch gelöscht. Du kannst das nicht Rückgängig machen",
                             "Ja, löschen", e -> {
+                        for (Feedback f : feedbackRepository.findAll()) {
+                            if(f.getKey().getDate().getBoard().equals(this.board)) {
+                                feedbackRepository.delete(f);
+                            }
+                        }
                         dateRepository.findByBoard(this.board).forEach(dateRepository::delete);
                         boardsRepository.delete(this.board);
                         UI.getCurrent().getPage().reload();

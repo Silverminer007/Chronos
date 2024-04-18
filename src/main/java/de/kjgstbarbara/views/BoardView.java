@@ -30,7 +30,7 @@ public class BoardView extends VerticalLayout implements AfterNavigationObserver
     private final Person person;
     private final Grid<Board> grid = new Grid<>(Board.class, false);
 
-    public BoardView(PersonsService personsService, BoardsService boardsService, DatesService datesService, AuthenticationContext authenticationContext) {
+    public BoardView(PersonsService personsService, BoardsService boardsService, DatesService datesService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.boardsRepository = boardsService.getBoardsRepository();
         this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
@@ -42,7 +42,7 @@ public class BoardView extends VerticalLayout implements AfterNavigationObserver
 
         this.setHeightFull();
         grid.setHeightFull();
-        grid.addComponentColumn(board -> new BoardWidget(board, this.person, this.boardsRepository, datesService.getDateRepository()));
+        grid.addComponentColumn(board -> new BoardWidget(board, this.person, this.boardsRepository, datesService.getDateRepository(), feedbackService.getFeedbackRepository()));
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
         grid.setSelectionMode(Grid.SelectionMode.NONE);
 
