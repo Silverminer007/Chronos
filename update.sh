@@ -1,6 +1,6 @@
-GITHUB_PAT=$(<../../github.pat)
 git stash
-git pull "https://""$GITHUB_PAT""@github.com/Silverminer007/Gruppentool.git"
+git fetch
+git pull
 mvn clean package -Pproduction
 systemctl stop kjgtermine
 cp kjgtermine.service /etc/systemd/system/
