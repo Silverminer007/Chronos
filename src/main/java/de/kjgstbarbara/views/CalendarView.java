@@ -33,7 +33,6 @@ import org.vaadin.stefan.fullcalendar.FullCalendarBuilder;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
@@ -112,7 +111,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         });
         for (Date d : getDates()) {
             fullCalendar.getEntryProvider().asInMemory().addEntries(new DateEntry(d, feedbackRepository.findById(Feedback.Key.create(this.person, d)).map(Feedback::getStatus).map(status -> {
-                if((d.getEnd() == null && d.getStart().isBefore(LocalDateTime.now()) || d.getEnd().isBefore(LocalDateTime.now()))){
+                if((d.getEnd() == null && d.getStart().isBefore(LocalDateTime.now())) || d.getEnd().isBefore(LocalDateTime.now())){
                     return "#cdcdcd";
                 } else if (status.equals(Feedback.Status.IN)) {
                     return "#a6ce39";
