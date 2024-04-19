@@ -7,6 +7,7 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
@@ -20,7 +21,7 @@ import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.DateWidget;
-import de.kjgstbarbara.views.components.EditPersonDialog;
+import de.kjgstbarbara.views.components.EditDateDialog;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
@@ -97,10 +98,41 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         Button createNew = new Button("Neuer Termin", VaadinIcon.PLUS_SQUARE_O.create());
         createNew.addClickListener(event ->
-                new EditPersonDialog(new Date(), person, boardsRepository, dateRepository).open());
+                new EditDateDialog(new Date(), person, boardsRepository, dateRepository).open());
         header.add(createNew);
 
         this.add(header);
+
+        HorizontalLayout legend = new HorizontalLayout();
+        legend.setWidthFull();
+        legend.setAlignItems(Alignment.CENTER);
+        legend.setJustifyContentMode(JustifyContentMode.START);
+
+        Icon inPast = VaadinIcon.CIRCLE.create();
+        inPast.setColor("#615c5c");
+        Icon current = VaadinIcon.CIRCLE.create();
+        current.setColor("#00b6be");
+        Icon confirmed = VaadinIcon.CIRCLE.create();
+        confirmed.setColor("#00ff00");
+        Icon declined = VaadinIcon.CIRCLE.create();
+        declined.setColor("#ff0000");
+        Icon feedbackNeeded = VaadinIcon.CIRCLE.create();
+        feedbackNeeded.setColor("#ffff00");
+
+        Button inPastLabel = new Button("Vergangenheit", inPast);
+        inPastLabel.setEnabled(false);
+        Button currentLabel = new Button("Heute", current);
+        currentLabel.setEnabled(false);
+        Button confirmedLabel = new Button("Zugesagt", confirmed);
+        confirmedLabel.setEnabled(false);
+        Button declinedLabel = new Button("Abgesagt", declined);
+        declinedLabel.setEnabled(false);
+        Button feedbackNeededLabel = new Button("Bitte Rückmeldung geben", feedbackNeeded);
+        feedbackNeededLabel.setEnabled(false);
+
+        legend.add(inPastLabel, currentLabel, confirmedLabel, declinedLabel, feedbackNeededLabel);
+        this.add(legend);
+
 
         fullCalendar.setSizeFull();
         fullCalendar.setFirstDay(DayOfWeek.MONDAY);
@@ -111,16 +143,18 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         });
         for (Date d : getDates()) {
             fullCalendar.getEntryProvider().asInMemory().addEntries(new DateEntry(d, feedbackRepository.findById(Feedback.Key.create(this.person, d)).map(Feedback::getStatus).map(status -> {
-                if((d.getEnd() == null && d.getStart().isBefore(LocalDateTime.now())) || d.getEnd().isBefore(LocalDateTime.now())){
-                    return "#cdcdcd";
-                } else if (status.equals(Feedback.Status.IN)) {
-                    return "#a6ce39";
+                if(d.getEnd().isBefore(LocalDateTime.now())){
+                    return "#615c5c";
+                } else if(LocalDateTime.now().isAfter(d.getStart()) && LocalDateTime.now().isBefore(d.getEnd())) {
+                    return "#00b6be";
+                }else if (status.equals(Feedback.Status.IN)) {
+                    return "#00ff00";
                 } else if (status.equals(Feedback.Status.OUT)) {
-                    return "#5c0101";
+                    return "#ff0000";
                 } else {
-                    return "#fcaf17";
+                    return "#ffff00";
                 }
-            }).orElse("#fcaf17")));
+            }).orElse("#ffff00")));
         }
         this.add(fullCalendar);
         this.setFlexGrow(1, fullCalendar);

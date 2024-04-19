@@ -34,19 +34,23 @@ public class DateWidget extends ClosableDialog {
 
     private final FeedbackRepository feedbackRepository;
     private final DateRepository dateRepository;
+    private final BoardsRepository boardsRepository;
     private final Date date;
     private final Person person;
+    private boolean changedCalendar = false;
 
     public DateWidget(Date date, FeedbackRepository feedbackRepository, DateRepository dateRepository, BoardsRepository boardsRepository, Person person) {
-        super(header(date, person, feedbackRepository, dateRepository, boardsRepository));
+        super();
         this.feedbackRepository = feedbackRepository;
         this.dateRepository = dateRepository;
+        this.boardsRepository = boardsRepository;
         this.date = date;
         this.person = person;
+        this.setTitle(header());
         this.update();
     }
 
-    private static Component header(Date date, Person person, FeedbackRepository feedbackRepository, DateRepository dateRepository, BoardsRepository boardsRepository) {
+    private Component header() {
         HorizontalLayout header = new HorizontalLayout();
         header.setAlignItems(FlexComponent.Alignment.CENTER);
 
@@ -55,7 +59,10 @@ public class DateWidget extends ClosableDialog {
         Button edit = new Button(VaadinIcon.PENCIL.create());
         edit.setVisible(date.getBoard().getAdmins().contains(person));
         edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-        edit.addClickListener(event -> new EditPersonDialog(date, person, boardsRepository, dateRepository).open());
+        edit.addClickListener(event -> {
+            new EditDateDialog(date, person, boardsRepository, dateRepository).open();
+            this.changedCalendar = true;
+        });
         header.add(edit);
 
         Button delete = new Button(VaadinIcon.TRASH.create());
@@ -68,12 +75,13 @@ public class DateWidget extends ClosableDialog {
                     "Ja, löschen",
                     e -> {
                         for (Feedback f : feedbackRepository.findAll()) {
-                            if (f.getKey().getDate().equals(date)) {
+                            if (f.getKey().getDate().getId() == date.getId()) {
                                 feedbackRepository.delete(f);
                             }
                         }
                         dateRepository.delete(date);
-                        UI.getCurrent().getPage().reload();
+                        this.changedCalendar = true;
+                        this.close();
                     }
             );
             confirmDelete.setCancelable(true);
@@ -111,12 +119,14 @@ public class DateWidget extends ClosableDialog {
         confirm.addClickListener(event -> {
             feedback.setStatus(Feedback.Status.IN);
             feedbackRepository.save(feedback);
+            this.changedCalendar = true;
             this.update();
         });
         Button decline = new Button("Bin raus");
         decline.addClickListener(event -> {
             feedback.setStatus(Feedback.Status.OUT);
             feedbackRepository.save(feedback);
+            this.changedCalendar = true;
             this.update();
         });
         decline.addThemeVariants(ButtonVariant.LUMO_ERROR);
@@ -126,6 +136,8 @@ public class DateWidget extends ClosableDialog {
         footer.setWidthFull();
         if (date.isPollRunning() && LocalDateTime.now().isBefore(date.getStart())) {
             content.add(footer);
+        } else {
+            content.add(new NativeLabel("Die Abfrage läuft nicht mehr"));
         }
 
         this.add(content);
@@ -209,9 +221,8 @@ public class DateWidget extends ClosableDialog {
             HorizontalLayout furtherElements = new HorizontalLayout();
             furtherElements.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
             Button remindAll = new Button("Alle Erinnern");
-            remindAll.addClickListener(e -> {
-                Notification.show("Diese Funktion wurde noch nicht programmiert").addThemeVariants(NotificationVariant.LUMO_ERROR);
-            });
+            remindAll.addClickListener(e ->
+                    Notification.show("Diese Funktion wurde noch nicht programmiert").addThemeVariants(NotificationVariant.LUMO_ERROR));
             remindAll.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
             if (date.isPollRunning() && date.getBoard().getAdmins().contains(this.person)) {
                 furtherElements.add(remindAll);
@@ -243,5 +254,13 @@ public class DateWidget extends ClosableDialog {
         });
         feedbacks.setHeight(confirmed.getHeight());
         return feedbacks;
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        if(changedCalendar) {
+            UI.getCurrent().getPage().reload();
+        }
     }
 }
