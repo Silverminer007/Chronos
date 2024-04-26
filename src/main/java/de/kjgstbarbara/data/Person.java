@@ -13,8 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Entity
 @Data
@@ -29,6 +28,17 @@ public class Person {
     private String username = "";
     private long phoneNumber = 0L;
     private String password;
+    private Locale userLocale = Locale.GERMANY;
+    private boolean whatsappNotifications;
+    // Die Uhrzeit am Tag an der die Person ihre Benachrichtigungen erhält. 19 entspricht also 19:00 Uhr
+    private int remindMeTime = 19;
+    private boolean monthOverview = true;
+    private boolean remindOneWeekBefore = false;
+    private boolean remindTwoDaysBefore = false;
+    private boolean remindOneDayBefore = true;
+    private boolean remindSixHoursBefore = false;
+    private boolean remindTwoHoursBefore = false;
+    private boolean remindOneHourBefore = true;
 
     public String toString() {
         return firstName + " " + lastName;
@@ -52,9 +62,9 @@ public class Person {
 
     public Avatar getAvatar() {
         Avatar avatar = new Avatar(getName());
-        Optional<StreamResource> pp = FileHelper.getProfileImage(this.getUsername());
-        if (pp.isPresent()) {
-            avatar.setImageResource(pp.get());
+        StreamResource pp = FileHelper.getProfileImage(this.getUsername());
+        if (pp.getWriter() != null) {
+            avatar.setImageResource(pp);
         } else {
             avatar.setColorIndex((int) (id % 7));
         }
@@ -63,9 +73,9 @@ public class Person {
 
     public AvatarGroup.AvatarGroupItem getAvatarGroupItem() {
         AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(getName());
-        Optional<StreamResource> pp = FileHelper.getProfileImage(this.getUsername());
-        if (pp.isPresent()) {
-            avatarGroupItem.setImageResource(pp.get());
+        StreamResource pp = FileHelper.getProfileImage(this.getUsername());
+        if (pp.getWriter() != null) {
+            avatarGroupItem.setImageResource(pp);
         } else {
             avatarGroupItem.setColorIndex((int) (id % 7));
         }

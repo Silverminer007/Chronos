@@ -87,6 +87,7 @@ public class RegisterView extends VerticalLayout {
             if (reCaptcha.isValid()) {
                 try {
                     binder.writeBean(person);
+                    person.setUserLocale(this.getLocale());
                     personsService.getPersonsRepository().save(person);
                     event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
                 } catch (ValidationException e) {

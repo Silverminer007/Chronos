@@ -13,7 +13,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.views.components.ReCaptcha;
-import de.kjgstbarbara.whatsapp.WhatsAppUtils;
+import de.kjgstbarbara.messaging.MessageUtils;
 import de.kjgstbarbara.data.PasswordReset;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PasswordResetRepository;
@@ -65,7 +65,7 @@ public class RequestPasswordResetView extends VerticalLayout {
             if (optionalPerson.isPresent()) {
                 phoneNumber.setInvalid(false);
                 try {
-                    PasswordReset passwordReset = WhatsAppUtils.getInstance().sendPasswordResetMessage(optionalPerson.get(), WhatsAppUtils.RESET);
+                    PasswordReset passwordReset = MessageUtils.sendPasswordResetMessage(optionalPerson.get(), MessageUtils.RESET);
                     passwordResetRepository.save(passwordReset);
                     event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
                 } catch (FriendlyError e) {

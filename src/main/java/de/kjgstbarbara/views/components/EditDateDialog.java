@@ -36,7 +36,7 @@ public class EditDateDialog extends ConfirmDialog {
         selectBoard.setItems(boardsRepository.findByAdmin(person));
         this.add(selectBoard);
 
-        DateTimePicker startPicker = new DateTimePicker("Startzeitpunkt");
+        DateTimePicker startPicker = new DateTimePicker("Startzeitpunkt");// Das Datum wird hier als UTC+2 eingegeben und im DateWidget auch als solches angezeigt. Das der Kalender aber die Zeitzone des Besuchers automatisch setzt, sind diese als UTC/0 interpretiert und werden entsprechend verschoben um +2 Stunden
         startPicker.setRequiredIndicatorVisible(true);
         binder.forField(startPicker).withValidator(new NonNullValidator<>()).bind(Date::getStart, Date::setStart);
         this.add(startPicker);

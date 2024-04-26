@@ -1,13 +1,18 @@
 package de.kjgstbarbara.views.nav;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
-import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Header;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
@@ -20,6 +25,7 @@ import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.BoardView;
 import de.kjgstbarbara.views.CalendarView;
+import de.kjgstbarbara.views.NotificationSettingsView;
 import de.kjgstbarbara.views.ProfileView;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -37,7 +43,7 @@ public class MainNavigationView extends AppLayout {
         this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
                 .orElse(null);
-        if(person == null) {
+        if (person == null) {
             authenticationContext.logout();
         }
         setPrimarySection(Section.DRAWER);
@@ -59,22 +65,30 @@ public class MainNavigationView extends AppLayout {
         title.setWidth("50%");
         title.setAlignItems(FlexComponent.Alignment.CENTER);
 
-        HorizontalLayout avatarWrapper = createAvatarButton();
+        Component avatarWrapper = createAvatarButton();
 
         header.add(title, avatarWrapper);
         addToNavbar(true, toggle, header);
     }
 
-    private HorizontalLayout createAvatarButton() {
-        Avatar avatar = this.person.getAvatar();
-        HorizontalLayout button = new HorizontalLayout(avatar);
-        button.setPadding(true);
-        button.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(ProfileView.class)));
-        HorizontalLayout avatarWrapper = new HorizontalLayout(button);
-        avatarWrapper.setWidth("50%");
-        avatarWrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        avatarWrapper.setAlignItems(FlexComponent.Alignment.END);
-        return avatarWrapper;
+    private Component createAvatarButton() {
+        HorizontalLayout wrapper = new HorizontalLayout();
+        wrapper.setWidthFull();
+        wrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        wrapper.setAlignItems(FlexComponent.Alignment.CENTER);
+        wrapper.setPadding(true);
+
+        MenuBar profile = new MenuBar();
+        profile.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
+
+        MenuItem personal = profile.addItem(this.person.getAvatar());
+        SubMenu personalSubmenu = personal.getSubMenu();
+
+        personalSubmenu.addItem("Profil", event -> UI.getCurrent().navigate(ProfileView.class));
+        personalSubmenu.addItem("Benachrichtigungen", event -> UI.getCurrent().navigate(NotificationSettingsView.class));
+
+        wrapper.add(profile);
+        return wrapper;
     }
 
     private void addDrawerContent() {

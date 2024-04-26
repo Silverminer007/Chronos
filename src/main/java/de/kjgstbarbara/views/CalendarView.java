@@ -51,7 +51,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     private final Person person;
 
-    private final FullCalendar fullCalendar = FullCalendarBuilder.create().withAutoBrowserLocale().withAutoBrowserTimezone().build();
+    private final FullCalendar fullCalendar = FullCalendarBuilder.create().withAutoBrowserLocale()/*.withAutoBrowserTimezone()*/.build();// Siehe EditDateDialog
     private final Button previous = new Button(LumoIcon.ARROW_LEFT.create());
     private final Button today = new Button("Heute");
     private final Button next = new Button(LumoIcon.ARROW_RIGHT.create());

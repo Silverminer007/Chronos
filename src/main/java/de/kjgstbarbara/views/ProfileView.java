@@ -3,7 +3,6 @@ package de.kjgstbarbara.views;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
@@ -39,7 +38,6 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Optional;
 
 @Route(value = "profile", layout = MainNavigationView.class)
 @PageTitle("Profil")
@@ -93,6 +91,7 @@ public class ProfileView extends VerticalLayout {
             save.addClickListener(event -> {
                 try {
                     binder.writeBean(person);
+                    personsRepository.save(person);
                     Notification.show("Speichern erfolgreich");
                 } catch (ValidationException e) {
                     Notification.show(e.getLocalizedMessage());
@@ -179,12 +178,10 @@ public class ProfileView extends VerticalLayout {
     }
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {
-        Optional<StreamResource> profileImageStreamResource = FileHelper.getProfileImage(person.getUsername());
-        Image profileImage = profileImageStreamResource
-                .map(streamResource ->
-                        new Image(streamResource, "Profilbild"))
-                .orElseGet(() ->
-                        new Image("/images/no-profile-image.png", "Profilbild"));
+        StreamResource profileImageStreamResource = FileHelper.getProfileImage(person.getUsername());
+        Image profileImage = profileImageStreamResource.getWriter() != null ?
+                new Image(profileImageStreamResource, "Profilbild")
+                : new Image("/images/no-profile-image.png", "Profilbild");
         profileImage.setWidth("150px");
 
         MemoryBuffer memoryBuffer = new MemoryBuffer();
