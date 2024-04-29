@@ -2,6 +2,7 @@ package de.kjgstbarbara;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.AppShellSettings;
+import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.boot.SpringApplication;
@@ -13,6 +14,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * and some desktop browsers.
  *
  */
+@PWA(
+        name = "KjG Termine",
+        shortName = "KjGT",
+        offlinePath="offline.html",
+        offlineResources = { "./images/offline.png"}
+)
 @SpringBootApplication
 @Theme(value = "kjgtermine", variant = Lumo.DARK)
 public class Application implements AppShellConfigurator {
