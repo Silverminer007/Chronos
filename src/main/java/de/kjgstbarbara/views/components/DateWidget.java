@@ -86,7 +86,6 @@ public class DateWidget extends ClosableDialog {
                             feedbackRepository.delete(f);
                         }
                         dateRepository.delete(date);
-                        this.close();
                         UI.getCurrent().getPage().reload();
                     }
             );
