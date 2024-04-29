@@ -309,6 +309,30 @@ public class DateWidget extends ClosableDialog {
         DatePicker datePicker = new DatePicker();
         datePicker.setValue(LocalDate.now().plusDays(1));
         remindAllDialog.add(datePicker);
+        Button scheduleReminder = getScheduleReminder(datePicker);
+        remindAllDialog.add(scheduleReminder);
+        remindAllDialog.add(new Hr());
+        Button remindNow = getRemindNow();
+        remindAllDialog.add(remindNow);
+        return remindAllDialog;
+    }
+
+    private Button getRemindNow() {
+        Button remindNow = new Button("Jetzt erinnern");
+        remindNow.addClickListener(e -> {
+            if (!senderUtils.sendDatePoll(this.date, true)) {
+                Notification.show("Die Abfrage konnte nicht an alle verschickt werden")
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } else {
+                Notification.show("Die Abfrage wurde erfolgreich verschickt")
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                remindAllDialog.close();
+            }
+        });
+        return remindNow;
+    }
+
+    private Button getScheduleReminder(DatePicker datePicker) {
         Button scheduleReminder = new Button("Erinnerung planen");
         scheduleReminder.addClickListener(e -> {
             if (datePicker.getValue() == null) {
@@ -327,21 +351,7 @@ public class DateWidget extends ClosableDialog {
                 remindAllDialog.close();
             }
         });
-        remindAllDialog.add(scheduleReminder);
-        remindAllDialog.add(new Hr());
-        Button remindNow = new Button("Jetzt erinnern");
-        remindNow.addClickListener(e -> {
-            if (!senderUtils.sendDatePoll(this.date, true)) {
-                Notification.show("Die Abfrage konnte nicht an alle verschickt werden")
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            } else {
-                Notification.show("Die Abfrage wurde erfolgreich verschickt")
-                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                remindAllDialog.close();
-            }
-        });
-        remindAllDialog.add(remindNow);
-        return remindAllDialog;
+        return scheduleReminder;
     }
 
     private final ClosableDialog historyDialog = new ClosableDialog("Historie");
