@@ -95,12 +95,12 @@ public class BoardWidget extends VerticalLayout {
                             "Bist du sicher, dass du dieses Board löschen möchtest?",
                             "Alle Termine in diesem Board werden auch gelöscht. Du kannst das nicht Rückgängig machen",
                             "Ja, löschen", e -> {
-                        for (Feedback f : feedbackRepository.findAll()) {
-                            if(f.getKey().getDate().getBoard().equals(this.board)) {
+                        dateRepository.findByBoard(this.board).forEach(date -> {
+                            for(Feedback f : date.getFeedbackList()) {
                                 feedbackRepository.delete(f);
                             }
-                        }
-                        dateRepository.findByBoard(this.board).forEach(dateRepository::delete);
+                            dateRepository.delete(date);
+                        });
                         boardsRepository.delete(this.board);
                         UI.getCurrent().getPage().reload();
                     });

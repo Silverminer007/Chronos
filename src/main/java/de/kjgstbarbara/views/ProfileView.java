@@ -17,6 +17,7 @@ import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -77,10 +78,15 @@ public class ProfileView extends VerticalLayout {
                                     : ValidationResult.ok())
                     .bind(Person::getLastName, Person::setLastName);
             LongNumberField phoneNumber = new LongNumberField("Telefonnummer");
-            phoneNumber.setRequired(true);
             phoneNumber.setWidthFull();
             binder.forField(phoneNumber)
                     .bind(Person::getPhoneNumber, Person::setPhoneNumber);
+
+            TextField mailAddress = new TextField("E-Mail Adresse");
+            mailAddress.setWidthFull();
+            binder.forField(mailAddress)
+                    .withValidator(new EmailValidator("Diese E-Mail Adresse ist ungültig"))
+                    .bind(Person::getEMailAddress, Person::setEMailAddress);
 
             Button changePassword = getChangePasswordButton(passwordEncoder, person, personsRepository);
 
@@ -101,7 +107,7 @@ public class ProfileView extends VerticalLayout {
 
             HorizontalLayout name = new HorizontalLayout(firstName, lastName);
 
-            VerticalLayout form = new VerticalLayout(profilePic, name, phoneNumber);
+            VerticalLayout form = new VerticalLayout(profilePic, name, phoneNumber, mailAddress);
             form.setHeightFull();
             form.setAlignItems(Alignment.START);
             form.setJustifyContentMode(JustifyContentMode.START);

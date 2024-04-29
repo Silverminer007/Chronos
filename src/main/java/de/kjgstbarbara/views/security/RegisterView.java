@@ -1,6 +1,7 @@
 package de.kjgstbarbara.views.security;
 
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
@@ -13,21 +14,26 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.data.Reminder;
 import de.kjgstbarbara.service.PersonsService;
+import de.kjgstbarbara.service.ReminderService;
 import de.kjgstbarbara.views.components.LongNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.time.temporal.ChronoUnit;
 
 @Route("register")
 @PageTitle("Registrieren | KjG Termine")
 @AnonymousAllowed
 public class RegisterView extends VerticalLayout {
 
-    public RegisterView(PersonsService personsService, PasswordEncoder passwordEncoder) {
+    public RegisterView(PersonsService personsService, ReminderService reminderService, PasswordEncoder passwordEncoder) {
         Binder<Person> binder = new Binder<>();
         Person person = new Person();
         addClassName("login-view");
@@ -59,6 +65,11 @@ public class RegisterView extends VerticalLayout {
         LongNumberField phoneNumber = new LongNumberField("Telefonnummer");
         binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
         phoneNumber.setWidthFull();
+        TextField mailAddress = new TextField("E-Mail Adresse");
+        mailAddress.setWidthFull();
+        binder.forField(mailAddress)
+                .withValidator(new EmailValidator("Diese E-Mail Adresse ist ungültig"))
+                .bind(Person::getEMailAddress, Person::setEMailAddress);
         PasswordField password = new PasswordField("Passwort");
         binder.forField(password)
                 .withValidator((s, context) -> s.isBlank() ? ValidationResult.error("Das Passwort darf nicht leer sein") : ValidationResult.ok())
@@ -87,7 +98,12 @@ public class RegisterView extends VerticalLayout {
             if (reCaptcha.isValid()) {
                 try {
                     binder.writeBean(person);
-                    person.setUserLocale(this.getLocale());
+                    person.setUserLocale(UI.getCurrent().getLocale());
+                    Reminder reminder = new Reminder();
+                    reminder.setAmount(1);
+                    reminder.setChronoUnit(ChronoUnit.DAYS);
+                    reminder.setPerson(person);
+                    reminderService.addReminder(reminder);
                     personsService.getPersonsRepository().save(person);
                     event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
                 } catch (ValidationException e) {
@@ -105,7 +121,7 @@ public class RegisterView extends VerticalLayout {
         buttons.setWidthFull();
         buttons.setJustifyContentMode(JustifyContentMode.CENTER);
 
-        VerticalLayout wrapper = new VerticalLayout(title, name, username, phoneNumber, password, reTypePassword, reCaptcha, buttons);
+        VerticalLayout wrapper = new VerticalLayout(title, name, username, phoneNumber, mailAddress, password, reTypePassword, reCaptcha, buttons);
         wrapper.setWidth(name.getWidth());
 
         add(wrapper);

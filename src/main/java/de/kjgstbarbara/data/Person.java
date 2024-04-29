@@ -4,21 +4,24 @@ import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.FileHelper;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import de.kjgstbarbara.security.SecurityUtils;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
 @Data
 @NoArgsConstructor
 public class Person {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Person.class);
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Setter(AccessLevel.PACKAGE)
@@ -26,19 +29,18 @@ public class Person {
     private String firstName;
     private String lastName;
     private String username = "";
-    private long phoneNumber = 0L;
     private String password;
-    private Locale userLocale = Locale.GERMANY;
+    private boolean systemAdmin = false;
+    private long phoneNumber = 0L;
     private boolean whatsappNotifications;
+    private String eMailAddress;
+    private boolean eMailNotifications;
+    private Locale userLocale = Locale.GERMANY;
     // Die Uhrzeit am Tag an der die Person ihre Benachrichtigungen erhält. 19 entspricht also 19:00 Uhr
     private int remindMeTime = 19;
     private boolean monthOverview = true;
-    private boolean remindOneWeekBefore = false;
-    private boolean remindTwoDaysBefore = false;
-    private boolean remindOneDayBefore = true;
-    private boolean remindSixHoursBefore = false;
-    private boolean remindTwoHoursBefore = false;
-    private boolean remindOneHourBefore = true;
+    private String resetToken;
+    private LocalDateTime resetTokenExpires;
 
     public String toString() {
         return firstName + " " + lastName;
@@ -80,5 +82,16 @@ public class Person {
             avatarGroupItem.setColorIndex((int) (id % 7));
         }
         return avatarGroupItem;
+    }
+
+    public boolean createResetPassword() {
+        try {
+            this.setResetToken(SecurityUtils.generatePassword(200));
+            this.setResetTokenExpires(LocalDateTime.now().plusHours(8));
+            return true;
+        } catch (NoSuchAlgorithmException e) {
+            LOGGER.error("Failed to generate Password Reset Token", e);
+            return false;
+        }
     }
 }

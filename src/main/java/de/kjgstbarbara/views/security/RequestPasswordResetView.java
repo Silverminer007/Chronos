@@ -1,6 +1,7 @@
 package de.kjgstbarbara.views.security;
 
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -8,16 +9,13 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import de.kjgstbarbara.FriendlyError;
+import de.kjgstbarbara.messaging.SenderUtils;
 import de.kjgstbarbara.views.components.ReCaptcha;
-import de.kjgstbarbara.messaging.MessageUtils;
-import de.kjgstbarbara.data.PasswordReset;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.service.PasswordResetRepository;
-import de.kjgstbarbara.service.PasswordResetService;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.components.LongNumberField;
@@ -27,9 +25,21 @@ import java.util.Optional;
 @Route("request-password-reset")
 @AnonymousAllowed
 public class RequestPasswordResetView extends VerticalLayout {
-    public RequestPasswordResetView(PersonsService personsService, PasswordResetService passwordResetService) {
+    private static final String RESET_MESSAGE_TEMPLATE =
+            """
+            Hey #PERSON_NAME,
+            du hast angefragt dein Passwort zurückzusetzen.
+            Wenn du das nicht getan hast klicke auf keinen Fall auf den Link unten,
+            sondern lösche diese Nachricht.
+            
+            Um dein Passwort zurückzusetzen, klicke auf diesen Link:
+            #PERSON_RESET_LINK
+            
+            Der Link ist noch #PERSON_RESET_EXPIRES_IN Stunden gültig
+            """;
+
+    public RequestPasswordResetView(PersonsService personsService, SenderUtils senderUtils) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
-        PasswordResetRepository passwordResetRepository = passwordResetService.getPasswordResetRepository();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
         VerticalLayout wrapper = new VerticalLayout();
@@ -64,15 +74,16 @@ public class RequestPasswordResetView extends VerticalLayout {
             Optional<Person> optionalPerson = personsRepository.findByPhoneNumber(phoneNumber.getValue());
             if (optionalPerson.isPresent()) {
                 phoneNumber.setInvalid(false);
-                try {
-                    PasswordReset passwordReset = MessageUtils.sendPasswordResetMessage(optionalPerson.get(), MessageUtils.RESET);
-                    passwordResetRepository.save(passwordReset);
-                    event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
-                } catch (FriendlyError e) {
-                    phoneNumber.setInvalid(true);
-                    phoneNumber.setErrorMessage("Es ist ein Fehler beim versenden der Nachricht aufgetreten");
-                    Notification.show(e.getMessage());
-                }
+                UI.getCurrent().getPage().fetchCurrentURL(url -> {
+                    Person person = optionalPerson.get();
+                    if(person.createResetPassword()) {
+                        personsRepository.save(person);
+                        senderUtils.sendMessageFormatted(RESET_MESSAGE_TEMPLATE, person, null, true);
+                        event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
+                    } else {
+                        Notification.show("Das zurücksetzen des Passworts ist nicht möglich").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    }
+                });
             } else {
                 phoneNumber.setInvalid(true);
                 phoneNumber.setErrorMessage("Es wurde kein Benutzer mit dieser Telefonnummer gefunden");

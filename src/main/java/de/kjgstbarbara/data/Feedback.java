@@ -2,42 +2,45 @@ package de.kjgstbarbara.data;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
 @NoArgsConstructor
-public class Feedback {
-    @EmbeddedId
-    private Key key;
+public class Feedback implements Comparable<Feedback> {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private long id;
+    @ManyToOne
+    private Person person;
+    private LocalDateTime timeStamp = LocalDateTime.now();
     private Status status;
 
-    public enum Status {
-        IN, OUT, DONTKNOW;
+    @Override
+    public int compareTo(Feedback o) {
+        return this.getTimeStamp().compareTo(o.getTimeStamp()) * -1;
     }
 
-    public static Feedback create(Person person, Date date, Status status) {
+    @Getter
+    public enum Status {
+        IN("Bin dabei"), OUT("Bin dabei"), DONTKNOW("Weiß nicht");
+
+        private final String readable;
+
+        Status(String readable) {
+            this.readable = readable;
+        }
+    }
+
+    public static Feedback create(Person person, Status status) {
         Feedback feedback = new Feedback();
-        feedback.setKey(Key.create(person, date));
+        feedback.setPerson(person);
         feedback.setStatus(status);
         return feedback;
-    }
-
-    @Data
-    @Embeddable
-    public static class Key implements Serializable {
-        @ManyToOne
-        private Person person;
-        @ManyToOne
-        private Date date;
-        public static @NonNull Key create(Person person, Date date) {
-            Key key = new Key();
-            key.setDate(date);
-            key.setPerson(person);
-            return key;
-        }
     }
 }

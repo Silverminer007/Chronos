@@ -18,21 +18,23 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.kjgstbarbara.data.Config;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.service.ConfigService;
 import de.kjgstbarbara.service.PersonsService;
-import de.kjgstbarbara.views.BoardView;
-import de.kjgstbarbara.views.CalendarView;
-import de.kjgstbarbara.views.NotificationSettingsView;
-import de.kjgstbarbara.views.ProfileView;
+import de.kjgstbarbara.views.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * The main view is a top-level placeholder for other views.
  */
-public class MainNavigationView extends AppLayout {
+public class MainNavigationView extends AppLayout implements BeforeEnterObserver {
     private final transient AuthenticationContext authenticationContext;
 
     private H1 viewTitle;
@@ -129,5 +131,14 @@ public class MainNavigationView extends AppLayout {
     private String getCurrentPageTitle() {
         PageTitle title = getContent().getClass().getAnnotation(PageTitle.class);
         return title == null ? "" : title.value();
+    }
+
+    @Autowired
+    private ConfigService configService;
+    @Override
+    public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+        if(!configService.getBoolean(Config.Key.SETUP_DONE)) {
+            beforeEnterEvent.rerouteTo(SetupView.class);
+        }
     }
 }

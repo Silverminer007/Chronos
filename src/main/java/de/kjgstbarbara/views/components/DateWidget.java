@@ -10,7 +10,11 @@ import com.vaadin.flow.component.avatar.AvatarGroupVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.details.DetailsVariant;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -21,10 +25,12 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.messaging.SenderUtils;
 import de.kjgstbarbara.service.BoardsRepository;
 import de.kjgstbarbara.service.DateRepository;
 import de.kjgstbarbara.service.FeedbackRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -35,16 +41,18 @@ public class DateWidget extends ClosableDialog {
     private final FeedbackRepository feedbackRepository;
     private final DateRepository dateRepository;
     private final BoardsRepository boardsRepository;
+    private final SenderUtils senderUtils;
     private final Date date;
     private final Person person;
     private boolean changedCalendar = false;
 
-    public DateWidget(Date date, FeedbackRepository feedbackRepository, DateRepository dateRepository, BoardsRepository boardsRepository, Person person) {
+    public DateWidget(Date date, FeedbackRepository feedbackRepository, DateRepository dateRepository, BoardsRepository boardsRepository, SenderUtils senderUtils, Person person) {
         super();
         this.feedbackRepository = feedbackRepository;
         this.dateRepository = dateRepository;
         this.boardsRepository = boardsRepository;
         this.date = date;
+        this.senderUtils = senderUtils;
         this.person = person;
         this.setTitle(header());
         this.update();
@@ -74,14 +82,12 @@ public class DateWidget extends ClosableDialog {
                     date.getTitle() + " - Das löschen kann nicht Rückgängig gemacht werden",
                     "Ja, löschen",
                     e -> {
-                        for (Feedback f : feedbackRepository.findAll()) {
-                            if (f.getKey().getDate().getId() == date.getId()) {
-                                feedbackRepository.delete(f);
-                            }
+                        for (Feedback f : date.getFeedbackList()) {
+                            feedbackRepository.delete(f);
                         }
                         dateRepository.delete(date);
-                        this.changedCalendar = true;
                         this.close();
+                        UI.getCurrent().getPage().reload();
                     }
             );
             confirmDelete.setCancelable(true);
@@ -97,8 +103,7 @@ public class DateWidget extends ClosableDialog {
     private final VerticalLayout content = new VerticalLayout();
 
     private void update() {
-        Feedback feedback = feedbackRepository.findById(Feedback.Key.create(this.person, date)).orElse(Feedback.create(this.person, date, null));
-        Feedback.Status status = feedback.getStatus();
+        Feedback.Status status = this.date.getStatusFor(this.person);
 
         content.removeAll();
         content.setPadding(true);
@@ -117,15 +122,19 @@ public class DateWidget extends ClosableDialog {
         confirm.setEnabled(!Feedback.Status.IN.equals(status));
         confirm.setWidth("50%");
         confirm.addClickListener(event -> {
-            feedback.setStatus(Feedback.Status.IN);
+            Feedback feedback = Feedback.create(this.person, Feedback.Status.IN);
             feedbackRepository.save(feedback);
+            date.addFeedback(feedback);
+            dateRepository.save(date);
             this.changedCalendar = true;
             this.update();
         });
         Button decline = new Button("Bin raus");
         decline.addClickListener(event -> {
-            feedback.setStatus(Feedback.Status.OUT);
+            Feedback feedback = Feedback.create(this.person, Feedback.Status.OUT);
             feedbackRepository.save(feedback);
+            date.addFeedback(feedback);
+            dateRepository.save(date);
             this.changedCalendar = true;
             this.update();
         });
@@ -143,8 +152,10 @@ public class DateWidget extends ClosableDialog {
         this.add(content);
     }
 
+    private final HorizontalLayout feedbacks = new HorizontalLayout();
+
     private HorizontalLayout createFeedbackWidget() {
-        HorizontalLayout feedbacks = new HorizontalLayout();
+        feedbacks.removeAll();
         AvatarGroup confirmed = new AvatarGroup();
         confirmed.setMaxItemsVisible(4);
         confirmed.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
@@ -160,7 +171,7 @@ public class DateWidget extends ClosableDialog {
         declinedLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         declinedLayout.setWidth("50%");
         for (Person p : date.getBoard().getMembers()) {
-            Feedback.Status status = feedbackRepository.findById(Feedback.Key.create(p, date)).map(Feedback::getStatus).orElse(null);
+            Feedback.Status status = date.getStatusFor(p);
             if (Feedback.Status.IN.equals(status)) {
                 confirmed.add(p.getAvatarGroupItem());
             } else if (Feedback.Status.OUT.equals(status)) {
@@ -169,97 +180,207 @@ public class DateWidget extends ClosableDialog {
         }
         feedbacks.setWidthFull();
         feedbacks.add(confirmedLayout, declinedLayout);
-        feedbacks.addClickListener(event -> {
-            ClosableDialog dialog = new ClosableDialog(new H3(date.getTitle()));
-
-            NativeLabel time = new NativeLabel((date.getStart().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))));
-            dialog.add(time, new Paragraph());
-
-            Accordion accordion = new Accordion();
-            AccordionPanel confirmedUsers = new AccordionPanel("Zusagen (" + confirmed.getItems().size() + ")");
-            confirmedUsers.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE);
-            if (confirmed.getItems().isEmpty()) {
-                confirmedUsers.setEnabled(false);
-            }
-            AccordionPanel declinedUsers = new AccordionPanel("Absagen (" + declined.getItems().size() + ")");
-            declinedUsers.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE);
-            if (declined.getItems().isEmpty()) {
-                declinedUsers.setEnabled(false);
-            }
-            AccordionPanel noFeedback = new AccordionPanel("Keine Rückmeldung (" + (date.getBoard().getMembers().size() - confirmed.getItems().size() - declined.getItems().size()) + ")");
-            noFeedback.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE);
-            if (date.getBoard().getMembers().size() - confirmed.getItems().size() - declined.getItems().size() == 0) {
-                noFeedback.setEnabled(false);
-            }
-            accordion.add(confirmedUsers);
-            accordion.add(declinedUsers);
-            accordion.add(noFeedback);
-            for (Person p : date.getBoard().getMembers()) {
-                Feedback.Status status = feedbackRepository.findById(Feedback.Key.create(p, date)).map(Feedback::getStatus).orElse(null);
-                Supplier<HorizontalLayout> personEntry = () -> {
-                    HorizontalLayout horizontalLayout = new HorizontalLayout();
-                    Avatar avatar = p.getAvatar();
-                    H4 label = new H4(avatar.getName());
-                    horizontalLayout.add(avatar, label);
-                    horizontalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-                    horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-                    return horizontalLayout;
-                };
-                if (Feedback.Status.IN.equals(status)) {
-                    confirmedUsers.add(personEntry.get());
-                    confirmedUsers.add(new Paragraph());
-                } else if (Feedback.Status.OUT.equals(status)) {
-                    declinedUsers.add(personEntry.get());
-                    declinedUsers.add(new Paragraph());
-                } else {
-                    noFeedback.add(personEntry.get());
-                    noFeedback.add(new Paragraph());
-                }
-            }
-            dialog.add(accordion);
-            dialog.add(new Paragraph());
-            HorizontalLayout furtherElements = new HorizontalLayout();
-            furtherElements.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-            Button remindAll = new Button("Alle Erinnern");
-            remindAll.addClickListener(e ->
-                    Notification.show("Diese Funktion wurde noch nicht programmiert").addThemeVariants(NotificationVariant.LUMO_ERROR));
-            remindAll.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-            if (date.isPollRunning() && date.getBoard().getAdmins().contains(this.person)) {
-                furtherElements.add(remindAll);
-            }
-            Button stopPoll = new Button("Abfrage stoppen");
-            stopPoll.addClickListener(e -> {
-                ConfirmDialog confirmDialog = new ConfirmDialog(
-                        "Bist du sicher, dass du die Abfrage beenden möchtest?",
-                        "Das kann nicht mehr Rückgängig gemacht werden",
-                        "Abfrage beenden",
-                        (confirmEvent) -> {
-                            date.setPollRunning(false);
-                            dateRepository.save(date);
-                            stopPoll.setVisible(false);
-                            remindAll.setVisible(false);
-                        });
-                confirmDialog.setCancelable(true);
-                confirmDialog.open();
-            });
-            stopPoll.addThemeVariants(ButtonVariant.LUMO_ERROR);
-            if (date.isPollRunning() && date.getBoard().getAdmins().contains(this.person)) {
-                furtherElements.add(stopPoll);
-            }
-            if (!date.isPollRunning()) {
-                furtherElements.add(new H4("Die Abfrage wurde beendet"));
-            }
-            dialog.add(furtherElements);
-            dialog.open();
-        });
+        feedbacks.addClickListener(event -> feedbackOverviewDialog().open());
         feedbacks.setHeight(confirmed.getHeight());
         return feedbacks;
+    }
+
+    private final ClosableDialog feedbackOverview = new ClosableDialog();
+
+    private Dialog feedbackOverviewDialog() {
+        feedbackOverview.removeAll();
+        feedbackOverview.setTitle(new H3(date.getTitle()));
+
+        NativeLabel time = new NativeLabel((date.getStart().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))));
+        feedbackOverview.add(time, new Paragraph());
+
+        Accordion accordion = new Accordion();
+
+        AccordionPanel confirmedUsers = new AccordionPanel();
+        confirmedUsers.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE);
+        confirmedUsers.setEnabled(false);
+        accordion.add(confirmedUsers);
+
+        AccordionPanel declinedUsers = new AccordionPanel();
+        declinedUsers.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE);
+        declinedUsers.setEnabled(false);
+        accordion.add(declinedUsers);
+
+        AccordionPanel noFeedback = new AccordionPanel();
+        noFeedback.addThemeVariants(DetailsVariant.FILLED, DetailsVariant.REVERSE);
+        noFeedback.setEnabled(false);
+        accordion.add(noFeedback);
+
+        int confirmedAmount = 0;
+        int declinedAmount = 0;
+        int noFeedbackAmount = 0;
+        for (Person p : date.getBoard().getMembers()) {
+            Feedback.Status status = this.date.getStatusFor(p);
+            Supplier<HorizontalLayout> personEntry = () -> {
+                HorizontalLayout horizontalLayout = new HorizontalLayout();
+                Avatar avatar = p.getAvatar();
+                H4 label = new H4(avatar.getName());
+                horizontalLayout.add(avatar, label);
+                horizontalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+                horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+                return horizontalLayout;
+            };
+            if (Feedback.Status.IN.equals(status)) {
+                confirmedUsers.add(personEntry.get());
+                confirmedUsers.add(new Paragraph());
+                confirmedUsers.setEnabled(true);
+                confirmedAmount++;
+            } else if (Feedback.Status.OUT.equals(status)) {
+                declinedUsers.add(personEntry.get());
+                declinedUsers.add(new Paragraph());
+                declinedUsers.setEnabled(true);
+                declinedAmount++;
+            } else {
+                noFeedback.add(personEntry.get());
+                noFeedback.add(new Paragraph());
+                noFeedback.setEnabled(true);
+                noFeedbackAmount++;
+            }
+        }
+        confirmedUsers.setSummaryText("Zusagen (" + confirmedAmount + ")");
+        declinedUsers.setSummaryText("Absagen (" + declinedAmount + ")");
+        noFeedback.setSummaryText("Keine Rückmeldung (" + noFeedbackAmount + ")");
+        feedbackOverview.add(accordion);
+
+        feedbackOverview.add(new Paragraph());
+
+        if (date.getPollScheduledFor() != null && date.isPollRunning()) {
+            feedbackOverview.add(new NativeLabel("Erinnerung geplant für den " + date.getPollScheduledFor().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))));
+            feedbackOverview.add(new Paragraph());
+        }
+
+        HorizontalLayout furtherElements = new HorizontalLayout();
+        furtherElements.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+
+        Button remindAll = new Button("Alle Erinnern");
+        remindAll.addClickListener(e -> remindAllDialog().open());
+        remindAll.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        if (date.isPollRunning() && date.getBoard().getAdmins().contains(this.person)) {
+            furtherElements.add(remindAll);
+        }
+
+        Button stopPoll = new Button("Abfrage stoppen");
+        stopPoll.addClickListener(e -> {
+            ConfirmDialog confirmDialog = new ConfirmDialog(
+                    "Bist du sicher, dass du die Abfrage beenden möchtest?",
+                    "Das kann nicht mehr Rückgängig gemacht werden",
+                    "Abfrage beenden",
+                    (confirmEvent) -> {
+                        date.setPollRunning(false);
+                        dateRepository.save(date);
+                        stopPoll.setVisible(false);
+                        remindAll.setVisible(false);
+                    });
+            confirmDialog.setCancelable(true);
+            confirmDialog.open();
+        });
+        stopPoll.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        if (date.isPollRunning() && date.getBoard().getAdmins().contains(this.person)) {
+            furtherElements.add(stopPoll);
+        }
+
+        if (!date.isPollRunning()) {
+            furtherElements.add(new H4("Die Abfrage wurde beendet"));
+        }
+
+        feedbackOverview.add(furtherElements);
+
+        Button history = new Button("Historie");
+        history.setWidthFull();
+        history.addClickListener(e -> historyDialog().open());
+        feedbackOverview.add(history);
+        return feedbackOverview;
+    }
+
+    private final ClosableDialog remindAllDialog = new ClosableDialog(new H3("Erinnerung verschicken"));
+
+    private Dialog remindAllDialog() {
+        remindAllDialog.removeAll();
+        remindAllDialog.add(new Hr());
+        remindAllDialog.add(new H4("Erinnerung planen"));
+        if (date.getPollScheduledFor() != null) {
+            remindAllDialog.add(new NativeLabel("Aktuell geplant für den " + date.getPollScheduledFor().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))));
+            remindAllDialog.add(new Paragraph());
+        }
+        DatePicker datePicker = new DatePicker();
+        datePicker.setValue(LocalDate.now().plusDays(1));
+        remindAllDialog.add(datePicker);
+        Button scheduleReminder = new Button("Erinnerung planen");
+        scheduleReminder.addClickListener(e -> {
+            if (datePicker.getValue() == null) {
+                datePicker.setInvalid(true);
+                datePicker.setErrorMessage("Kein Datum ausgewählt");
+            } else if (datePicker.getValue().isBefore(LocalDate.now())) {
+                datePicker.setInvalid(true);
+                datePicker.setErrorMessage("Das Datum muss in der Zukunft liegen");
+            } else if (datePicker.getValue().isAfter(date.getStart().toLocalDate())) {
+                datePicker.setInvalid(true);
+                datePicker.setErrorMessage("Die Abfrage sollte vor beginn des Termins gesendet werden");
+            } else {
+                this.date.setPollScheduledFor(datePicker.getValue());
+                this.dateRepository.save(date);
+                feedbackOverviewDialog();
+                remindAllDialog.close();
+            }
+        });
+        remindAllDialog.add(scheduleReminder);
+        remindAllDialog.add(new Hr());
+        Button remindNow = new Button("Jetzt erinnern");
+        remindNow.addClickListener(e -> {
+            if (!senderUtils.sendDatePoll(this.date, true)) {
+                Notification.show("Die Abfrage konnte nicht an alle verschickt werden")
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } else {
+                Notification.show("Die Abfrage wurde erfolgreich verschickt")
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                remindAllDialog.close();
+            }
+        });
+        remindAllDialog.add(remindNow);
+        return remindAllDialog;
+    }
+
+    private final ClosableDialog historyDialog = new ClosableDialog("Historie");
+
+    private Dialog historyDialog() {
+        historyDialog.removeAll();
+        historyDialog.setWidthFull();
+
+        Grid<Feedback> feedbackHistory = new Grid<>();
+        feedbackHistory.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
+
+        feedbackHistory.addComponentColumn(feedback -> feedback.getPerson().getAvatar()).setFlexGrow(0);
+        feedbackHistory.addColumn(feedback -> feedback.getPerson().getName());
+        feedbackHistory.addColumn(feedback -> feedback.getTimeStamp().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)));
+        feedbackHistory.addColumn(feedback ->
+                switch (feedback.getStatus()) {
+                    case IN -> "Zugesagt";
+                    case OUT -> "Abgesagt";
+                    default -> "Feedback gelöscht";
+                });
+        feedbackHistory.addComponentColumn(feedback ->
+                switch (feedback.getStatus()) {
+                    case IN -> VaadinIcon.CHECK.create();
+                    case OUT -> VaadinIcon.CLOSE.create();
+                    default -> new Div();
+                });
+
+        feedbackHistory.setItems(this.date.getFeedbackList().stream().sorted().toList());
+
+        historyDialog.add(feedbackHistory);
+
+        return historyDialog;
     }
 
     @Override
     public void close() {
         super.close();
-        if(changedCalendar) {
+        if (changedCalendar) {
             UI.getCurrent().getPage().reload();
         }
     }

@@ -11,32 +11,30 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import de.kjgstbarbara.data.PasswordReset;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.security.SecurityUtils;
-import de.kjgstbarbara.service.PasswordResetRepository;
-import de.kjgstbarbara.service.PasswordResetService;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
-@Route("password-reset/:token")
+@Route("password-reset/:personId/:token")
 @AnonymousAllowed
 public class ResetPasswordTokenizedView extends VerticalLayout implements BeforeEnterObserver, AfterNavigationObserver {
-    private final PasswordResetRepository passwordResetRepository;
     private final PersonsRepository personsRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private Person person;
+
     private final H1 title = new H1();
     private final TextField username = new TextField("Benutzername");
 
-    public ResetPasswordTokenizedView(PasswordResetService passwordResetService, PersonsService personsService) {
-        this.passwordResetRepository = passwordResetService.getPasswordResetRepository();
+    public ResetPasswordTokenizedView(PersonsService personsService) {
         this.personsRepository = personsService.getPersonsRepository();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
@@ -74,11 +72,11 @@ public class ResetPasswordTokenizedView extends VerticalLayout implements Before
         confirm.addClickListener(event -> {
             Optional<Person> personOptional = personsRepository.findByUsername(username.getValue());
             boolean error = false;
-            if (username.getValue().isBlank() && passwordReset.getRequester().getUsername().isBlank()) {
+            if (username.getValue().isBlank() && person.getUsername().isBlank()) {
                 username.setErrorMessage("Der Benutzername darf nicht leer sein");
                 username.setInvalid(true);
                 error = true;
-            } else if (personOptional.isPresent() && !personOptional.get().equals(passwordReset.getRequester())) {
+            } else if (personOptional.isPresent() && !personOptional.get().equals(person)) {
                 username.setErrorMessage("Der Benutzername ist bereits vergeben");
                 username.setInvalid(true);
                 error = true;
@@ -105,11 +103,11 @@ public class ResetPasswordTokenizedView extends VerticalLayout implements Before
             if(error) {
                 return;
             }
-            passwordReset.getRequester().setPassword(passwordEncoder.encode(password.getValue()));
-            passwordReset.getRequester().setUsername(username.getValue().isBlank()
-                    ? passwordReset.getRequester().getUsername() : username.getValue());
-            personsRepository.save(passwordReset.getRequester());
-            passwordResetRepository.delete(passwordReset);
+            person.setPassword(passwordEncoder.encode(password.getValue()));
+            person.setUsername(username.getValue().isBlank()
+                    ? person.getUsername() : username.getValue());
+            person.setResetTokenExpires(LocalDateTime.now());
+            personsRepository.save(person);
             event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
         });
         HorizontalLayout pass = new HorizontalLayout(password, retypepassword);
@@ -118,24 +116,23 @@ public class ResetPasswordTokenizedView extends VerticalLayout implements Before
         add(wrapper);
     }
 
-    private PasswordReset passwordReset;
-
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        Optional<PasswordReset> passwordResetOptional = beforeEnterEvent.getRouteParameters().get("token").flatMap(passwordResetRepository::findById);
-        if (passwordResetOptional.isEmpty()) {
+        Optional<Person> person = beforeEnterEvent.getRouteParameters().get("personId").map(Long::valueOf).flatMap(personsRepository::findById);
+        Optional<String> token = beforeEnterEvent.getRouteParameters().get("token");
+        if (person.isEmpty() || token.isEmpty() || !person.get().getResetToken().equals(token.get())) {
             beforeEnterEvent.getUI().navigate(ResetPasswordView.class, new RouteParameters("status", "invalid-token"));
             beforeEnterEvent.rerouteTo(ResetPasswordView.class, new RouteParameters("status", "invalid-token"));
-        } else if (passwordResetOptional.get().expired()) {
+        } else if (person.get().getResetTokenExpires().isBefore(LocalDateTime.now())) {
             beforeEnterEvent.getUI().navigate(ResetPasswordView.class, new RouteParameters("status", "token-expired"));
         } else {
-            this.passwordReset = passwordResetOptional.get();
+            this.person = person.get();
         }
     }
 
     @Override
     public void afterNavigation(AfterNavigationEvent afterNavigationEvent) {
-        if (passwordReset.getRequester().getUsername().isEmpty()) {
+        if (person.getUsername().isEmpty()) {
             title.setText("Zugangsdaten erstellen");
             username.setRequired(true);
         } else {

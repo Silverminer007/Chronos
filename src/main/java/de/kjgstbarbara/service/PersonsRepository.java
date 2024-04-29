@@ -1,6 +1,5 @@
 package de.kjgstbarbara.service;
 
-import de.kjgstbarbara.data.Board;
 import de.kjgstbarbara.data.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,5 +13,9 @@ public interface PersonsRepository extends JpaRepository<Person, Long> {
 
     default Optional<Person> findByPhoneNumber(long phoneNumber) {
         return findAll().stream().filter(person -> person.getPhoneNumber() == phoneNumber).findAny();
+    }
+
+    default List<Person> systemAdmin() {
+        return findAll().stream().filter(Person::isSystemAdmin).toList();
     }
 }

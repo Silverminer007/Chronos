@@ -19,6 +19,7 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.messaging.SenderUtils;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.DateWidget;
 import de.kjgstbarbara.views.components.EditDateDialog;
@@ -60,7 +61,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
     private LocalDate week = LocalDate.now();
     private Layout calendarView = Layout.LIST;
 
-    public CalendarView(PersonsService personsService, DatesService datesService, BoardsService boardsService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
+    public CalendarView(PersonsService personsService, DatesService datesService, BoardsService boardsService, FeedbackService feedbackService, SenderUtils senderUtils, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.dateRepository = datesService.getDateRepository();
         this.boardsRepository = boardsService.getBoardsRepository();
@@ -96,14 +97,14 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         header.add(year);
 
-        Button createNew = new Button("Neuer Termin", VaadinIcon.PLUS_SQUARE_O.create());
+        Button createNew = new Button("Neuer Termin", VaadinIcon.PLUS_SQUARE_O.create());// TODO Irgendwas stimmt beim erstellen noch nicht -> Termin wird nicht erstellt ohne Fehlermeldung
         createNew.addClickListener(event ->
-                new EditDateDialog(new Date(), person, boardsRepository, dateRepository).open());
+                new EditDateDialog(new Date(), person, boardsRepository, dateRepository).setCloseListener(() -> UI.getCurrent().getPage().reload()).open());
         header.add(createNew);
 
         this.add(header);
 
-        HorizontalLayout legend = new HorizontalLayout();
+        HorizontalLayout legend = new HorizontalLayout();// TODO Flex Component, auf Mobile sind die Buttons zu breit
         legend.setWidthFull();
         legend.setAlignItems(Alignment.CENTER);
         legend.setJustifyContentMode(JustifyContentMode.START);
@@ -138,23 +139,22 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         fullCalendar.setFirstDay(DayOfWeek.MONDAY);
         fullCalendar.addEntryClickedListener(event -> {
             if (event.getEntry() instanceof DateEntry dateEntry) {
-                new DateWidget(dateEntry.getDate(), feedbackRepository, dateRepository, boardsRepository, this.person).open();
+                new DateWidget(dateEntry.getDate(), feedbackRepository, dateRepository, boardsRepository, senderUtils, this.person).open();
             }
         });
         for (Date d : getDates()) {
-            fullCalendar.getEntryProvider().asInMemory().addEntries(new DateEntry(d, feedbackRepository.findById(Feedback.Key.create(this.person, d)).map(Feedback::getStatus).map(status -> {
-                if(d.getEnd().isBefore(LocalDateTime.now())){
-                    return "#615c5c";
-                } else if(LocalDateTime.now().isAfter(d.getStart()) && LocalDateTime.now().isBefore(d.getEnd())) {
-                    return "#00b6be";
-                }else if (status.equals(Feedback.Status.IN)) {
-                    return "#00ff00";
-                } else if (status.equals(Feedback.Status.OUT)) {
-                    return "#ff0000";
-                } else {
-                    return "#ffff00";
-                }
-            }).orElse("#ffff00")));
+            String color = "#ffff00";
+            Feedback.Status status = d.getStatusFor(this.person);
+            if(d.getEnd().isBefore(LocalDateTime.now())){
+                color = "#615c5c";
+            } else if(LocalDateTime.now().isAfter(d.getStart()) && LocalDateTime.now().isBefore(d.getEnd())) {
+                color = "#00b6be";
+            }else if (status.equals(Feedback.Status.IN)) {
+                color = "#00ff00";
+            } else if (status.equals(Feedback.Status.OUT)) {
+                color = "#ff0000";
+            }
+            fullCalendar.getEntryProvider().asInMemory().addEntries(new DateEntry(d, color));
         }
         this.add(fullCalendar);
         this.setFlexGrow(1, fullCalendar);
