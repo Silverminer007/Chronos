@@ -88,6 +88,9 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
 
         personalSubmenu.addItem("Profil", event -> UI.getCurrent().navigate(ProfileView.class));
         personalSubmenu.addItem("Benachrichtigungen", event -> UI.getCurrent().navigate(NotificationSettingsView.class));
+        if(this.person.isSystemAdmin()) {
+            personalSubmenu.addItem("System", event -> UI.getCurrent().navigate(SetupView.class));
+        }
 
         wrapper.add(profile);
         return wrapper;

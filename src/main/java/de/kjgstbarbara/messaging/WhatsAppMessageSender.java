@@ -1,7 +1,8 @@
 package de.kjgstbarbara.messaging;
 
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.FriendlyError;
-import de.kjgstbarbara.data.Config;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
@@ -9,6 +10,9 @@ import de.kjgstbarbara.service.ConfigService;
 import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.FeedbackService;
 import de.kjgstbarbara.service.PersonsService;
+import de.kjgstbarbara.views.components.HasPhoneNumber;
+import it.auties.whatsapp.api.PairingCodeHandler;
+import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.chat.Chat;
 import it.auties.whatsapp.model.info.MessageInfo;
@@ -19,13 +23,14 @@ import it.auties.whatsapp.model.message.standard.PollCreationMessageBuilder;
 import it.auties.whatsapp.model.message.standard.PollUpdateMessage;
 import it.auties.whatsapp.model.poll.PollOption;
 import it.auties.whatsapp.model.poll.PollOptionBuilder;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.*;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -33,7 +38,10 @@ import java.util.function.Consumer;
 @Component
 public class WhatsAppMessageSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(WhatsAppMessageSender.class);
-    private final List<Consumer<String>> pairingCodeHandler = new ArrayList<>();
+    @Setter
+    private PairingCodeHandler pairingCodeHandler = s -> {};
+    @Setter
+    private Consumer<StreamResource> qrCodeHandler = resource -> {};
     private Whatsapp whatsapp;
 
     @Autowired
@@ -45,15 +53,16 @@ public class WhatsAppMessageSender {
     @Autowired
     private ConfigService configService;
 
-    public void setup() {
-        whatsapp = Whatsapp.webBuilder()
+    public void setup(boolean qrCode) {
+        whatsapp = qrCode ? Whatsapp.webBuilder()
+                .lastConnection().unregistered(this::qrHandler) : Whatsapp.webBuilder()
                 .lastConnection()
-                .unregistered(configService.getLong(Config.Key.SENDER_PHONE_NUMBER),
-                        authCode -> pairingCodeHandler.forEach(handler -> handler.accept(authCode)))
-                .addLoggedInListener(api -> {
+                .unregistered(new HasPhoneNumber.Config(configService).phoneNumber(),
+                        pairingCodeHandler);
+        whatsapp.addLoggedInListener(api -> {
                     System.out.printf("Connected: %s%n", api.store().privacySettings());
                     for (Person admin : personsService.getPersonsRepository().systemAdmin()) {
-                        api.store().findChatByJid(Jid.of(admin.getPhoneNumber())).ifPresent(chat ->
+                        api.store().findChatByJid(Jid.of(admin.phoneNumber())).ifPresent(chat ->
                                 api.sendMessage(chat, "Der WhatsApp Dienst wurde erfolgreich gestartet"));
                     }
                 })
@@ -64,19 +73,26 @@ public class WhatsAppMessageSender {
                 .join();
     }
 
-    public void addCallback(Consumer<String> callback) {
-        pairingCodeHandler.add(callback);
+    private void qrHandler(String qr) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try {
+            MatrixToImageWriter.writeToStream(QrHandler.createMatrix(qr, 400, 5), "jpg", os);
+            StreamResource streamResource = new StreamResource("WhatsApp QR Code", () -> new ByteArrayInputStream(os.toByteArray()));
+            qrCodeHandler.accept(streamResource);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Chat getChat(Person sendTo) throws FriendlyError {
         if (whatsapp == null) {
-            setup();
+            setup(false);
         }
-        Optional<Chat> optionalChat = whatsapp.store().findChatByJid(Jid.of(sendTo.getPhoneNumber()));
+        Optional<Chat> optionalChat = whatsapp.store().findChatByJid(Jid.of(sendTo.phoneNumber()));
         if (optionalChat.isPresent()) {
             return optionalChat.get();
         } else {
-            throw new FriendlyError("Es konnte kein Kontakt zur Telefonnummer +" + sendTo.getPhoneNumber() + " gefunden werden");
+            throw new FriendlyError("Es konnte kein Kontakt zur Telefonnummer +" + sendTo.phoneNumber() + " gefunden werden");
         }
     }
 

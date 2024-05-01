@@ -22,7 +22,7 @@ import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.data.Reminder;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.service.ReminderService;
-import de.kjgstbarbara.views.components.LongNumberField;
+import de.kjgstbarbara.views.components.ComponentUtil;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -62,9 +62,7 @@ public class RegisterView extends VerticalLayout {
                 .bind(Person::getUsername, Person::setUsername);
         username.setRequired(true);
         username.setWidthFull();
-        LongNumberField phoneNumber = new LongNumberField("Telefonnummer");
-        binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
-        phoneNumber.setWidthFull();
+
         TextField mailAddress = new TextField("E-Mail Adresse");
         mailAddress.setWidthFull();
         binder.forField(mailAddress)
@@ -103,8 +101,8 @@ public class RegisterView extends VerticalLayout {
                     reminder.setAmount(1);
                     reminder.setChronoUnit(ChronoUnit.DAYS);
                     reminder.setPerson(person);
-                    reminderService.addReminder(reminder);
                     personsService.getPersonsRepository().save(person);
+                    reminderService.addReminder(reminder);
                     event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
                 } catch (ValidationException e) {
                     Notification.show("Ein Fehler ist ausgetreten, der Account konnte nicht erstellt werdne").addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -121,7 +119,7 @@ public class RegisterView extends VerticalLayout {
         buttons.setWidthFull();
         buttons.setJustifyContentMode(JustifyContentMode.CENTER);
 
-        VerticalLayout wrapper = new VerticalLayout(title, name, username, phoneNumber, mailAddress, password, reTypePassword, reCaptcha, buttons);
+        VerticalLayout wrapper = new VerticalLayout(title, name, username, ComponentUtil.getPhoneNumber(binder), mailAddress, password, reTypePassword, reCaptcha, buttons);
         wrapper.setWidth(name.getWidth());
 
         add(wrapper);

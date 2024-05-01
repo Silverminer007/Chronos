@@ -16,11 +16,19 @@ public class ConfigService {
     }
 
     public int getInt(Config.Key key) {
-        return Integer.parseInt(get(key));
+        try {
+            return Integer.parseInt(get(key));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public long getLong(Config.Key key) {
-        return Long.parseLong(get(key));
+        try {
+            return Long.parseLong(get(key));
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
     }
 
     public boolean getBoolean(Config.Key key) {

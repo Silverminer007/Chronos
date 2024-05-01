@@ -12,7 +12,7 @@ public interface PersonsRepository extends JpaRepository<Person, Long> {
     }
 
     default Optional<Person> findByPhoneNumber(long phoneNumber) {
-        return findAll().stream().filter(person -> person.getPhoneNumber() == phoneNumber).findAny();
+        return findAll().stream().filter(person -> person.phoneNumber() == phoneNumber).findAny();
     }
 
     default List<Person> systemAdmin() {

@@ -71,7 +71,7 @@ public class NotificationSettingsView extends VerticalLayout {
             form.add(services);
 
             Checkbox whatsapp = new Checkbox("WhatsApp");
-            if (person.getPhoneNumber() == 0) {
+            if (person.phoneNumber() == 0) {
                 whatsapp.setEnabled(false);
                 whatsapp.setTooltipText("Bitte hinterlege zuerst eine Telefonnummer");
             }

@@ -85,7 +85,7 @@ public class MessageProcessor {
         String username = person.getUsername();
         output = output.replaceAll("#PERSON_USERNAME", username);
         // PERSON_PHONE_NUMBER
-        String phoneNumber = String.valueOf(person.getPhoneNumber());
+        String phoneNumber = String.valueOf(person.phoneNumber());
         output = output.replaceAll("#PERSON_PHONE_NUMBER", phoneNumber);
         // PERSON_E_MAIL
         String eMail = person.getEMailAddress();
@@ -110,7 +110,7 @@ public class MessageProcessor {
         // BOARD_TITLE
         String title = board.getTitle();
         output = output.replaceAll("#BOARD_TITLE", title);
-        return input;
+        return output;
     }
 
     private static String feedbackPlaceholder(String input, Feedback.Status feedback) {
@@ -118,6 +118,6 @@ public class MessageProcessor {
         // FEEDBACK_STATUS
         String status = feedback.getReadable();
         output = output.replaceAll("#FEEDBACK_STATUS", status);
-        return input;
+        return output;
     }
 }

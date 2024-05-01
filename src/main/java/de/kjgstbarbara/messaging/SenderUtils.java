@@ -1,11 +1,13 @@
 package de.kjgstbarbara.messaging;
 
+import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.data.*;
 import de.kjgstbarbara.service.ConfigService;
 import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.FeedbackService;
 import de.kjgstbarbara.service.PersonsService;
+import it.auties.whatsapp.api.PairingCodeHandler;
 import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,12 +33,16 @@ public class SenderUtils {
     @Autowired
     private FeedbackService feedbackService;
 
-    public void reSetupWhatsApp() {
-        whatsAppMessageSender.setup();
+    public void reSetupWhatsApp(boolean qrCode) {
+        whatsAppMessageSender.setup(qrCode);
     }
 
-    public void addWhatsAppPairingCodeHandler(Consumer<String> pairingCodeHandler) {
-        whatsAppMessageSender.addCallback(pairingCodeHandler);
+    public void setWhatsAppPairingCodeHandler(PairingCodeHandler pairingCodeHandler) {
+        whatsAppMessageSender.setPairingCodeHandler(pairingCodeHandler);
+    }
+
+    public void setWhatsAppQrCodeHandler(Consumer<StreamResource> qrCodeHandler) {
+        whatsAppMessageSender.setQrCodeHandler(qrCodeHandler);
     }
 
     // Termin direkt abfragen
@@ -72,7 +78,7 @@ public class SenderUtils {
             whatsAppMessageSender.sendMessage(message, sendTo, force);
             eMailMessageSender.sendMessage(message, sendTo, force);
             return true;
-        } catch (FriendlyError e) {
+        } catch (Exception e) {
             return false;
         }
     }

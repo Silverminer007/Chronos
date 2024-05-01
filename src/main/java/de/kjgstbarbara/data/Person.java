@@ -5,6 +5,7 @@ import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.FileHelper;
 import de.kjgstbarbara.security.SecurityUtils;
+import de.kjgstbarbara.views.components.HasPhoneNumber;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -20,7 +21,7 @@ import java.util.*;
 @Entity
 @Data
 @NoArgsConstructor
-public class Person {
+public class Person implements HasPhoneNumber {
     private static final Logger LOGGER = LoggerFactory.getLogger(Person.class);
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -31,7 +32,8 @@ public class Person {
     private String username = "";
     private String password;
     private boolean systemAdmin = false;
-    private long phoneNumber = 0L;
+    private String regionCode;
+    private long nationalNumber;
     private boolean whatsappNotifications;
     private String eMailAddress;
     private boolean eMailNotifications;

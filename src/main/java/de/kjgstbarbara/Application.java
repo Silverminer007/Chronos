@@ -1,6 +1,7 @@
 package de.kjgstbarbara;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
@@ -21,6 +22,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         offlineResources = { "./images/offline.png"}
 )
 @SpringBootApplication
+@Push
 @Theme(value = "kjgtermine", variant = Lumo.DARK)
 public class Application implements AppShellConfigurator {
 
