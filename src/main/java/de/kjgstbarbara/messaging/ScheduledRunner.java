@@ -61,7 +61,7 @@ public class ScheduledRunner implements CommandLineRunner {
                     messageSender.sendDatePoll(d, p, false);
                 }
 
-                if (d.getGroup().getMembers().contains(p) && !feedback.equals(Feedback.Status.OUT)) {
+                if (d.getGroup().getMembers().contains(p) && !feedback.equals(Feedback.Status.CANCELLED)) {
                     // TODO Wann soll jemand diese Nachricht bekommen?
                     //  Nur wenn man zugesagt hat oder auch bei keiner Rückmeldung?
                     //  Oder wenn jemand spontan vielleicht doch kommt?

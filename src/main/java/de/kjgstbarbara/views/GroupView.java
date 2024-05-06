@@ -10,7 +10,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -40,6 +39,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.vaadin.olli.ClipboardHelper;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 @Route(value = "groups", layout = MainNavigationView.class)
@@ -210,18 +210,26 @@ public class GroupView extends VerticalLayout {
 
         TextField invitationLink = new TextField("Einladungslink");
         invitationLink.setEnabled(false);
-        invitationLink.setValue("");
+        invitationLink.setValue("Temp");
         invite.add(invitationLink);
 
         Button copyInvitationLink = new Button(VaadinIcon.COPY.create());
-        ClipboardHelper clipboardHelper = new ClipboardHelper("", copyInvitationLink);
+        ClipboardHelper clipboardHelper = new ClipboardHelper("Kopieren fehlgeschlagen", copyInvitationLink);
         UI.getCurrent().getPage().fetchCurrentURL(url -> {
-            String joinURL = "http://" + url.getHost() + ":" + url.getPort() + "/groups/join/" + group.getId();
+            StringBuilder urlBuilder = new StringBuilder();
+            urlBuilder.append(url.getProtocol()).append("://");
+            urlBuilder.append(url.getHost());
+            if(url.getPort() != -1) {
+                urlBuilder.append(":").append(url.getPort());
+            }
+            urlBuilder.append("/group/join/");
+            urlBuilder.append(group.getId());
+            String joinURL = urlBuilder.toString();
             invitationLink.setValue(joinURL);
             clipboardHelper.setContent(joinURL);
         });
         copyInvitationLink.addClickListener(event -> Notification.show("Einladung in Zwischenablage kopiert"));
-        invite.add(copyInvitationLink);
+        invite.add(clipboardHelper);
 
         collapsableArea.add(invite);
 
@@ -294,14 +302,15 @@ public class GroupView extends VerticalLayout {
         H5 requestsLabel = new H5("Anfragen: ");
         requests.add(requestsLabel);
         if (!group.getRequests().isEmpty()) {
-            requests.addClickListener(event -> createManageRequestsDialog(group, person));
-
             AvatarGroup requestAvatars = new AvatarGroup();
             requestAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
-            for (Person p : group.getRequests()) {
-                requestAvatars.add(p.getAvatarGroupItem());
-            }
+            requestAvatars.setItems(getRequestAvatars(group));
             requests.add(requestAvatars);
+
+            requests.addClickListener(event ->
+                    createManageRequestsDialog(group, person)
+                            .setCloseListener(() -> requestAvatars.setItems(getRequestAvatars(group)))
+                            .open());
         } else {
             NativeLabel noRequests = new NativeLabel("Keine Anfragen");
             requests.add(noRequests);
@@ -314,14 +323,15 @@ public class GroupView extends VerticalLayout {
         H5 membersLabel = new H5("Mitglieder: ");
         members.add(membersLabel);
         if (!group.getMembers().isEmpty()) {
-            members.addClickListener(event -> createEditMembersDialog(group, person));
-
             AvatarGroup membersAvatars = new AvatarGroup();
             membersAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
-            for (Person p : group.getMembers()) {
-                membersAvatars.add(p.getAvatarGroupItem());
-            }
+            membersAvatars.setItems(getMemberAvatars(group));
             members.add(membersAvatars);
+
+            members.addClickListener(event ->
+                    createEditMembersDialog(group, person)
+                            .setCloseListener(() -> membersAvatars.setItems(getMemberAvatars(group)))
+                            .open());
         } else {
             NativeLabel noMembers = new NativeLabel("Keine Mitglieder");
             members.add(noMembers);
@@ -331,11 +341,16 @@ public class GroupView extends VerticalLayout {
         return peopleLayout;
     }
 
-    private void createManageRequestsDialog(Group group, Person person) {
-        ConfirmDialog dialog = new ConfirmDialog();
-        dialog.setHeader("Beitrittsanfragen");
-        dialog.setCancelable(false);
-        dialog.setConfirmButton("Schließen", event -> UI.getCurrent().getPage().reload());
+    private List<AvatarGroup.AvatarGroupItem> getMemberAvatars(Group group) {
+        return group.getMembers().stream().map(Person::getAvatarGroupItem).toList();
+    }
+
+    private List<AvatarGroup.AvatarGroupItem> getRequestAvatars(Group group) {
+        return group.getRequests().stream().map(Person::getAvatarGroupItem).toList();
+    }
+
+    private ClosableDialog createManageRequestsDialog(Group group, Person person) {
+        ClosableDialog dialog = new ClosableDialog("Beitrittsanfragen");
 
         Grid<Person> requests = new Grid<>();
         requests.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
@@ -382,15 +397,13 @@ public class GroupView extends VerticalLayout {
         requests.setItems(group.getRequests());
 
         dialog.add(requests);
+        dialog.setWidth("500px");
 
-        dialog.open();
+        return dialog;
     }
 
-    private void createEditMembersDialog(Group group, Person person) {
-        ConfirmDialog dialog = new ConfirmDialog();
-        dialog.setHeader("Mitglieder");
-        dialog.setCancelable(false);
-        dialog.setConfirmButton("Schließen", event -> UI.getCurrent().getPage().reload());
+    private ClosableDialog createEditMembersDialog(Group group, Person person) {
+        ClosableDialog dialog = new ClosableDialog("Mitglieder");
 
         Grid<Person> members = new Grid<>();
         members.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
@@ -446,7 +459,8 @@ public class GroupView extends VerticalLayout {
         members.setItems(group.getMembers());
 
         dialog.add(members);
+        dialog.setWidth("500px");
 
-        dialog.open();
+        return dialog;
     }
 }

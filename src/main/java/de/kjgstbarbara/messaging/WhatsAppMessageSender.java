@@ -154,7 +154,7 @@ public class WhatsAppMessageSender {
             long voteId = Long.parseLong(vote.substring(1, vote.indexOf(")")));
 
             if (voteId == 1 || voteId == 2) {
-                Feedback feedback = Feedback.create(person, voteId == 1 ? Feedback.Status.IN : Feedback.Status.OUT);
+                Feedback feedback = Feedback.create(person, voteId == 1 ? Feedback.Status.COMMITTED : Feedback.Status.CANCELLED);
                 feedbackService.getFeedbackRepository().save(feedback);
                 date.addFeedback(feedback);
                 datesService.getDateRepository().save(date);

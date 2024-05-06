@@ -13,7 +13,7 @@ import lombok.Setter;
 
 public class ClosableDialog extends Dialog {
     private final Div titleWrapper = new Div();
-    private Runnable closeListener;
+    private Runnable closeListener = () -> {};
 
     public ClosableDialog(Component title) {
         setupHeader();

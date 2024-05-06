@@ -4,9 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -28,7 +26,7 @@ public class Feedback implements Comparable<Feedback> {
 
     @Getter
     public enum Status {
-        IN("Bin dabei"), OUT("Bin dabei"), DONTKNOW("Weiß nicht");
+        COMMITTED("Bin dabei"), CANCELLED("Bin raus"), DONTKNOW("Weiß nicht");
 
         private final String readable;
 
