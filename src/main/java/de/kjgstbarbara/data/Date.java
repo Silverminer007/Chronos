@@ -22,8 +22,6 @@ public class Date implements Comparable<Date> {
     private LocalDateTime start;
     private LocalDateTime end;
     private String attachment;
-    @Deprecated
-    private boolean internal = false;// TODO Remove
     private boolean publish = false;
     private boolean pollRunning = true;
     @ManyToOne
