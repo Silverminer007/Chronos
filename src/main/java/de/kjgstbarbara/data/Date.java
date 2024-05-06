@@ -26,7 +26,7 @@ public class Date implements Comparable<Date> {
     private boolean publish = false;
     private boolean pollRunning = true;
     @ManyToOne
-    private Board board;
+    private Group group;
     @OneToMany(fetch = FetchType.EAGER)
     private List<Feedback> feedbackList = new ArrayList<>();
     private LocalDate pollScheduledFor;

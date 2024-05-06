@@ -31,6 +31,7 @@ public class Person implements HasPhoneNumber {
     private String lastName;
     private String username = "";
     private String password;
+    private boolean darkMode = true;
     private boolean systemAdmin = false;
     private String regionCode;
     private long nationalNumber;

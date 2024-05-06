@@ -22,10 +22,12 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.data.Config;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.ConfigService;
+import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,12 +38,14 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 public class MainNavigationView extends AppLayout implements BeforeEnterObserver {
     private final transient AuthenticationContext authenticationContext;
+    private final PersonsRepository personsRepository;
 
     private H1 viewTitle;
     private final Person person;
 
     public MainNavigationView(PersonsService personsService, AuthenticationContext authenticationContext) {
         this.authenticationContext = authenticationContext;
+        this.personsRepository = personsService.getPersonsRepository();
         this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
                 .orElse(null);
@@ -88,9 +92,15 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
 
         personalSubmenu.addItem("Profil", event -> UI.getCurrent().navigate(ProfileView.class));
         personalSubmenu.addItem("Benachrichtigungen", event -> UI.getCurrent().navigate(NotificationSettingsView.class));
-        if(this.person.isSystemAdmin()) {
+        if (this.person.isSystemAdmin()) {
             personalSubmenu.addItem("System", event -> UI.getCurrent().navigate(SetupView.class));
         }
+        personalSubmenu.addItem(this.person.isDarkMode() ? "Heller Modus" : "Dunkler Modus", event -> {
+            this.person.setDarkMode(!this.person.isDarkMode());
+            personsRepository.save(this.person);
+            UI.getCurrent().getPage().reload();
+        });
+        personalSubmenu.addItem("Abmelden", event -> authenticationContext.logout());
 
         wrapper.add(profile);
         return wrapper;
@@ -110,19 +120,13 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         SideNav nav = new SideNav();
 
         nav.addItem(new SideNavItem("Meine Termine", CalendarView.class, VaadinIcon.CALENDAR_USER.create()));
-        nav.addItem(new SideNavItem("Meine Boards", BoardView.class, VaadinIcon.GROUP.create()));
+        nav.addItem(new SideNavItem("Gruppen", GroupView.class, VaadinIcon.GROUP.create()));
 
         return nav;
     }
 
     private Footer createFooter() {
-        Footer layout = new Footer();
-
-        Button logOut = new Button("Abmelden", VaadinIcon.EXIT.create());
-        logOut.addClickListener(buttonClickEvent -> authenticationContext.logout());
-        logOut.setWidthFull();
-        layout.add(logOut);
-        return layout;
+        return new Footer();
     }
 
     @Override
@@ -138,10 +142,17 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
 
     @Autowired
     private ConfigService configService;
+
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        if(!configService.getBoolean(Config.Key.SETUP_DONE)) {
-            beforeEnterEvent.rerouteTo(SetupView.class);
+        if (!configService.getBoolean(Config.Key.SETUP_DONE)) {
+            beforeEnterEvent.rerouteTo("setup-initial");
         }
+        this.setTheme(this.person.isDarkMode());
+    }
+
+    private void setTheme(boolean dark) {
+        var js = "document.documentElement.setAttribute('theme', $0)";
+        getElement().executeJs(js, dark ? Lumo.DARK : Lumo.LIGHT);
     }
 }

@@ -1,5 +1,8 @@
 package de.kjgstbarbara.messaging;
 
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.FriendlyError;
@@ -61,7 +64,7 @@ public class WhatsAppMessageSender {
                         pairingCodeHandler);
         whatsapp.addLoggedInListener(api -> {
                     System.out.printf("Connected: %s%n", api.store().privacySettings());
-                    for (Person admin : personsService.getPersonsRepository().systemAdmin()) {
+                    for (Person admin : personsService.getPersonsRepository().findBySystemAdmin(true)) {
                         api.store().findChatByJid(Jid.of(admin.phoneNumber())).ifPresent(chat ->
                                 api.sendMessage(chat, "Der WhatsApp Dienst wurde erfolgreich gestartet"));
                     }
@@ -138,7 +141,8 @@ public class WhatsAppMessageSender {
             Long phoneNumber = pollUpdateMessage.voter().map(jid -> Long.parseLong(jid.toPhoneNumber().substring(1))).orElse(null);
             if (phoneNumber == null) return;
 
-            Person person = personsService.getPersonsRepository().findByPhoneNumber(phoneNumber).orElse(null);
+            Phonenumber.PhoneNumber parsedPhoneNumber =  PhoneNumberUtil.getInstance().parse(phoneNumber.toString(), "DE");
+            Person person = personsService.getPersonsRepository().findByRegionCodeAndNationalNumber(String.valueOf(parsedPhoneNumber.getCountryCode()), parsedPhoneNumber.getNationalNumber()).orElse(null);
             if (person == null) return;
 
             String title = pollCreationMessage.title();
@@ -156,7 +160,7 @@ public class WhatsAppMessageSender {
                 datesService.getDateRepository().save(date);
                 System.out.printf("%s ist bei %s %s", person.getName(), date.getTitle(), feedback.getStatus());
             }
-        } catch (NumberFormatException ignored) {
+        } catch (NumberFormatException | NumberParseException ignored) {
         }
     }
 }

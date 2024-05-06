@@ -3,11 +3,16 @@ package de.kjgstbarbara.service;
 import de.kjgstbarbara.data.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Stream;
 
 public interface DateRepository extends JpaRepository<Date, Long> {
-    default List<Date> findByBoard(Board board) {
-        return findAll().stream().filter(date -> Objects.equals(board.getId(), date.getBoard().getId())).toList();
+    List<Date> findByGroup(Group group);
+
+    default Stream<Date> findByStartBetweenAndGroupMembersIn(LocalDateTime start, LocalDateTime end, Person... persons) {
+        return findByStartBetweenAndGroupMembersIn(start, end, List.of(persons)).stream();
     }
+
+    List<Date> findByStartBetweenAndGroupMembersIn(LocalDateTime start, LocalDateTime end, List<Person> personList);
 }

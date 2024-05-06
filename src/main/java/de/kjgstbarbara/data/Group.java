@@ -5,17 +5,20 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Data
 @NoArgsConstructor
 @Entity
-public class Board {// TODO Rename to Group
+@Table(name = "people-group")
+public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Setter(AccessLevel.PRIVATE)
     private long id;
     @NonNull
     private String title;
+    private String color = generateColor();
     @ManyToMany(fetch = FetchType.EAGER)
     private final List<Person> members = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
@@ -25,5 +28,9 @@ public class Board {// TODO Rename to Group
 
     public String toString() {
         return title;
+    }
+
+    public static String generateColor() {
+        return "#" + Integer.toHexString(new Random().nextInt(0xffffff));
     }
 }

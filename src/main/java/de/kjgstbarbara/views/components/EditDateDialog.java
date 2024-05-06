@@ -8,8 +8,6 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -17,18 +15,17 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
-import de.kjgstbarbara.data.Board;
+import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.service.BoardsRepository;
+import de.kjgstbarbara.service.GroupRepository;
 import de.kjgstbarbara.service.DateRepository;
 
 public class EditDateDialog extends ClosableDialog {
-    public EditDateDialog(Date date, Person person, BoardsRepository boardsRepository, DateRepository dateRepository) {
+    public EditDateDialog(Date date, Person person, GroupRepository groupRepository, DateRepository dateRepository) {
         Binder<Date> binder = new Binder<>();
 
         this.setTitle(new H3("Termin erstellen"));
-
 
         VerticalLayout content = new VerticalLayout();
 
@@ -38,20 +35,20 @@ public class EditDateDialog extends ClosableDialog {
         binder.forField(boardTitle).withValidator(new NonNullValidator<>()).bind(Date::getTitle, Date::setTitle);
         firstLine.add(boardTitle);
 
-        ComboBox<Board> selectBoard = new ComboBox<>();
-        selectBoard.setLabel("Board");
+        ComboBox<Group> selectBoard = new ComboBox<>();
+        selectBoard.setLabel("Gruppe");
         selectBoard.setAllowCustomValue(true);
         selectBoard.addCustomValueSetListener(event -> {
-            Board board = new Board();
-            board.setTitle(event.getDetail());
-            board.getAdmins().add(person);
-            board.getMembers().add(person);
-            boardsRepository.save(board);
-            selectBoard.setItems(boardsRepository.findByAdmin(person));
-            selectBoard.setValue(board);
+            Group group = new Group();
+            group.setTitle(event.getDetail());
+            group.getAdmins().add(person);
+            group.getMembers().add(person);
+            groupRepository.save(group);
+            selectBoard.setItems(groupRepository.findByAdminsIn(person));
+            selectBoard.setValue(group);
         });
-        binder.forField(selectBoard).withValidator(new NonNullValidator<>()).bind(Date::getBoard, Date::setBoard);
-        selectBoard.setItems(boardsRepository.findByAdmin(person));
+        binder.forField(selectBoard).withValidator(new NonNullValidator<>()).bind(Date::getGroup, Date::setGroup);
+        selectBoard.setItems(groupRepository.findByAdminsIn(person));
         firstLine.add(selectBoard);
 
         content.add(firstLine);
@@ -70,7 +67,7 @@ public class EditDateDialog extends ClosableDialog {
                                 ValidationResult.error("Das Ende einer Veranstaltung kann nicht vor dessen Beginn liegen"))
                 .bind(Date::getEnd, Date::setEnd);
         startPicker.addValueChangeListener(event -> {
-            if (endPicker.getValue() == null && event.getValue() != null) {
+            if (event.getValue() != null && (endPicker.getValue() == null || endPicker.getValue().isBefore(event.getValue()))) {
                 endPicker.setValue(event.getValue().plusHours(1));
             }
         });
@@ -95,8 +92,7 @@ public class EditDateDialog extends ClosableDialog {
                 binder.writeBean(date);
                 dateRepository.save(date);
                 this.close();
-            } catch (ValidationException e) {
-                Notification.show(e.getLocalizedMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } catch (ValidationException ignored) {
             }
         });
         footer.add(save);

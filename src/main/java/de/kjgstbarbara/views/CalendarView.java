@@ -7,7 +7,6 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Hr;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
@@ -17,7 +16,6 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import de.kjgstbarbara.data.Date;
-import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.SenderUtils;
 import de.kjgstbarbara.service.*;
@@ -27,18 +25,16 @@ import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.vaadin.stefan.fullcalendar.CalendarViewImpl;
-import org.vaadin.stefan.fullcalendar.Entry;
-import org.vaadin.stefan.fullcalendar.FullCalendar;
-import org.vaadin.stefan.fullcalendar.FullCalendarBuilder;
+import org.vaadin.stefan.fullcalendar.*;
+import org.vaadin.stefan.fullcalendar.dataprovider.CallbackEntryProvider;
+import org.vaadin.stefan.fullcalendar.dataprovider.EntryProvider;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Locale;
 
 @Route(value = "calendar/:week?/:layout?", layout = MainNavigationView.class)
 @RouteAlias(value = ":week?/:layout?", layout = MainNavigationView.class)
@@ -47,24 +43,21 @@ import java.util.List;
 public class CalendarView extends VerticalLayout implements BeforeEnterObserver {
     private final PersonsRepository personsRepository;
     private final DateRepository dateRepository;
-    private final BoardsRepository boardsRepository;
+    private final GroupRepository groupRepository;
     private final FeedbackRepository feedbackRepository;
 
     private final Person person;
 
     private final FullCalendar fullCalendar = FullCalendarBuilder.create().withAutoBrowserLocale()/*.withAutoBrowserTimezone()*/.build();// Siehe EditDateDialog
-    private final Button previous = new Button(LumoIcon.ARROW_LEFT.create());
-    private final Button today = new Button("Heute");
-    private final Button next = new Button(LumoIcon.ARROW_RIGHT.create());
     private final Button cL = new Button("", VaadinIcon.ANGLE_DOWN.create());
-    private final H4 year = new H4();
+    private final H4 intervalLabel = new H4();
     private LocalDate week = LocalDate.now();
     private Layout calendarView = Layout.LIST;
 
-    public CalendarView(PersonsService personsService, DatesService datesService, BoardsService boardsService, FeedbackService feedbackService, SenderUtils senderUtils, AuthenticationContext authenticationContext) {
+    public CalendarView(PersonsService personsService, DatesService datesService, GroupService groupService, FeedbackService feedbackService, SenderUtils senderUtils, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.dateRepository = datesService.getDateRepository();
-        this.boardsRepository = boardsService.getBoardsRepository();
+        this.groupRepository = groupService.getGroupRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
@@ -95,67 +88,54 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         }
         header.add(menu);
 
-        header.add(year);
+        header.add(intervalLabel);
 
-        Button createNew = new Button("Neuer Termin", VaadinIcon.PLUS_SQUARE_O.create());// TODO Irgendwas stimmt beim erstellen noch nicht -> Termin wird nicht erstellt ohne Fehlermeldung
-        createNew.addClickListener(event ->
-                new EditDateDialog(new Date(), person, boardsRepository, dateRepository).setCloseListener(() -> UI.getCurrent().getPage().reload()).open());
+        Button createNew = new Button("Neuer Termin", VaadinIcon.PLUS_SQUARE_O.create());
+        createNew.addClickListener(event -> {
+            Date d = new Date();
+            new EditDateDialog(d, person, groupRepository, dateRepository).setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll()).open();
+        });
         header.add(createNew);
 
         this.add(header);
 
-        HorizontalLayout legend = new HorizontalLayout();// TODO Flex Component, auf Mobile sind die Buttons zu breit
-        legend.setWidthFull();
-        legend.setAlignItems(Alignment.CENTER);
-        legend.setJustifyContentMode(JustifyContentMode.START);
-
-        Icon inPast = VaadinIcon.CIRCLE.create();
-        inPast.setColor("#615c5c");
-        Icon current = VaadinIcon.CIRCLE.create();
-        current.setColor("#00b6be");
-        Icon confirmed = VaadinIcon.CIRCLE.create();
-        confirmed.setColor("#00ff00");
-        Icon declined = VaadinIcon.CIRCLE.create();
-        declined.setColor("#ff0000");
-        Icon feedbackNeeded = VaadinIcon.CIRCLE.create();
-        feedbackNeeded.setColor("#ffff00");
-
-        Button inPastLabel = new Button("Vergangenheit", inPast);
-        inPastLabel.setEnabled(false);
-        Button currentLabel = new Button("Heute", current);
-        currentLabel.setEnabled(false);
-        Button confirmedLabel = new Button("Zugesagt", confirmed);
-        confirmedLabel.setEnabled(false);
-        Button declinedLabel = new Button("Abgesagt", declined);
-        declinedLabel.setEnabled(false);
-        Button feedbackNeededLabel = new Button("Bitte Rückmeldung geben", feedbackNeeded);
-        feedbackNeededLabel.setEnabled(false);
-
-        legend.add(inPastLabel, currentLabel, confirmedLabel, declinedLabel, feedbackNeededLabel);
-        this.add(legend);
-
-
         fullCalendar.setSizeFull();
+        fullCalendar.addThemeVariants(FullCalendarVariant.LUMO);
         fullCalendar.setFirstDay(DayOfWeek.MONDAY);
+        fullCalendar.addTimeslotClickedListener(event -> {
+            Date d = new Date();
+            d.setStart(event.getDateTime().withHour(19));
+            d.setEnd(d.getStart().plusHours(1));
+            new EditDateDialog(d, person, groupRepository, dateRepository).setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll()).open();
+        });
         fullCalendar.addEntryClickedListener(event -> {
             if (event.getEntry() instanceof DateEntry dateEntry) {
-                new DateWidget(dateEntry.getDate(), feedbackRepository, dateRepository, boardsRepository, senderUtils, this.person).open();
+                new DateWidget(dateEntry.getDate(), feedbackRepository, dateRepository, groupRepository, senderUtils, this.person).setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll()).open();
             }
         });
-        for (Date d : getDates()) {
-            String color = "#ffff00";
-            Feedback.Status status = d.getStatusFor(this.person);
-            if(d.getEnd().isBefore(LocalDateTime.now())){
-                color = "#615c5c";
-            } else if(LocalDateTime.now().isAfter(d.getStart()) && LocalDateTime.now().isBefore(d.getEnd())) {
-                color = "#00b6be";
-            }else if (status.equals(Feedback.Status.IN)) {
-                color = "#00ff00";
-            } else if (status.equals(Feedback.Status.OUT)) {
-                color = "#ff0000";
-            }
-            fullCalendar.getEntryProvider().asInMemory().addEntries(new DateEntry(d, color));
-        }
+        fullCalendar.addDatesRenderedListener(event -> {
+            LocalDate intervalStart = event.getIntervalStart();
+            Locale locale = fullCalendar.getLocale();
+            this.intervalLabel.setText(
+                    switch (this.calendarView.getCalendarView()) {
+                        default -> intervalStart.format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(locale));
+                        case TIME_GRID_DAY, DAY_GRID_DAY, LIST_DAY ->
+                                intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yyyy").withLocale(locale));
+                        case TIME_GRID_WEEK, DAY_GRID_WEEK, LIST_WEEK ->
+                                intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
+                                        " - " + intervalStart.plusDays(6)
+                                        .format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
+                                        " (kw " + intervalStart.format(DateTimeFormatter.ofPattern("ww").withLocale(locale)) + ")";
+                        case LIST_YEAR -> intervalStart.format(DateTimeFormatter.ofPattern("yyyy").withLocale(locale));
+                    }
+            );
+        });
+        fullCalendar.setPrefetchEnabled(true);
+        CallbackEntryProvider<Entry> entryProvider = EntryProvider.fromCallbacks(
+                query -> dateRepository.findByStartBetweenAndGroupMembersIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new),
+                entryId -> dateRepository.findById(Long.valueOf(entryId)).map(DateEntry::new).orElse(null)
+        );
+        fullCalendar.setEntryProvider(entryProvider);
         this.add(fullCalendar);
         this.setFlexGrow(1, fullCalendar);
 
@@ -165,16 +145,19 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         buttons.setWidthFull();
         buttons.setJustifyContentMode(JustifyContentMode.CENTER);
 
+        Button previous = new Button(LumoIcon.ARROW_LEFT.create());
         previous.addThemeVariants(ButtonVariant.LUMO_LARGE);
         previous.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
                 new RouteParameters(new RouteParam("layout", this.calendarView.name()), new RouteParam("week", this.week.minus(1, this.calendarView.getStepSize()).toString()))));
         buttons.add(previous);
 
+        Button today = new Button("Heute");
         today.addThemeVariants(ButtonVariant.LUMO_LARGE);
         today.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
                 new RouteParameters(new RouteParam("layout", this.calendarView.name()), new RouteParam("week", LocalDate.now().toString()))));
         buttons.add(today);
 
+        Button next = new Button(LumoIcon.ARROW_RIGHT.create());
         next.addThemeVariants(ButtonVariant.LUMO_LARGE);
         next.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
                 new RouteParameters(new RouteParam("layout", this.calendarView.name()), new RouteParam("week", this.week.plus(1, this.calendarView.getStepSize()).toString()))));
@@ -183,33 +166,23 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         this.add(buttons);
     }
 
-    private List<Date> getDates() {
-        List<Date> dates = new ArrayList<>();
-        boardsRepository.findByPerson(this.person).stream().map(dateRepository::findByBoard).forEach(dates::addAll);
-        return dates.stream().distinct().sorted().toList();
-    }
-
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         this.calendarView = beforeEnterEvent.getRouteParameters().get("layout").map(Layout::valueOf).orElse(Layout.LIST);
         this.fullCalendar.changeView(this.calendarView.getCalendarView());
-        previous.setVisible(this.calendarView.getStepSize() != null);
-        today.setVisible(this.calendarView.getStepSize() != null);
-        next.setVisible(this.calendarView.getStepSize() != null);
         cL.setText(this.calendarView.getDisplayName());
         this.week = beforeEnterEvent.getRouteParameters().get("week").map(LocalDate::parse).orElse(LocalDate.now());
         LocalDate calDate = this.calendarView.getStepSize() == null ? LocalDate.now() : this.week;
         fullCalendar.gotoDate(calDate);
-        this.year.setText(String.valueOf(calDate.getYear()));
     }
 
     @Getter
     public static class DateEntry extends Entry {
         private final Date date;
 
-        public DateEntry(Date date, String color) {
+        public DateEntry(Date date) {
             this.date = date;
-            this.setColor(color);
+            this.setColor(date.getGroup().getColor());
             this.setTitle(date.getTitle());
             this.setStart(date.getStart());
             this.setEnd(date.getEnd());
@@ -218,7 +191,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     @Getter
     public enum Layout {
-        LIST(CalendarViewImpl.LIST_YEAR, ChronoUnit.YEARS, "LISTE"),
+        LIST(CalendarViewImpl.LIST_MONTH, ChronoUnit.MONTHS, "LISTE"),
         MONTH(CalendarViewImpl.DAY_GRID_MONTH, ChronoUnit.MONTHS, "MONAT"),
         YEAR(CalendarViewImpl.MULTI_MONTH, ChronoUnit.YEARS, "JAHR");
 

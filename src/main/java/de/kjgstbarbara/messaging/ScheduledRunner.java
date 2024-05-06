@@ -56,12 +56,12 @@ public class ScheduledRunner implements CommandLineRunner {
                 Feedback.Status feedback = d.getStatusFor(p);
                 if (d.getPollScheduledFor().equals(LocalDate.now())
                         && d.isPollRunning()
-                        && d.getBoard().getMembers().contains(p)
+                        && d.getGroup().getMembers().contains(p)
                         && now.getHour() == p.getRemindMeTime()) {
                     messageSender.sendDatePoll(d, p, false);
                 }
 
-                if (d.getBoard().getMembers().contains(p) && !feedback.equals(Feedback.Status.OUT)) {
+                if (d.getGroup().getMembers().contains(p) && !feedback.equals(Feedback.Status.OUT)) {
                     // TODO Wann soll jemand diese Nachricht bekommen?
                     //  Nur wenn man zugesagt hat oder auch bei keiner Rückmeldung?
                     //  Oder wenn jemand spontan vielleicht doch kommt?

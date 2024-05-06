@@ -14,27 +14,36 @@ import java.util.Locale;
 public class ComponentUtil {
     public static Component getPhoneNumber(Binder<? extends HasPhoneNumber> binder) {
         HorizontalLayout phoneNumber = new HorizontalLayout();
-        ComboBox<String> countryCode = new ComboBox<>("Vorwahl");
-        countryCode.setWidth("30%");
-        countryCode.setItems(Locale.getISOCountries());
-        countryCode.setValue("DE");
-        countryCode.setItemLabelGenerator(ComponentUtil::getPhoneNumberDisplay);
-        countryCode.getStyle().set("--vaadin-combo-box-overlay-width", "250px");
-        binder.forField(countryCode).bind(HasPhoneNumber::getRegionCode, HasPhoneNumber::setRegionCode);
-        phoneNumber.add(countryCode);
-        TextField countrySpecificNumber = new TextField("Telefonnummer");
-        countrySpecificNumber.setWidth("70%");
-        binder.forField(countrySpecificNumber).withValidator((value, valueContext) -> {
-                    if (countryCode.isEmpty()) {
-                        return ValidationResult.error("Bitte wähle eine Vorwahl");
-                    } else {
-                        return ValidationResult.ok();
-                    }
-                })
-                .withConverter(new StringToLongConverter("Deine Telefonnummer darf nur aus Zahlen bestehen"))
+        ComboBox<String> regionCode = getRegionCodeSelect();
+        binder.forField(regionCode).withValidator((value, valueContext) -> {
+            if (value.isEmpty()) {
+                return ValidationResult.error("Bitte wähle eine Vorwahl");
+            } else {
+                return ValidationResult.ok();
+            }
+        }).bind(HasPhoneNumber::getRegionCode, HasPhoneNumber::setRegionCode);
+        phoneNumber.add(regionCode);
+        TextField nationalNumber = getNationalNumberField();
+        binder.forField(nationalNumber)
+                .withConverter(new NationalNumberToStringConverter())
                 .bind(HasPhoneNumber::getNationalNumber, HasPhoneNumber::setNationalNumber);
-        phoneNumber.add(countrySpecificNumber);// TODO Null soll "" bedeuten schmeist aber fehler
+        phoneNumber.add(nationalNumber);
         return phoneNumber;
+    }
+
+    public static ComboBox<String> getRegionCodeSelect() {
+        ComboBox<String> regionCode = new ComboBox<>("Vorwahl");
+        regionCode.setWidth("30%");
+        regionCode.setItems(Locale.getISOCountries());
+        regionCode.setValue("DE");
+        regionCode.setItemLabelGenerator(ComponentUtil::getPhoneNumberDisplay);
+        return regionCode;
+    }
+
+    public static TextField getNationalNumberField() {
+        TextField nationalNumber = new TextField("Telefonnummer");
+        nationalNumber.setWidth("70%");
+        return nationalNumber;
     }
 
     private static String getPhoneNumberDisplay(String countryCode) {

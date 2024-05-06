@@ -18,6 +18,7 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Config;
 import de.kjgstbarbara.data.Person;
@@ -25,10 +26,12 @@ import de.kjgstbarbara.messaging.SenderUtils;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.ComponentUtil;
 import de.kjgstbarbara.views.components.HasPhoneNumber;
+import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UserDetails;
 
-@Route("setup")
+@Route(value = "setup", layout = MainNavigationView.class)
+@RouteAlias("setup-initial")
 @PermitAll
 public class SetupView extends VerticalLayout implements BeforeEnterObserver {
     private final PersonsRepository personsRepository;

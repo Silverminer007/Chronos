@@ -1,6 +1,6 @@
 package de.kjgstbarbara.messaging;
 
-import de.kjgstbarbara.data.Board;
+import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
@@ -13,7 +13,7 @@ import java.util.Locale;
 
 public class MessageProcessor {
 
-    public static String placeholders(String input, @Nullable Date date, @Nullable Person person, @Nullable Board board, @Nullable Feedback.Status feedback) {
+    public static String placeholders(String input, @Nullable Date date, @Nullable Person person, @Nullable Group group, @Nullable Feedback.Status feedback) {
         String output = input;
         if(date != null) {
             output = datePlaceholder(output, date);
@@ -21,8 +21,8 @@ public class MessageProcessor {
         if(person != null) {
             output = personPlaceholder(output, person);
         }
-        if(board != null) {
-            output = boardPlaceholders(output, board);
+        if(group != null) {
+            output = boardPlaceholders(output, group);
         }
         if(feedback != null) {
             output = feedbackPlaceholder(output, feedback);
@@ -105,10 +105,10 @@ public class MessageProcessor {
         return output;
     }
 
-    private static String boardPlaceholders(String input, Board board) {
+    private static String boardPlaceholders(String input, Group group) {
         String output = input;
         // BOARD_TITLE
-        String title = board.getTitle();
+        String title = group.getTitle();
         output = output.replaceAll("#BOARD_TITLE", title);
         return output;
     }

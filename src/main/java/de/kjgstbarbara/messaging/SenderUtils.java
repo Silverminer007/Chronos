@@ -48,7 +48,7 @@ public class SenderUtils {
     // Termin direkt abfragen
     public boolean sendDatePoll(Date date, boolean forceAll) {
         boolean error = false;
-        for (Person p : date.getBoard().getMembers()) {
+        for (Person p : date.getGroup().getMembers()) {
            if(!sendDatePoll(date, p, forceAll)) {
                error = true;
            }
@@ -70,7 +70,7 @@ public class SenderUtils {
     }
 
     public void sendMessageFormatted(String message, Person sendTo, @Nullable Date date, boolean force) {
-        sendMessage(MessageProcessor.placeholders(message, date, sendTo, date == null ? null : date.getBoard(), date == null ? null : date.getStatusFor(sendTo)), sendTo, force);
+        sendMessage(MessageProcessor.placeholders(message, date, sendTo, date == null ? null : date.getGroup(), date == null ? null : date.getStatusFor(sendTo)), sendTo, force);
     }
 
     public boolean sendMessage(String message, Person sendTo, boolean force) {

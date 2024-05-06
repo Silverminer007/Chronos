@@ -26,7 +26,7 @@ import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.SenderUtils;
-import de.kjgstbarbara.service.BoardsRepository;
+import de.kjgstbarbara.service.GroupRepository;
 import de.kjgstbarbara.service.DateRepository;
 import de.kjgstbarbara.service.FeedbackRepository;
 
@@ -40,17 +40,16 @@ public class DateWidget extends ClosableDialog {
 
     private final FeedbackRepository feedbackRepository;
     private final DateRepository dateRepository;
-    private final BoardsRepository boardsRepository;
+    private final GroupRepository groupRepository;
     private final SenderUtils senderUtils;
     private final Date date;
     private final Person person;
-    private boolean changedCalendar = false;
 
-    public DateWidget(Date date, FeedbackRepository feedbackRepository, DateRepository dateRepository, BoardsRepository boardsRepository, SenderUtils senderUtils, Person person) {
+    public DateWidget(Date date, FeedbackRepository feedbackRepository, DateRepository dateRepository, GroupRepository groupRepository, SenderUtils senderUtils, Person person) {
         super();
         this.feedbackRepository = feedbackRepository;
         this.dateRepository = dateRepository;
-        this.boardsRepository = boardsRepository;
+        this.groupRepository = groupRepository;
         this.date = date;
         this.senderUtils = senderUtils;
         this.person = person;
@@ -65,17 +64,16 @@ public class DateWidget extends ClosableDialog {
         header.add(new H3(date.getTitle()));
 
         Button edit = new Button(VaadinIcon.PENCIL.create());
-        edit.setVisible(date.getBoard().getAdmins().contains(person));
+        edit.setVisible(date.getGroup().getAdmins().contains(person));
         edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
         edit.addClickListener(event -> {
-            new EditDateDialog(date, person, boardsRepository, dateRepository).open();
-            this.changedCalendar = true;
+            new EditDateDialog(date, person, groupRepository, dateRepository).open();
         });
         header.add(edit);
 
         Button delete = new Button(VaadinIcon.TRASH.create());
         delete.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-        delete.setVisible(date.getBoard().getAdmins().contains(person));
+        delete.setVisible(date.getGroup().getAdmins().contains(person));
         delete.addClickListener(event -> {
             ConfirmDialog confirmDelete = new ConfirmDialog(
                     "Bist du sicher, dass du diesen Termin löschen möchtest?",
@@ -86,7 +84,6 @@ public class DateWidget extends ClosableDialog {
                             feedbackRepository.delete(f);
                         }
                         dateRepository.delete(date);
-                        UI.getCurrent().getPage().reload();
                     }
             );
             confirmDelete.setCancelable(true);
@@ -125,7 +122,6 @@ public class DateWidget extends ClosableDialog {
             feedbackRepository.save(feedback);
             date.addFeedback(feedback);
             dateRepository.save(date);
-            this.changedCalendar = true;
             this.update();
         });
         Button decline = new Button("Bin raus");
@@ -134,7 +130,6 @@ public class DateWidget extends ClosableDialog {
             feedbackRepository.save(feedback);
             date.addFeedback(feedback);
             dateRepository.save(date);
-            this.changedCalendar = true;
             this.update();
         });
         decline.addThemeVariants(ButtonVariant.LUMO_ERROR);
@@ -169,7 +164,7 @@ public class DateWidget extends ClosableDialog {
         declinedLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         declinedLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         declinedLayout.setWidth("50%");
-        for (Person p : date.getBoard().getMembers()) {
+        for (Person p : date.getGroup().getMembers()) {
             Feedback.Status status = date.getStatusFor(p);
             if (Feedback.Status.IN.equals(status)) {
                 confirmed.add(p.getAvatarGroupItem());
@@ -213,7 +208,7 @@ public class DateWidget extends ClosableDialog {
         int confirmedAmount = 0;
         int declinedAmount = 0;
         int noFeedbackAmount = 0;
-        for (Person p : date.getBoard().getMembers()) {
+        for (Person p : date.getGroup().getMembers()) {
             Feedback.Status status = this.date.getStatusFor(p);
             Supplier<HorizontalLayout> personEntry = () -> {
                 HorizontalLayout horizontalLayout = new HorizontalLayout();
@@ -259,7 +254,7 @@ public class DateWidget extends ClosableDialog {
         Button remindAll = new Button("Alle Erinnern");
         remindAll.addClickListener(e -> remindAllDialog().open());
         remindAll.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        if (date.isPollRunning() && date.getBoard().getAdmins().contains(this.person)) {
+        if (date.isPollRunning() && date.getGroup().getAdmins().contains(this.person)) {
             furtherElements.add(remindAll);
         }
 
@@ -279,7 +274,7 @@ public class DateWidget extends ClosableDialog {
             confirmDialog.open();
         });
         stopPoll.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        if (date.isPollRunning() && date.getBoard().getAdmins().contains(this.person)) {
+        if (date.isPollRunning() && date.getGroup().getAdmins().contains(this.person)) {
             furtherElements.add(stopPoll);
         }
 
@@ -384,13 +379,5 @@ public class DateWidget extends ClosableDialog {
         historyDialog.add(feedbackHistory);
 
         return historyDialog;
-    }
-
-    @Override
-    public void close() {
-        super.close();
-        if (changedCalendar) {
-            UI.getCurrent().getPage().reload();
-        }
     }
 }

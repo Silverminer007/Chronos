@@ -7,15 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PersonsRepository extends JpaRepository<Person, Long> {
-    default Optional<Person> findByUsername(String username) {
-        return findAll().stream().filter(person -> person.getUsername().equals(username)).findAny();
-    }
+    Optional<Person> findByUsername(String username) ;
 
-    default Optional<Person> findByPhoneNumber(long phoneNumber) {
-        return findAll().stream().filter(person -> person.phoneNumber() == phoneNumber).findAny();
-    }
+    Optional<Person> findByRegionCodeAndNationalNumber(String regionCode, long nationalNumber);
 
-    default List<Person> systemAdmin() {
-        return findAll().stream().filter(Person::isSystemAdmin).toList();
-    }
+    List<Person> findBySystemAdmin(boolean systemAdmin);
 }
