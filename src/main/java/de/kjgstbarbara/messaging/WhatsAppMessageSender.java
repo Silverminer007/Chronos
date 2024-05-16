@@ -1,11 +1,9 @@
 package de.kjgstbarbara.messaging;
 
-import com.google.i18n.phonenumbers.NumberParseException;
-import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.FriendlyError;
+import de.kjgstbarbara.data.Config;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
@@ -13,7 +11,6 @@ import de.kjgstbarbara.service.ConfigService;
 import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.FeedbackService;
 import de.kjgstbarbara.service.PersonsService;
-import de.kjgstbarbara.views.components.HasPhoneNumber;
 import it.auties.whatsapp.api.PairingCodeHandler;
 import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.Whatsapp;
@@ -42,9 +39,11 @@ import java.util.function.Consumer;
 public class WhatsAppMessageSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(WhatsAppMessageSender.class);
     @Setter
-    private PairingCodeHandler pairingCodeHandler = s -> {};
+    private PairingCodeHandler pairingCodeHandler = s -> {
+    };
     @Setter
-    private Consumer<StreamResource> qrCodeHandler = resource -> {};
+    private Consumer<StreamResource> qrCodeHandler = resource -> {
+    };
     private Whatsapp whatsapp;
 
     @Autowired
@@ -60,12 +59,12 @@ public class WhatsAppMessageSender {
         whatsapp = qrCode ? Whatsapp.webBuilder()
                 .lastConnection().unregistered(this::qrHandler) : Whatsapp.webBuilder()
                 .lastConnection()
-                .unregistered(new HasPhoneNumber.Config(configService).phoneNumber(),
+                .unregistered(new Person.PhoneNumber(configService.get(Config.Key.SENDER_PHONE_NUMBER)).number(),
                         pairingCodeHandler);
         whatsapp.addLoggedInListener(api -> {
                     System.out.printf("Connected: %s%n", api.store().privacySettings());
                     for (Person admin : personsService.getPersonsRepository().findBySystemAdmin(true)) {
-                        api.store().findChatByJid(Jid.of(admin.phoneNumber())).ifPresent(chat ->
+                        api.store().findChatByJid(Jid.of(admin.getPhoneNumber().number())).ifPresent(chat ->
                                 api.sendMessage(chat, "Der WhatsApp Dienst wurde erfolgreich gestartet"));
                     }
                 })
@@ -91,22 +90,23 @@ public class WhatsAppMessageSender {
         if (whatsapp == null) {
             setup(false);
         }
-        Optional<Chat> optionalChat = whatsapp.store().findChatByJid(Jid.of(sendTo.phoneNumber()));
+        Optional<Chat> optionalChat = whatsapp.store().findChatByJid(Jid.of(sendTo.getPhoneNumber().number()));
         if (optionalChat.isPresent()) {
             return optionalChat.get();
         } else {
-            throw new FriendlyError("Es konnte kein Kontakt zur Telefonnummer +" + sendTo.phoneNumber() + " gefunden werden");
+            throw new FriendlyError("Es konnte kein Kontakt zur Telefonnummer +" + sendTo.getPhoneNumber().number() + " gefunden werden");
         }
     }
 
-    public void sendMessage(String message, Person sendTo, boolean force) throws FriendlyError {
-        if (sendTo.isWhatsappNotifications() || force) {
-            whatsapp.sendMessage(getChat(sendTo), message);
+    public void sendMessage(String message, Person sendTo) throws FriendlyError {
+        if (whatsapp == null) {
+            setup(false);
         }
+        whatsapp.sendMessage(getChat(sendTo), message);
     }
 
     public void sendDatePoll(Date date, Person sendTo) throws FriendlyError {
-        if (sendTo.isWhatsappNotifications()) {
+        if (sendTo.getReminder().equals(Person.Reminder.WHATSAPP)) {
             String title = String.format("(%s) Am %s um %s:%s Uhr ist %s. Bist du dabei?",
                     date.getId(),
                     date.getStart().getDayOfWeek().getDisplayName(TextStyle.FULL, sendTo.getUserLocale()),
@@ -141,8 +141,7 @@ public class WhatsAppMessageSender {
             Long phoneNumber = pollUpdateMessage.voter().map(jid -> Long.parseLong(jid.toPhoneNumber().substring(1))).orElse(null);
             if (phoneNumber == null) return;
 
-            Phonenumber.PhoneNumber parsedPhoneNumber =  PhoneNumberUtil.getInstance().parse(phoneNumber.toString(), "DE");
-            Person person = personsService.getPersonsRepository().findByRegionCodeAndNationalNumber(String.valueOf(parsedPhoneNumber.getCountryCode()), parsedPhoneNumber.getNationalNumber()).orElse(null);
+            Person person = personsService.getPersonsRepository().findByPhoneNumber(new Person.PhoneNumber(phoneNumber.toString())).orElse(null);
             if (person == null) return;
 
             String title = pollCreationMessage.title();
@@ -160,7 +159,7 @@ public class WhatsAppMessageSender {
                 datesService.getDateRepository().save(date);
                 System.out.printf("%s ist bei %s %s", person.getName(), date.getTitle(), feedback.getStatus());
             }
-        } catch (NumberFormatException | NumberParseException ignored) {
+        } catch (NumberFormatException ignored) {
         }
     }
 }

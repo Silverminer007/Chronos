@@ -14,29 +14,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EMailMessageSender  {
+public class EMailMessageSender {
     @Autowired
     private ConfigService configService;
 
-    public void sendMessage(String message, Person sendTo, boolean force) throws FriendlyError {
-        if (sendTo.isEMailNotifications() || force) {
-            Mailer mailer = MailerBuilder
-                    .withSMTPServer(configService.get(Config.Key.SMTP_SERVER),
-                            configService.getInt(Config.Key.SMTP_PORT),
-                            configService.get(Config.Key.SENDER_EMAIL_ADDRESS),
-                            configService.get(Config.Key.SMTP_PASSWORD))
-                    .withTransportStrategy(TransportStrategy.SMTPS).buildMailer();
-            Email email = EmailBuilder.startingBlank()
-                    .from(configService.get(Config.Key.SENDER_NAME), configService.get(Config.Key.SENDER_EMAIL_ADDRESS))
-                    .to(sendTo.getName(), sendTo.getEMailAddress())
-                    .withSubject("Neue Nachricht vom KjG Termintool")
-                    .withPlainText(message)
-                    .buildEmail();
-            mailer.sendMail(email);
-        }
+    public void sendMessage(String message, Person sendTo) {
+        Mailer mailer = MailerBuilder
+                .withSMTPServer(configService.get(Config.Key.SMTP_SERVER),
+                        configService.getInt(Config.Key.SMTP_PORT),
+                        configService.get(Config.Key.SENDER_EMAIL_ADDRESS),
+                        configService.get(Config.Key.SMTP_PASSWORD))
+                .withTransportStrategy(TransportStrategy.SMTPS).buildMailer();
+        Email email = EmailBuilder.startingBlank()
+                .from(configService.get(Config.Key.SENDER_NAME), configService.get(Config.Key.SENDER_EMAIL_ADDRESS))
+                .to(sendTo.getName(), sendTo.getEMailAddress())
+                .withSubject("Neue Nachricht vom KjG Termintool")
+                .withPlainText(message)
+                .buildEmail();
+        mailer.sendMail(email);
     }
 
     public void sendDatePoll(Date date, Person sendTo) throws FriendlyError {
-        sendMessage(date.getTitle(), sendTo, false);
+        sendMessage(date.getTitle(), sendTo);
     }
 }

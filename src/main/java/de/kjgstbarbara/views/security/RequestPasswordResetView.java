@@ -5,19 +5,16 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.messaging.SenderUtils;
-import de.kjgstbarbara.views.components.ComponentUtil;
+import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsRepository;
@@ -57,11 +54,8 @@ public class RequestPasswordResetView extends VerticalLayout {
         inner.add(new NativeLabel("Bitte gib deine Telefonnummer an," +
                 " um dir einen Code zum Zurücksetzen deines Passworts zuschicken zu lassen" +
                 " und gib dein Geburtsdatum als Bestätigung deiner Identität ein"));
-        HorizontalLayout phoneNumber = new HorizontalLayout();
-        ComboBox<String> regionCodeSelect = ComponentUtil.getRegionCodeSelect();
-        TextField nationalNumber = ComponentUtil.getNationalNumberField();
-        phoneNumber.add(regionCodeSelect, nationalNumber);
-        inner.add(phoneNumber);
+        PhoneNumberField phoneNumberField = new PhoneNumberField();
+        inner.add(phoneNumberField);
         ReCaptcha reCaptcha = new ReCaptcha();
         inner.add(reCaptcha);
         Button confirm = new Button("Bestätigen");
@@ -71,33 +65,27 @@ public class RequestPasswordResetView extends VerticalLayout {
             if (reCaptcha.isValid()) {
                 confirm.setAriaLabel("Bitte löse zuerst das Captcha");
             }
-            if (regionCodeSelect.getValue() == null) {
-                regionCodeSelect.setInvalid(true);
-                regionCodeSelect.setErrorMessage("Bitte wähle eine Vorwahl");
+            if (phoneNumberField.getValue() == null) {
+                phoneNumberField.setInvalid(true);
+                phoneNumberField.setErrorMessage("Bitte wähle eine Telefonnummer");
                 return;
             }
-            if (nationalNumber.getValue() == null) {
-                nationalNumber.setInvalid(true);
-                nationalNumber.setErrorMessage("Bitte wähle eine Telefonnummer");
-                return;
-            }
-            Optional<Person> optionalPerson = personsRepository.findByRegionCodeAndNationalNumber(regionCodeSelect.getValue(), Long.parseLong(nationalNumber.getValue()));
+            Optional<Person> optionalPerson = personsRepository.findByPhoneNumber(phoneNumberField.getValue());
             if (optionalPerson.isPresent()) {
-                nationalNumber.setInvalid(false);
-                regionCodeSelect.setInvalid(false);
+                phoneNumberField.setInvalid(false);
                 UI.getCurrent().getPage().fetchCurrentURL(url -> {
                     Person person = optionalPerson.get();
                     if(person.createResetPassword()) {
                         personsRepository.save(person);
-                        senderUtils.sendMessageFormatted(RESET_MESSAGE_TEMPLATE, person, null, true);
+                        senderUtils.sendMessageFormatted(RESET_MESSAGE_TEMPLATE, person, null);
                         event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
                     } else {
                         Notification.show("Das zurücksetzen des Passworts ist nicht möglich").addThemeVariants(NotificationVariant.LUMO_ERROR);
                     }
                 });
             } else {
-                nationalNumber.setInvalid(true);
-                nationalNumber.setErrorMessage("Es wurde kein Benutzer mit dieser Telefonnummer gefunden");
+                phoneNumberField.setInvalid(true);
+                phoneNumberField.setErrorMessage("Es wurde kein Benutzer mit dieser Telefonnummer gefunden");
             }
         });
         confirm.setWidthFull();

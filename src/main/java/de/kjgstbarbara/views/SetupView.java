@@ -1,6 +1,5 @@
 package de.kjgstbarbara.views;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
@@ -13,8 +12,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -24,8 +21,7 @@ import de.kjgstbarbara.data.Config;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.SenderUtils;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.views.components.ComponentUtil;
-import de.kjgstbarbara.views.components.HasPhoneNumber;
+import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -95,10 +91,10 @@ public class SetupView extends VerticalLayout implements BeforeEnterObserver {
         VerticalLayout verticalLayout = new VerticalLayout();
         H1 whatsAppTitle = new H1("WhatsApp Einstellungen");
         verticalLayout.add(whatsAppTitle);
-        Binder<HasPhoneNumber.Config> senderPerson = new Binder<>();
-        Component phoneNumber = ComponentUtil.getPhoneNumber(senderPerson);
-        HasPhoneNumber.Config configSaver = new HasPhoneNumber.Config(configService);
-        senderPerson.readBean(configSaver);
+
+        PhoneNumberField phoneNumber = new PhoneNumberField();
+        phoneNumber.setValue(new Person.PhoneNumber(configService.get(Config.Key.SENDER_PHONE_NUMBER)));
+
         verticalLayout.add(phoneNumber);
         H2 pairingCode = new H2("Kopplungscode kommt");
         pairingCode.setVisible(false);
@@ -109,36 +105,28 @@ public class SetupView extends VerticalLayout implements BeforeEnterObserver {
         Button goOn = new Button("Weiter");
         verticalLayout.add(goOn);
         goOn.addClickListener(event -> {
-            boolean mailNotifications = this.person.isEMailNotifications();
-            boolean whatsAppNotifications = this.person.isWhatsappNotifications();
-            this.person.setEMailNotifications(false);
-            this.person.setWhatsappNotifications(true);
+            Person.Reminder reminder = this.person.getReminder();
+            this.person.setReminder(Person.Reminder.WHATSAPP);
             personsRepository.save(this.person);
 
-            try {
-                senderPerson.writeBean(configSaver);
-                senderUtils.reSetupWhatsApp(false);
+            configService.save(Config.Key.SENDER_PHONE_NUMBER, phoneNumber.getValue().toString());
+            senderUtils.reSetupWhatsApp(false);
 
-                boolean result = senderUtils.sendMessage("Test Nachricht", this.person, false);
+            boolean result = senderUtils.sendMessage("Test Nachricht", this.person);
 
-                this.person.setEMailNotifications(mailNotifications);
-                this.person.setWhatsappNotifications(whatsAppNotifications);
-                personsRepository.save(this.person);
+            this.person.setReminder(reminder);
+            personsRepository.save(this.person);
 
-                if (result) {
-                    step1.setVisible(false);
-                    step2.setVisible(true);
-                    Notification.show("Die WhatsApp Konfiguration wurde erfolgreich gespeichert")
-                            .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                } else if (pairingCode.isVisible()) {
-                    Notification.show("Koppeln nicht erfolgreich / noch nicht abgeschlossen")
-                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                }
-                pairingCode.setVisible(true);
-            } catch (ValidationException e) {
-                Notification.show("Ungültige Telefonnummer")
+            if (result) {
+                step1.setVisible(false);
+                step2.setVisible(true);
+                Notification.show("Die WhatsApp Konfiguration wurde erfolgreich gespeichert")
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } else if (pairingCode.isVisible()) {
+                Notification.show("Koppeln nicht erfolgreich / noch nicht abgeschlossen")
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
+            pairingCode.setVisible(true);
         });
         return verticalLayout;
     }
@@ -168,10 +156,8 @@ public class SetupView extends VerticalLayout implements BeforeEnterObserver {
         Button testMail = new Button("Speichern");
         step2.add(testMail);
         testMail.addClickListener(event -> {
-            boolean mailNotifications = this.person.isEMailNotifications();
-            boolean whatsAppNotifications = this.person.isWhatsappNotifications();
-            this.person.setEMailNotifications(true);
-            this.person.setWhatsappNotifications(false);
+            Person.Reminder reminder = this.person.getReminder();
+            this.person.setReminder(Person.Reminder.EMAIL);
             personsRepository.save(this.person);
 
             configService.save(Config.Key.SENDER_NAME, name.getValue());
@@ -180,10 +166,9 @@ public class SetupView extends VerticalLayout implements BeforeEnterObserver {
             configService.save(Config.Key.SMTP_SERVER, smtpServer.getValue());
             configService.save(Config.Key.SMTP_PASSWORD, smtpPassword.getValue());
 
-            boolean result = senderUtils.sendMessage("Test Nachricht", this.person, true);
+            boolean result = senderUtils.sendMessage("Test Nachricht", this.person);
 
-            this.person.setEMailNotifications(mailNotifications);
-            this.person.setWhatsappNotifications(whatsAppNotifications);
+            this.person.setReminder(reminder);
             personsRepository.save(this.person);
 
             if (result) {

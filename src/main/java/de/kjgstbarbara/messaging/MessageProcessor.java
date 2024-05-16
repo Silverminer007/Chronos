@@ -39,13 +39,13 @@ public class MessageProcessor {
         String startDate = date.getStart().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
         output = output.replaceAll("#DATE_START_DATE", startDate);
         // DATE_START_TIME
-        String startTime = date.getStart().format(DateTimeFormatter.ofPattern("hh:mm", Locale.GERMAN)) + "Uhr";
+        String startTime = date.getStart().format(DateTimeFormatter.ofPattern("hh:mm", Locale.GERMAN)) + " Uhr";
         output = output.replaceAll("#DATE_START_TIME", startTime);
         // DATE_END_DATE
         String endDate = date.getEnd().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
         output = output.replaceAll("#DATE_END_DATE", endDate);
         // DATE_END_TIME
-        String endTime = date.getStart().format(DateTimeFormatter.ofPattern("hh:mm", Locale.GERMAN)) + "Uhr";
+        String endTime = date.getStart().format(DateTimeFormatter.ofPattern("hh:mm", Locale.GERMAN)) + " Uhr";
         output = output.replaceAll("#DATE_END_TIME", endTime);
         // DATE_POLL_DATE
         if(date.getPollScheduledFor() != null) {
@@ -54,8 +54,8 @@ public class MessageProcessor {
         }
         // DATE_TIME_UNTIL_START
         LocalDateTime now = LocalDateTime.now();
-        long daysUntilStart = date.getStart().until(now, ChronoUnit.DAYS);
-        long hoursUntilStart = date.getStart().until(now, ChronoUnit.HOURS);
+        long daysUntilStart = now.until(date.getStart(), ChronoUnit.DAYS);
+        long hoursUntilStart = now.until(date.getStart(), ChronoUnit.HOURS);
         String timeUntilStart = switch ((int) daysUntilStart) {
             case 0 -> hoursUntilStart == 1 ? "in einer Stunde" : "in " + hoursUntilStart + " Stunden";
             case 1 -> "morgen";
@@ -85,7 +85,7 @@ public class MessageProcessor {
         String username = person.getUsername();
         output = output.replaceAll("#PERSON_USERNAME", username);
         // PERSON_PHONE_NUMBER
-        String phoneNumber = String.valueOf(person.phoneNumber());
+        String phoneNumber = "+" + person.getPhoneNumber();
         output = output.replaceAll("#PERSON_PHONE_NUMBER", phoneNumber);
         // PERSON_E_MAIL
         String eMail = person.getEMailAddress();

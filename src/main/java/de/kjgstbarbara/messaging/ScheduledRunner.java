@@ -3,7 +3,6 @@ package de.kjgstbarbara.messaging;
 import de.kjgstbarbara.data.*;
 import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.PersonsService;
-import de.kjgstbarbara.service.ReminderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -29,8 +29,6 @@ public class ScheduledRunner implements CommandLineRunner {
     private PersonsService personsService;
     @Autowired
     private DatesService datesService;
-    @Autowired
-    private ReminderService reminderService;
     @Autowired
     private SenderUtils messageSender;
 
@@ -52,24 +50,22 @@ public class ScheduledRunner implements CommandLineRunner {
         LocalDateTime now = LocalDateTime.now();
         // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
         for (Date d : datesService.getDateRepository().findAll()) {
-            for (Person p : personsService.getPersonsRepository().findAll()) {
+            for (Person p : d.getGroup().getMembers()) {
                 Feedback.Status feedback = d.getStatusFor(p);
-                if (d.getPollScheduledFor().equals(LocalDate.now())
-                        && d.isPollRunning()
-                        && d.getGroup().getMembers().contains(p)
-                        && now.getHour() == p.getRemindMeTime()) {
-                    messageSender.sendDatePoll(d, p, false);
-                }
-
-                if (d.getGroup().getMembers().contains(p) && !feedback.equals(Feedback.Status.CANCELLED)) {
+                if (!feedback.equals(Feedback.Status.CANCELLED)) {
                     // TODO Wann soll jemand diese Nachricht bekommen?
                     //  Nur wenn man zugesagt hat oder auch bei keiner Rückmeldung?
                     //  Oder wenn jemand spontan vielleicht doch kommt?
-                    for(Reminder reminder : reminderService.getReminders(p)) {
-                        if(reminder.matches(d.getStart(), p.getRemindMeTime())) {
-                            messageSender.sendMessageFormatted(DATE_REMINDER_TEMPLATE, p, d, false);
-                        }
+                    if ((p.getRemindMeTime().contains(now.getHour()) || p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
+                            || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
+                        messageSender.sendMessageFormatted(DATE_REMINDER_TEMPLATE, p, d);
                     }
+                }
+
+                if (LocalDate.now().isEqual(d.getPollScheduledFor())
+                        && d.isPollRunning()
+                        && p.getRemindMeTime().contains(now.getHour())) {
+                    messageSender.sendDatePoll(d, p, false);
                 }
             }
         }
@@ -79,11 +75,11 @@ public class ScheduledRunner implements CommandLineRunner {
 
     private static final String DATE_REMINDER_TEMPLATE =
             """
-            Hey #PERSON_FIRSTNAME,
-            du hast %s einen Termin bei der KjG :)
-            #DATE_TITLE (#BOARD_TITLE)
-            #DATE_START_DATE von #DATE_START_TIME
-            #DATE_END_DATE bis #DATE_END_TIME
-            Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK
-            """;
+                    Hey #PERSON_FIRSTNAME,
+                    du hast #DATE_TIME_UNTIL_START einen Termin bei der KjG :)
+                    #DATE_TITLE (#BOARD_TITLE)
+                    Von #DATE_START_TIME am #DATE_START_DATE
+                    Bis #DATE_END_TIME am #DATE_END_DATE
+                                       \s
+                    Deine Rückmeldung zu diesem Termin: #FEEDBACK_STATUS""";//Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK
 }

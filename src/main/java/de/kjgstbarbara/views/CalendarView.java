@@ -347,7 +347,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         this.add(content);
 
-        commit.addClickListener(event -> {
+        commit.addClickListener(event -> {// TODO Direkt das Feedback zu ändern wirft eine Fehlermeldung, erst beim zweiten öffnen möglich
             Feedback feedback = Feedback.create(person, Feedback.Status.COMMITTED);
             feedbackRepository.save(feedback);
             date.addFeedback(feedback);

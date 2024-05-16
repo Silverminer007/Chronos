@@ -12,8 +12,7 @@ public class Config {// TODO Setup Menu on first Start and for System Admins
     private String value;
 
     public enum Key {
-        SENDER_NATIONAL_NUMBER,
-        SENDER_REGION_CODE,
+        SENDER_PHONE_NUMBER,
         SENDER_EMAIL_ADDRESS,
         SENDER_NAME,
         SMTP_SERVER,

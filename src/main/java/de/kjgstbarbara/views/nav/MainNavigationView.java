@@ -50,10 +50,11 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
                 .orElse(null);
         if (person == null) {
             authenticationContext.logout();
+        } else {
+            setPrimarySection(Section.DRAWER);
+            addDrawerContent();
+            addHeaderContent();
         }
-        setPrimarySection(Section.DRAWER);
-        addDrawerContent();
-        addHeaderContent();
     }
 
     private void addHeaderContent() {

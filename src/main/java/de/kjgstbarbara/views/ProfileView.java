@@ -1,6 +1,5 @@
 package de.kjgstbarbara.views;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -27,7 +26,7 @@ import de.kjgstbarbara.FileHelper;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
-import de.kjgstbarbara.views.components.ComponentUtil;
+import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
@@ -78,7 +77,9 @@ public class ProfileView extends VerticalLayout {
                                     ValidationResult.error("Dieses Feld ist erforderlich")
                                     : ValidationResult.ok())
                     .bind(Person::getLastName, Person::setLastName);
-            Component phoneNumber = ComponentUtil.getPhoneNumber(binder);
+
+            PhoneNumberField phoneNumber = new PhoneNumberField();
+            binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
 
             TextField mailAddress = new TextField("E-Mail Adresse");
             mailAddress.setWidthFull();

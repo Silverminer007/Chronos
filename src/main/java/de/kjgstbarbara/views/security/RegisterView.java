@@ -19,21 +19,17 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.data.Reminder;
 import de.kjgstbarbara.service.PersonsService;
-import de.kjgstbarbara.service.ReminderService;
-import de.kjgstbarbara.views.components.ComponentUtil;
+import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.temporal.ChronoUnit;
 
 @Route("register")
 @PageTitle("Registrieren | KjG Termine")
 @AnonymousAllowed
 public class RegisterView extends VerticalLayout {
 
-    public RegisterView(PersonsService personsService, ReminderService reminderService, PasswordEncoder passwordEncoder) {
+    public RegisterView(PersonsService personsService, PasswordEncoder passwordEncoder) {
         Binder<Person> binder = new Binder<>();
         Person person = new Person();
         addClassName("login-view");
@@ -63,12 +59,15 @@ public class RegisterView extends VerticalLayout {
         username.setRequired(true);
         username.setWidthFull();
 
+        PhoneNumberField phoneNumberField = new PhoneNumberField();
+        binder.forField(phoneNumberField).bind(Person::getPhoneNumber, Person::setPhoneNumber);
+
         TextField mailAddress = new TextField("E-Mail Adresse");
         mailAddress.setWidthFull();
         binder.forField(mailAddress)
                 .withValidator(new EmailValidator("Diese E-Mail Adresse ist ungültig"))
                 .bind(Person::getEMailAddress, Person::setEMailAddress);
-        PasswordField password = new PasswordField("Passwort");
+        PasswordField password = new PasswordField("Passwort erstellen");
         binder.forField(password)
                 .withValidator((s, context) -> s.isBlank() ? ValidationResult.error("Das Passwort darf nicht leer sein") : ValidationResult.ok())
                 .withValidator((s, valueContext) -> s.length() > 7 ? ValidationResult.ok() : ValidationResult.error("Das Passwort muss mindestens 8 zeichen enthalten"))
@@ -97,13 +96,8 @@ public class RegisterView extends VerticalLayout {
                 try {
                     binder.writeBean(person);
                     person.setUserLocale(UI.getCurrent().getLocale());
-                    Reminder reminder = new Reminder();
-                    reminder.setAmount(1);
-                    reminder.setChronoUnit(ChronoUnit.DAYS);
-                    reminder.setPerson(person);
                     personsService.getPersonsRepository().save(person);
-                    reminderService.addReminder(reminder);
-                    event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class));
+                    UI.getCurrent().navigate(LoginView.class);
                 } catch (ValidationException e) {
                     Notification.show("Ein Fehler ist ausgetreten, der Account konnte nicht erstellt werdne").addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
@@ -119,7 +113,7 @@ public class RegisterView extends VerticalLayout {
         buttons.setWidthFull();
         buttons.setJustifyContentMode(JustifyContentMode.CENTER);
 
-        VerticalLayout wrapper = new VerticalLayout(title, name, username, ComponentUtil.getPhoneNumber(binder), mailAddress, password, reTypePassword, reCaptcha, buttons);
+        VerticalLayout wrapper = new VerticalLayout(title, name, username, phoneNumberField, mailAddress, password, reTypePassword, reCaptcha, buttons);
         wrapper.setWidth(name.getWidth());
 
         add(wrapper);

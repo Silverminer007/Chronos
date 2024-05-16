@@ -9,7 +9,7 @@ import java.util.Optional;
 public interface PersonsRepository extends JpaRepository<Person, Long> {
     Optional<Person> findByUsername(String username) ;
 
-    Optional<Person> findByRegionCodeAndNationalNumber(String regionCode, long nationalNumber);
+    Optional<Person> findByPhoneNumber(Person.PhoneNumber phoneNumber);
 
     List<Person> findBySystemAdmin(boolean systemAdmin);
 }

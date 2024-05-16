@@ -17,7 +17,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @PWA(
         name = "KjG Termine",
-        shortName = "KjGT",
+        shortName = "KjG Termine",
         offlinePath="offline.html",
         offlineResources = { "./images/offline.png"}
 )

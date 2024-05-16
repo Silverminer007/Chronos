@@ -69,14 +69,16 @@ public class SenderUtils {
         return false;
     }
 
-    public void sendMessageFormatted(String message, Person sendTo, @Nullable Date date, boolean force) {
-        sendMessage(MessageProcessor.placeholders(message, date, sendTo, date == null ? null : date.getGroup(), date == null ? null : date.getStatusFor(sendTo)), sendTo, force);
+    public void sendMessageFormatted(String message, Person sendTo, @Nullable Date date) {
+        sendMessage(MessageProcessor.placeholders(message, date, sendTo, date == null ? null : date.getGroup(), date == null ? null : date.getStatusFor(sendTo)), sendTo);
     }
 
-    public boolean sendMessage(String message, Person sendTo, boolean force) {
+    public boolean sendMessage(String message, Person sendTo) {
         try {
-            whatsAppMessageSender.sendMessage(message, sendTo, force);
-            eMailMessageSender.sendMessage(message, sendTo, force);
+            switch (sendTo.getReminder()) {
+                case EMAIL -> eMailMessageSender.sendMessage(message, sendTo);
+                case WHATSAPP -> whatsAppMessageSender.sendMessage(message, sendTo);
+            }
             return true;
         } catch (Exception e) {
             return false;
