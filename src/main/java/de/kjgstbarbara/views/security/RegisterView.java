@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -24,6 +25,8 @@ import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.ArrayList;
+
 @Route("register")
 @PageTitle("Registrieren | KjG Termine")
 @AnonymousAllowed
@@ -38,18 +41,23 @@ public class RegisterView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
-        Button createAccount = new Button("Account erstellen");
+        FormLayout layout = new FormLayout();
+
         H2 title = new H2("Account erstellen");
+        layout.add(title);
+        layout.setColspan(title, 2);
         TextField firstName = new TextField("Vorname");
         binder.forField(firstName)
                 .withValidator((s, valueContext) -> s.isBlank() ? ValidationResult.error("Der Vorname darf nicht leer sein") : ValidationResult.ok())
                 .bind(Person::getFirstName, Person::setFirstName);
         firstName.setRequired(true);
+        layout.add(firstName);
         TextField lastName = new TextField("Nachname");
         binder.forField(lastName)
                 .withValidator((s, valueContext) -> s.isBlank() ? ValidationResult.error("Der Nachname darf nicht leer sein") : ValidationResult.ok())
                 .bind(Person::getLastName, Person::setLastName);
         lastName.setRequired(true);
+        layout.add(lastName);
         TextField username = new TextField("Benutzername");
         binder.forField(username)
                 .withValidator((s, valueContext) -> s.isBlank() ? ValidationResult.error("Der Benutzername darf nicht leer sein") : ValidationResult.ok())
@@ -58,15 +66,20 @@ public class RegisterView extends VerticalLayout {
                 .bind(Person::getUsername, Person::setUsername);
         username.setRequired(true);
         username.setWidthFull();
+        layout.add(username);
+        layout.setColspan(username, 2);
 
         PhoneNumberField phoneNumberField = new PhoneNumberField();
         binder.forField(phoneNumberField).bind(Person::getPhoneNumber, Person::setPhoneNumber);
+        layout.add(phoneNumberField);
 
         TextField mailAddress = new TextField("E-Mail Adresse");
         mailAddress.setWidthFull();
         binder.forField(mailAddress)
                 .withValidator(new EmailValidator("Diese E-Mail Adresse ist ungültig"))
                 .bind(Person::getEMailAddress, Person::setEMailAddress);
+        layout.add(mailAddress);
+
         PasswordField password = new PasswordField("Passwort erstellen");
         binder.forField(password)
                 .withValidator((s, context) -> s.isBlank() ? ValidationResult.error("Das Passwort darf nicht leer sein") : ValidationResult.ok())
@@ -75,21 +88,27 @@ public class RegisterView extends VerticalLayout {
                 });
         password.setRequired(true);
         password.setWidthFull();
+        layout.add(password);
         PasswordField reTypePassword = new PasswordField("Passwort wiederholen");
         reTypePassword.setRequired(true);
         reTypePassword.setWidthFull();
         binder.forField(reTypePassword)
                 .withValidator((s, context) -> s.equals(password.getValue()) ? ValidationResult.ok() : ValidationResult.error("Die Passwörter stimmen nicht überein"))
                 .bind(p -> "", (p, value) -> p.setPassword(passwordEncoder.encode(value)));
+        layout.add(reTypePassword);
         ReCaptcha reCaptcha = new ReCaptcha();
+        layout.add(reCaptcha);
 
         Button back = new Button("zurück");
         back.setWidth("30%");
         back.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(LoginView.class)));
+        layout.add(back);
 
+        Button createAccount = new Button("Account erstellen");
         createAccount.addClickShortcut(Key.ENTER);
         createAccount.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         createAccount.setWidth("65%");
+        layout.add(createAccount);
 
         createAccount.addClickListener(event -> {
             if (reCaptcha.isValid()) {
@@ -107,15 +126,9 @@ public class RegisterView extends VerticalLayout {
         });
         binder.readBean(person);
 
-        HorizontalLayout name = new HorizontalLayout(firstName, lastName);
-
-        HorizontalLayout buttons = new HorizontalLayout(back, createAccount);
-        buttons.setWidthFull();
-        buttons.setJustifyContentMode(JustifyContentMode.CENTER);
-
-        VerticalLayout wrapper = new VerticalLayout(title, name, username, phoneNumberField, mailAddress, password, reTypePassword, reCaptcha, buttons);
-        wrapper.setWidth(name.getWidth());
-
-        add(wrapper);
+        layout.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0", 1),
+                new FormLayout.ResponsiveStep("600px", 2));
+        add(layout);
     }
 }

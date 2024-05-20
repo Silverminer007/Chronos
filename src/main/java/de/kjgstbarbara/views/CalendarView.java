@@ -677,15 +677,17 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         save.addClickListener(event -> {
             try {
                 binder.writeBean(date);
-                if (selectOrganisation.getValue() != null) {
-                    if (date.getGroup().getOrganisation() == null) {
-                        organisationRepository.save(selectOrganisation.getValue());
-                        date.getGroup().setOrganisation(selectOrganisation.getValue());
+                if(selectOrganisation.isVisible()) {
+                    if (selectOrganisation.getValue() != null) {
+                        if (date.getGroup().getOrganisation() == null) {
+                            organisationRepository.save(selectOrganisation.getValue());
+                            date.getGroup().setOrganisation(selectOrganisation.getValue());
+                        }
+                    } else {
+                        selectOrganisation.setInvalid(true);
+                        selectOrganisation.setErrorMessage("Bitte wähle eine Organisation aus, zu der die neue Gruppe gehören soll");
+                        return;
                     }
-                } else {
-                    selectOrganisation.setInvalid(true);
-                    selectOrganisation.setErrorMessage("Bitte wähle eine Organisation aus, zu der die neue Gruppe gehören soll");
-                    return;
                 }
                 groupRepository.save(date.getGroup());
                 dateRepository.save(date);
