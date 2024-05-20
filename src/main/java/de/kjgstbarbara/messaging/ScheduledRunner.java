@@ -30,8 +30,6 @@ public class ScheduledRunner implements CommandLineRunner {
     private PersonsService personsService;
     @Autowired
     private DatesService datesService;
-    @Autowired
-    private SenderUtils messageSender;
 
     @Override
     public void run(String... args) {

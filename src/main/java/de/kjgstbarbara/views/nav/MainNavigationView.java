@@ -23,13 +23,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.data.Config;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.service.ConfigService;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -138,14 +135,8 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         return title == null ? "" : title.value();
     }
 
-    @Autowired
-    private ConfigService configService;
-
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        if (!configService.getBoolean(Config.Key.SETUP_DONE)) {
-            beforeEnterEvent.rerouteTo("setup-initial");
-        }
         this.setTheme(this.person.isDarkMode());
     }
 

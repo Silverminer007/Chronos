@@ -3,7 +3,6 @@ package de.kjgstbarbara.service;
 import de.kjgstbarbara.data.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface PersonsRepository extends JpaRepository<Person, Long> {
@@ -11,5 +10,4 @@ public interface PersonsRepository extends JpaRepository<Person, Long> {
 
     Optional<Person> findByPhoneNumber(Person.PhoneNumber phoneNumber);
 
-    List<Person> findBySystemAdmin(boolean systemAdmin);
 }

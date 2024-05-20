@@ -13,7 +13,6 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import de.kjgstbarbara.messaging.SenderUtils;
 import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import de.kjgstbarbara.data.Person;
@@ -38,7 +37,7 @@ public class RequestPasswordResetView extends VerticalLayout {
             Der Link ist noch #PERSON_RESET_EXPIRES_IN Stunden gültig
             """;
 
-    public RequestPasswordResetView(PersonsService personsService, SenderUtils senderUtils) {
+    public RequestPasswordResetView(PersonsService personsService) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);

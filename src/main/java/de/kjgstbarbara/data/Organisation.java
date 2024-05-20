@@ -1,7 +1,7 @@
 package de.kjgstbarbara.data;
 
 import de.kjgstbarbara.FriendlyError;
-import de.kjgstbarbara.messaging.NewEMailMessageSender;
+import de.kjgstbarbara.messaging.EMailSender;
 import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.chat.Chat;
 import it.auties.whatsapp.model.jid.Jid;
@@ -30,15 +30,15 @@ public class Organisation {
     private String name;
     @ManyToOne
     private Person admin;
-    @OneToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Person> members = new ArrayList<>();
-    @OneToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Person> membershipRequests = new ArrayList<>();
 
     @Transient
     private Whatsapp whatsapp = Whatsapp.webBuilder().lastConnection().unregistered(qr -> {}).connect().join();
     @Embedded
-    private NewEMailMessageSender emailSender = new NewEMailMessageSender();
+    private EMailSender emailSender = new EMailSender();
 
     public String toString() {
         return name;

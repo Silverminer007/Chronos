@@ -14,7 +14,7 @@ import org.simplejavamail.mailer.MailerBuilder;
 
 @Data
 @NoArgsConstructor
-public class NewEMailMessageSender {
+public class EMailSender {
     @Nullable
     private String senderEmailAddress;
     @Nullable

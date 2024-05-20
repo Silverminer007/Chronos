@@ -39,11 +39,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import de.kjgstbarbara.FriendlyError;
-import de.kjgstbarbara.data.Date;
-import de.kjgstbarbara.data.Feedback;
-import de.kjgstbarbara.data.Group;
-import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.messaging.SenderUtils;
+import de.kjgstbarbara.data.*;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.ClosableDialog;
 import de.kjgstbarbara.views.components.NonNullValidator;
@@ -63,6 +59,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
@@ -73,10 +70,10 @@ import java.util.function.Supplier;
 @PermitAll
 public class CalendarView extends VerticalLayout implements BeforeEnterObserver {
     private final PersonsRepository personsRepository;
+    private final OrganisationRepository organisationRepository;
     private final DateRepository dateRepository;
     private final GroupRepository groupRepository;
     private final FeedbackRepository feedbackRepository;
-    private final SenderUtils senderUtils;
 
     private final Person person;
 
@@ -86,12 +83,12 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
     private LocalDate week = LocalDate.now();
     private Layout calendarView = Layout.LIST;
 
-    public CalendarView(PersonsService personsService, DatesService datesService, GroupService groupService, FeedbackService feedbackService, SenderUtils senderUtils, AuthenticationContext authenticationContext) {
+    public CalendarView(PersonsService personsService, OrganisationService organisationService, DatesService datesService, GroupService groupService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
+        this.organisationRepository = organisationService.getOrganisationRepository();
         this.dateRepository = datesService.getDateRepository();
         this.groupRepository = groupService.getGroupRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
-        this.senderUtils = senderUtils;
         this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
                 .orElse(null);
@@ -585,13 +582,33 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             group.setName(event.getDetail());
             group.getAdmins().add(person);
             group.getMembers().add(person);
-            groupRepository.save(group);
-            selectGroup.setItems(groupRepository.findByAdminsIn(person));
             selectGroup.setValue(group);
         });
         binder.forField(selectGroup).withValidator(new NonNullValidator<>()).bind(Date::getGroup, Date::setGroup);
         selectGroup.setItems(groupRepository.findByAdminsIn(person));
         content.add(selectGroup);
+
+        ComboBox<Organisation> selectOrganisation = new ComboBox<>();
+        selectOrganisation.setLabel("Organisation");
+        selectOrganisation.setVisible(false);
+        selectOrganisation.setRequired(true);
+        selectOrganisation.setAllowCustomValue(true);
+        selectOrganisation.setItems(organisationRepository.findByMembersIn(this.person));
+        if (date.getGroup() != null) {
+            selectOrganisation.setValue(date.getGroup().getOrganisation());
+        }
+        selectOrganisation.addCustomValueSetListener(event -> {
+            Organisation organisation = new Organisation();
+            organisation.setName(event.getDetail());
+            organisation.setAdmin(this.person);
+            organisation.getMembers().add(this.person);
+            selectOrganisation.setValue(organisation);
+        });
+        content.add(selectOrganisation);
+        content.setColspan(selectOrganisation, 2);
+
+        selectGroup.addValueChangeListener(event -> selectOrganisation.setVisible(event.getValue().getOrganisation() == null));
+
 
         DateTimePicker startPicker = new DateTimePicker("Von");// Das Datum wird hier als UTC+2 eingegeben und im DateWidget auch als solches angezeigt. Dass der Kalender aber die Zeitzone des Besuchers automatisch setzt, sind diese als UTC/0 interpretiert und werden entsprechend verschoben um +2 Stunden
         startPicker.setStep(Duration.of(30, ChronoUnit.MINUTES));
@@ -660,6 +677,17 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         save.addClickListener(event -> {
             try {
                 binder.writeBean(date);
+                if (selectOrganisation.getValue() != null) {
+                    if (date.getGroup().getOrganisation() == null) {
+                        organisationRepository.save(selectOrganisation.getValue());
+                        date.getGroup().setOrganisation(selectOrganisation.getValue());
+                    }
+                } else {
+                    selectOrganisation.setInvalid(true);
+                    selectOrganisation.setErrorMessage("Bitte wähle eine Organisation aus, zu der die neue Gruppe gehören soll");
+                    return;
+                }
+                groupRepository.save(date.getGroup());
                 dateRepository.save(date);
                 if (selectRepetitionInterval.getValue() != 0) {
                     Date dateCopy = new Date(date);
