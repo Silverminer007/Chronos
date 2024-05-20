@@ -92,9 +92,6 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
 
         personalSubmenu.addItem("Profil", event -> UI.getCurrent().navigate(ProfileView.class));
         personalSubmenu.addItem("Benachrichtigungen", event -> UI.getCurrent().navigate(NotificationSettingsView.class));
-        if (this.person.isSystemAdmin()) {
-            personalSubmenu.addItem("System", event -> UI.getCurrent().navigate(SetupView.class));
-        }
         personalSubmenu.addItem(this.person.isDarkMode() ? "Heller Modus" : "Dunkler Modus", event -> {
             this.person.setDarkMode(!this.person.isDarkMode());
             personsRepository.save(this.person);
@@ -121,6 +118,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
 
         nav.addItem(new SideNavItem("Meine Termine", CalendarView.class, VaadinIcon.CALENDAR_USER.create()));
         nav.addItem(new SideNavItem("Gruppen", GroupView.class, VaadinIcon.GROUP.create()));
+        nav.addItem(new SideNavItem("Organisationen", OrganisationView.class, VaadinIcon.OFFICE.create()));
 
         return nav;
     }

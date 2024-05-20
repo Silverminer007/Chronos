@@ -1,6 +1,7 @@
 package de.kjgstbarbara.service;
 
 import de.kjgstbarbara.data.Group;
+import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,12 +15,16 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     }
 
     List<Group> findByMembersIn(List<Person> person);
-    
+
     default List<Group> findByAdminsIn(Person... person) {
         return this.findByAdminsIn(List.of(person));
     }
 
     List<Group> findByAdminsIn(List<Person> person);
 
-    List<Group> findByTitleIgnoreCaseLike(String title, PageRequest of);
+    List<Group> findByNameIgnoreCaseLikeAndMembersIn(String title, List<Person> person, PageRequest of);
+
+    default List<Group> findByOrganisation(Organisation organisation) {
+        return List.of();
+    }
 }

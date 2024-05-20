@@ -31,17 +31,14 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Group;
@@ -517,13 +514,14 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         remindAllDialog.add(new Hr());
         Button remindNow = new Button("Jetzt erinnern");
         remindNow.addClickListener(e -> {
-            if (!senderUtils.sendDatePoll(date, true)) {
-                Notification.show("Die Abfrage konnte nicht an alle verschickt werden")
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            } else {
+            try {
+                date.getGroup().getOrganisation().sendDatePollToAll(date);
                 Notification.show("Die Abfrage wurde erfolgreich verschickt")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 remindAllDialog.close();
+            } catch (FriendlyError ex) {
+                Notification.show("Die Abfrage konnte nicht an alle verschickt werden")
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         });
         remindAllDialog.add(remindNow);
@@ -584,7 +582,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         selectGroup.setAllowCustomValue(true);
         selectGroup.addCustomValueSetListener(event -> {
             Group group = new Group();
-            group.setTitle(event.getDetail());
+            group.setName(event.getDetail());
             group.getAdmins().add(person);
             group.getMembers().add(person);
             groupRepository.save(group);
@@ -623,13 +621,13 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         selectRepetitionInterval.setItems(0, 1, 2, 7, 14, 21);
         selectRepetitionInterval.setValue(0);
         selectRepetitionInterval.setItemLabelGenerator(value -> {
-            if(value == 0) {
+            if (value == 0) {
                 return "Keine Wiederholung";
-            } else if(value == 1) {
+            } else if (value == 1) {
                 return "jeden Tag";
-            } else if(value == 7) {
+            } else if (value == 7) {
                 return "jede Woche";
-            } else if(value == 14) {
+            } else if (value == 14) {
                 return "alle zwei Wochen";
             } else {
                 return "alle " + value + " Tage";
@@ -663,7 +661,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             try {
                 binder.writeBean(date);
                 dateRepository.save(date);
-                if(selectRepetitionInterval.getValue() != 0) {
+                if (selectRepetitionInterval.getValue() != 0) {
                     Date dateCopy = new Date(date);
                     LocalDate localDate = date.getStart().toLocalDate().plusDays(selectRepetitionInterval.getValue());
                     while (localDate.isBefore(endOfSeries.getValue())) {

@@ -2,14 +2,16 @@ package de.kjgstbarbara.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.avatar.AvatarGroupVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -19,7 +21,6 @@ import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -30,6 +31,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Group;
+import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.ClosableDialog;
@@ -37,8 +39,8 @@ import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.vaadin.olli.ClipboardHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -46,7 +48,8 @@ import java.util.stream.Stream;
 @PageTitle("Gruppen")
 @PermitAll
 public class GroupView extends VerticalLayout {
-    private final PersonsRepository personsRepository;
+    private final PersonsRepository personsRepository;// TODO Wie kann man beim Inline erstellen einer Gruppe beim erstellen eines Termin eine neu Organisation auswählen?
+    private final OrganisationRepository organisationRepository; // TODO Inline erstellen von Organisationen beim erstellen von Gruppen
     private final GroupRepository groupRepository;
     private final DateRepository dateRepository;
     private final FeedbackRepository feedbackRepository;
@@ -56,8 +59,9 @@ public class GroupView extends VerticalLayout {
 
     private final Person person;
 
-    public GroupView(PersonsService personsService, GroupService groupService, DatesService datesService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
+    public GroupView(PersonsService personsService, OrganisationService organisationService, GroupService groupService, DatesService datesService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
+        this.organisationRepository = organisationService.getOrganisationRepository();
         this.groupRepository = groupService.getGroupRepository();
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
@@ -95,8 +99,13 @@ public class GroupView extends VerticalLayout {
 
         add.addClickListener(event -> {
             ClosableDialog createNewGroupDialog = new ClosableDialog("Neue Gruppe");
+            FormLayout formLayout = new FormLayout();
             TextField name = new TextField("Name der Gruppe");
             name.focus();
+            formLayout.add(name);
+            ComboBox<Organisation> organisationComboBox = new ComboBox<>("Organisation");
+            organisationComboBox.setItems(organisationRepository.findByMembersIn(this.person));
+            formLayout.add(organisationComboBox);
             Button create = new Button("Erstellen");
             create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             create.addClickShortcut(Key.ENTER);
@@ -104,9 +113,15 @@ public class GroupView extends VerticalLayout {
                 if (name.getValue().isBlank()) {
                     name.setInvalid(true);
                     name.setErrorMessage("Dieses Feld ist erforderlich");
+                } else if (organisationComboBox.getValue() == null) {
+                    name.setInvalid(false);
+                    name.setErrorMessage("");
+                    organisationComboBox.setInvalid(true);
+                    organisationComboBox.setErrorMessage("Bitte wähle eine Organisation");
                 } else {
                     Group newGroup = new Group();
-                    newGroup.setTitle(name.getValue());
+                    newGroup.setName(name.getValue());
+                    newGroup.setOrganisation(organisationComboBox.getValue());
                     newGroup.getMembers().add(person);
                     newGroup.getAdmins().add(person);
                     groupRepository.save(newGroup);
@@ -114,7 +129,11 @@ public class GroupView extends VerticalLayout {
                     createNewGroupDialog.close();
                 }
             });
-            createNewGroupDialog.add(name);
+            formLayout.setResponsiveSteps(
+                    new FormLayout.ResponsiveStep("0", 1),
+                    new FormLayout.ResponsiveStep("500px", 2)
+            );
+            createNewGroupDialog.add(formLayout);
             HorizontalLayout dialogFooter = new HorizontalLayout(create);
             dialogFooter.setWidthFull();
             dialogFooter.setAlignItems(Alignment.END);
@@ -127,8 +146,9 @@ public class GroupView extends VerticalLayout {
     }
 
     private Stream<Group> updateGrid(Query<Group, Void> query) {
-        return groupRepository.findByTitleIgnoreCaseLike(
+        return groupRepository.findByNameIgnoreCaseLikeAndMembersIn(
                 "%" + search.getValue() + "%",
+                List.of(this.person),
                 PageRequest.of(query.getPage(),
                         query.getPageSize())
         ).stream();
@@ -156,7 +176,7 @@ public class GroupView extends VerticalLayout {
         summary.add(colorCircle);
 
         H3 title = new H3();
-        title.setText(group.getTitle());
+        title.setText(group.getName());
         summary.add(title);
 
         TextField editTitle = new TextField();
@@ -177,7 +197,7 @@ public class GroupView extends VerticalLayout {
         editButton.addClickListener(event -> {
             title.setVisible(false);
             editTitle.setVisible(true);
-            editTitle.setValue(group.getTitle());
+            editTitle.setValue(group.getName());
             editButton.setVisible(false);
             saveEditButton.setVisible(true);
         });
@@ -190,7 +210,7 @@ public class GroupView extends VerticalLayout {
                 } else {
                     editTitle.setInvalid(false);
                     editTitle.setErrorMessage("");
-                    group.setTitle(editTitle.getValue());
+                    group.setName(editTitle.getValue());
                     groupRepository.save(group);
                     title.setText(editTitle.getValue());
                     title.setVisible(true);
@@ -203,45 +223,15 @@ public class GroupView extends VerticalLayout {
 
         boolean admin = group.getAdmins().contains(person);
 
-        HorizontalLayout invite = new HorizontalLayout();
-        invite.setAlignItems(Alignment.END);
-        invite.setWidthFull();
-        invite.setVisible(admin);
-
-        TextField invitationLink = new TextField("Einladungslink");
-        invitationLink.setEnabled(false);
-        invitationLink.setValue("Temp");
-        invite.add(invitationLink);
-
-        Button copyInvitationLink = new Button(VaadinIcon.COPY.create());
-        ClipboardHelper clipboardHelper = new ClipboardHelper("Kopieren fehlgeschlagen", copyInvitationLink);
-        UI.getCurrent().getPage().fetchCurrentURL(url -> {
-            StringBuilder urlBuilder = new StringBuilder();
-            urlBuilder.append(url.getProtocol()).append("://");
-            urlBuilder.append(url.getHost());
-            if(url.getPort() != -1) {
-                urlBuilder.append(":").append(url.getPort());
-            }
-            urlBuilder.append("/group/join/");
-            urlBuilder.append(group.getId());
-            String joinURL = urlBuilder.toString();
-            invitationLink.setValue(joinURL);
-            clipboardHelper.setContent(joinURL);
-        });
-        copyInvitationLink.addClickListener(event -> Notification.show("Einladung in Zwischenablage kopiert"));
-        invite.add(clipboardHelper);
-
-        collapsableArea.add(invite);
-
-        Component requestsAndMembers = createPeopleSection(group, person);
-        collapsableArea.add(requestsAndMembers);
+        Component members = createPeopleSection(group, person);
+        collapsableArea.add(members);
 
         HorizontalLayout buttons = new HorizontalLayout();
 
         Button leave = new Button("Verlassen");
         leave.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         leave.setEnabled(!(group.getAdmins().contains(person) && group.getAdmins().size() == 1) // Nicht der letzte Admin
-                && (group.getMembers().size() != 1));// Und nicht die letzte Person => Dann löschen
+                && (group.getMembers().size() != 1));// Und nicht die letzte Person → Dann löschen
         leave.addClickListener(event -> {
             ConfirmDialog confirmLeave = new ConfirmDialog(
                     "Bist du sicher, dass du diese Gruppe verlassen möchtest?",
@@ -296,27 +286,6 @@ public class GroupView extends VerticalLayout {
         VerticalLayout peopleLayout = new VerticalLayout();
         peopleLayout.setWidthFull();
 
-        HorizontalLayout requests = new HorizontalLayout();
-        requests.setWidthFull();
-        requests.setAlignItems(Alignment.CENTER);
-        H5 requestsLabel = new H5("Anfragen: ");
-        requests.add(requestsLabel);
-        if (!group.getRequests().isEmpty()) {
-            AvatarGroup requestAvatars = new AvatarGroup();
-            requestAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
-            requestAvatars.setItems(getRequestAvatars(group));
-            requests.add(requestAvatars);
-
-            requests.addClickListener(event ->
-                    createManageRequestsDialog(group, person)
-                            .setCloseListener(() -> requestAvatars.setItems(getRequestAvatars(group)))
-                            .open());
-        } else {
-            NativeLabel noRequests = new NativeLabel("Keine Anfragen");
-            requests.add(noRequests);
-        }
-        peopleLayout.add(requests);
-
         HorizontalLayout members = new HorizontalLayout();
         members.setWidthFull();
         members.setAlignItems(Alignment.CENTER);
@@ -345,64 +314,10 @@ public class GroupView extends VerticalLayout {
         return group.getMembers().stream().map(Person::getAvatarGroupItem).toList();
     }
 
-    private List<AvatarGroup.AvatarGroupItem> getRequestAvatars(Group group) {
-        return group.getRequests().stream().map(Person::getAvatarGroupItem).toList();
-    }
-
-    private ClosableDialog createManageRequestsDialog(Group group, Person person) {
-        ClosableDialog dialog = new ClosableDialog("Beitrittsanfragen");
-
-        Grid<Person> requests = new Grid<>();
-        requests.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-
-        requests.addComponentColumn(p -> {
-            HorizontalLayout row = new HorizontalLayout();
-            row.setAlignItems(Alignment.CENTER);
-
-            Avatar avatar = p.getAvatar();
-            row.add(avatar);
-
-            NativeLabel name = new NativeLabel(p.getName());
-            row.add(name);
-
-            return row;
-        });
-        requests.addComponentColumn(p -> {
-            HorizontalLayout row = new HorizontalLayout();
-
-            Button confirm = new Button(VaadinIcon.CHECK.create());
-            confirm.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SUCCESS);
-            confirm.setEnabled(group.getAdmins().contains(person));
-            confirm.addClickListener(event -> {
-                group.getRequests().remove(p);
-                group.getMembers().add(p);
-                groupRepository.save(group);
-                requests.setItems(group.getRequests());
-            });
-            row.add(confirm);
-
-            Button remove = new Button(VaadinIcon.CLOSE.create());
-            remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-            remove.setEnabled(group.getAdmins().contains(person));
-            remove.addClickListener(event -> {
-                group.getRequests().remove(p);
-                groupRepository.save(group);
-                requests.setItems(group.getRequests());
-            });
-            row.add(remove);
-
-            return row;
-        });
-
-        requests.setItems(group.getRequests());
-
-        dialog.add(requests);
-        dialog.setWidth("500px");
-
-        return dialog;
-    }
-
     private ClosableDialog createEditMembersDialog(Group group, Person person) {
+        List<Person> addablePersons = new ArrayList<>(group.getOrganisation().getMembers());
+        MultiSelectComboBox<Person> addPersonSelector = new MultiSelectComboBox<>();
+
         ClosableDialog dialog = new ClosableDialog("Mitglieder");
 
         Grid<Person> members = new Grid<>();
@@ -448,6 +363,8 @@ public class GroupView extends VerticalLayout {
             remove.addClickListener(event -> {
                 group.getMembers().remove(p);
                 group.getAdmins().remove(p);
+                addablePersons.add(p);
+                addPersonSelector.setItems(addablePersons);
                 groupRepository.save(group);
                 members.setItems(group.getMembers());
             });
@@ -460,6 +377,28 @@ public class GroupView extends VerticalLayout {
 
         dialog.add(members);
         dialog.setWidth("500px");
+
+        HorizontalLayout addPerson = new HorizontalLayout();
+
+        addablePersons.removeAll(group.getMembers());
+        addPersonSelector.setItems(addablePersons);
+        addPersonSelector.setItemLabelGenerator(Person::getName);
+        addPerson.add(addPersonSelector);
+
+        Button addPersonButton = new Button("Mitglied hinzufügen");
+        addPersonButton.addClickListener(event -> {
+            if(addPersonSelector.getValue() != null && !addPersonSelector.getValue().isEmpty()) {
+                group.getMembers().addAll(addPersonSelector.getValue());
+                members.setItems(group.getMembers());
+                addablePersons.removeAll(addPersonSelector.getValue());
+                addPersonSelector.setItems(addablePersons);
+                groupRepository.save(group);
+                addPersonSelector.clear();
+            }
+        });
+        addPerson.add(addPersonButton);
+
+        dialog.add(addPerson);
 
         return dialog;
     }

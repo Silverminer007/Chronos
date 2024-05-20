@@ -1,5 +1,6 @@
 package de.kjgstbarbara.messaging;
 
+import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.data.*;
 import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.PersonsService;
@@ -58,14 +59,22 @@ public class ScheduledRunner implements CommandLineRunner {
                     //  Oder wenn jemand spontan vielleicht doch kommt?
                     if ((p.getRemindMeTime().contains(now.getHour()) || p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                             || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
-                        messageSender.sendMessageFormatted(DATE_REMINDER_TEMPLATE, p, d);
+                        try {
+                            d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(DATE_REMINDER_TEMPLATE), p);
+                        } catch (FriendlyError e) {
+                            throw new RuntimeException(e);// TODO Show to handle invalid phone numbers
+                        }
                     }
                 }
 
                 if (LocalDate.now().isEqual(d.getPollScheduledFor())
                         && d.isPollRunning()
                         && p.getRemindMeTime().contains(now.getHour())) {
-                    messageSender.sendDatePoll(d, p, false);
+                    try {
+                        d.getGroup().getOrganisation().sendDatePoll(d, p);
+                    } catch (FriendlyError e) {
+                        LOGGER.error("Die geplante Terminabfrage konnte nicht verschickt werden", e);
+                    }
                 }
             }
         }

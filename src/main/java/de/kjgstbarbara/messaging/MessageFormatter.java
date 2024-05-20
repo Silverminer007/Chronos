@@ -5,29 +5,45 @@ import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
 import jakarta.annotation.Nullable;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
-public class MessageProcessor {
+@Setter
+@Accessors(fluent = true)
+public class MessageFormatter {
+    private Date date;
+    private Person person;
+    private Group group;
+    private Feedback.Status feedback;
 
     public static String placeholders(String input, @Nullable Date date, @Nullable Person person, @Nullable Group group, @Nullable Feedback.Status feedback) {
         String output = input;
         if(date != null) {
             output = datePlaceholder(output, date);
+            if(group == null) {
+                group = date.getGroup();
+            }
+            output = boardPlaceholders(output, group);
         }
         if(person != null) {
             output = personPlaceholder(output, person);
         }
-        if(group != null) {
-            output = boardPlaceholders(output, group);
+        if(feedback == null && date != null && person != null) {
+            feedback = date.getStatusFor(person);
         }
         if(feedback != null) {
             output = feedbackPlaceholder(output, feedback);
         }
         return output;
+    }
+
+    public String format(String input) {
+        return placeholders(input, date, person, group, feedback);
     }
 
     private static String datePlaceholder(String input, Date date) {
@@ -108,7 +124,7 @@ public class MessageProcessor {
     private static String boardPlaceholders(String input, Group group) {
         String output = input;
         // BOARD_TITLE
-        String title = group.getTitle();
+        String title = group.getName();
         output = output.replaceAll("#BOARD_TITLE", title);
         return output;
     }

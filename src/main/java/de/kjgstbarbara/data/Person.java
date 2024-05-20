@@ -28,7 +28,6 @@ public class Person {
     private String username = "";
     private String password;
     private boolean darkMode = true;
-    private boolean systemAdmin = false;
     private Reminder reminder;
     @Embedded
     private PhoneNumber phoneNumber;

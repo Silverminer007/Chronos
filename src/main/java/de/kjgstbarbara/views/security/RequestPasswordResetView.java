@@ -77,7 +77,7 @@ public class RequestPasswordResetView extends VerticalLayout {
                     Person person = optionalPerson.get();
                     if(person.createResetPassword()) {
                         personsRepository.save(person);
-                        senderUtils.sendMessageFormatted(RESET_MESSAGE_TEMPLATE, person, null);
+                        //senderUtils.sendMessageFormatted(RESET_MESSAGE_TEMPLATE, person, null);// TODO
                         event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));
                     } else {
                         Notification.show("Das zurücksetzen des Passworts ist nicht möglich").addThemeVariants(NotificationVariant.LUMO_ERROR);
