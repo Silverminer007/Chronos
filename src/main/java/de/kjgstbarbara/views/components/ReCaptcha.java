@@ -10,16 +10,20 @@ import com.vaadin.flow.server.VaadinService;
 import elemental.json.Json;
 import elemental.json.JsonObject;
 import elemental.json.JsonValue;
+import lombok.Getter;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+@Getter
 @Tag("my-recaptcha")
 public class ReCaptcha extends Component {
 
@@ -50,20 +54,16 @@ public class ReCaptcha extends Component {
                 "$0.init();\n", this);
     }
 
-    public boolean isValid() {
-        return valid;
-    }
-
     @ClientCallable
     public void callback(String response) {
         try {
             valid = checkResponse(response);
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private boolean checkResponse(String response) throws IOException {
+    private boolean checkResponse(String response) throws IOException, URISyntaxException {
         String remoteAddr = getRemoteAddr(VaadinService.getCurrentRequest());
 
         String url = "https://www.google.com/recaptcha/api/siteverify";
@@ -90,8 +90,8 @@ public class ReCaptcha extends Component {
         return ret;
     }
 
-    private static String doHttpPost(String urlStr, String postData) throws IOException {
-        URL url = new URL(urlStr);
+    private static String doHttpPost(String urlStr, String postData) throws IOException, URISyntaxException {
+        URL url = new URI(urlStr).toURL();
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
         try {
 
