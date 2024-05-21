@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -59,7 +60,12 @@ public class ProfileView extends VerticalLayout {
             setAlignItems(Alignment.CENTER);
             setJustifyContentMode(JustifyContentMode.CENTER);
 
+            FormLayout content = new FormLayout();
+            content.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1), new FormLayout.ResponsiveStep("500px", 2));
+
             VerticalLayout profilePic = getProfileImageLayout(person, personsRepository);
+            content.add(profilePic);
+            content.setColspan(profilePic, 2);
 
             TextField firstName = new TextField("Vorname");
             firstName.setRequired(true);
@@ -69,6 +75,7 @@ public class ProfileView extends VerticalLayout {
                                     ValidationResult.error("Dieses Feld ist erforderlich")
                                     : ValidationResult.ok())
                     .bind(Person::getFirstName, Person::setFirstName);
+            content.add(firstName);
             TextField lastName = new TextField("Nachname");
             lastName.setRequired(true);
             binder.forField(lastName)
@@ -77,17 +84,21 @@ public class ProfileView extends VerticalLayout {
                                     ValidationResult.error("Dieses Feld ist erforderlich")
                                     : ValidationResult.ok())
                     .bind(Person::getLastName, Person::setLastName);
+            content.add(lastName);
 
             PhoneNumberField phoneNumber = new PhoneNumberField();
             binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
+            content.add(phoneNumber);
 
             TextField mailAddress = new TextField("E-Mail Adresse");
             mailAddress.setWidthFull();
             binder.forField(mailAddress)
                     .withValidator(new EmailValidator("Diese E-Mail Adresse ist ungültig"))
                     .bind(Person::getEMailAddress, Person::setEMailAddress);
+            content.add(mailAddress);
 
             Button changePassword = getChangePasswordButton(passwordEncoder, person, personsRepository);
+            content.add(changePassword);
 
             Button save = new Button("Speichern");
             save.addClickShortcut(Key.ENTER);
@@ -102,23 +113,10 @@ public class ProfileView extends VerticalLayout {
                     Notification.show(e.getLocalizedMessage());
                 }
             });
+            content.add(save);
             binder.readBean(person);
 
-            HorizontalLayout name = new HorizontalLayout(firstName, lastName);
-
-            VerticalLayout form = new VerticalLayout(profilePic, name, phoneNumber, mailAddress);
-            form.setHeightFull();
-            form.setAlignItems(Alignment.START);
-            form.setJustifyContentMode(JustifyContentMode.START);
-            Scroller scroller = new Scroller(form);
-            scroller.setHeightFull();
-            scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
-            VerticalLayout wrapper = new VerticalLayout(scroller, changePassword, save);
-            wrapper.setJustifyContentMode(JustifyContentMode.END);
-            wrapper.setAlignItems(Alignment.END);
-            wrapper.setHeightFull();
-            wrapper.setWidth(name.getWidth());
-            add(wrapper);
+            add(content);
         }
     }
 

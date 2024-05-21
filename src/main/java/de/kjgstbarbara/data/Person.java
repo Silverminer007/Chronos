@@ -28,7 +28,7 @@ public class Person {
     private String username = "";
     private String password;
     private boolean darkMode = true;
-    private Reminder reminder;
+    private Reminder reminder = Reminder.WHATSAPP;
     @Embedded
     private PhoneNumber phoneNumber;
     private String eMailAddress;
@@ -36,8 +36,8 @@ public class Person {
     // Die Uhrzeit am Tag an der die Person ihre Benachrichtigungen erhält. 19 entspricht also 19:00 Uhr
     private Set<Integer> remindMeTime = Set.of(19);
     private boolean monthOverview = true;
-    private Set<Integer> hourReminderIntervals = Set.of();
-    private Set<Integer> dayReminderIntervals = Set.of();
+    private Set<Integer> hourReminderIntervals = Set.of(1);
+    private Set<Integer> dayReminderIntervals = Set.of(2);
     private String resetToken;
     private LocalDateTime resetTokenExpires;
 
