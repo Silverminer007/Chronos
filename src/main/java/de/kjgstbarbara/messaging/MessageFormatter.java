@@ -1,9 +1,6 @@
 package de.kjgstbarbara.messaging;
 
-import de.kjgstbarbara.data.Group;
-import de.kjgstbarbara.data.Date;
-import de.kjgstbarbara.data.Feedback;
-import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.data.*;
 import jakarta.annotation.Nullable;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -16,12 +13,13 @@ import java.util.Locale;
 @Setter
 @Accessors(fluent = true)
 public class MessageFormatter {
+    private Organisation organisation;
     private Date date;
     private Person person;
     private Group group;
     private Feedback.Status feedback;
 
-    public static String placeholders(String input, @Nullable Date date, @Nullable Person person, @Nullable Group group, @Nullable Feedback.Status feedback) {
+    public static String placeholders(String input, @Nullable Organisation organisation, @Nullable Date date, @Nullable Person person, @Nullable Group group, @Nullable Feedback.Status feedback) {
         String output = input;
         if(date != null) {
             output = datePlaceholder(output, date);
@@ -29,6 +27,10 @@ public class MessageFormatter {
                 group = date.getGroup();
             }
             output = boardPlaceholders(output, group);
+            if(organisation == null) {
+                organisation = group.getOrganisation();
+            }
+            output = organisationPlaceholders(output, organisation);
         }
         if(person != null) {
             output = personPlaceholder(output, person);
@@ -43,7 +45,7 @@ public class MessageFormatter {
     }
 
     public String format(String input) {
-        return placeholders(input, date, person, group, feedback);
+        return placeholders(input, organisation, date, person, group, feedback);
     }
 
     private static String datePlaceholder(String input, Date date) {
@@ -134,6 +136,14 @@ public class MessageFormatter {
         // FEEDBACK_STATUS
         String status = feedback.getReadable();
         output = output.replaceAll("#FEEDBACK_STATUS", status);
+        return output;
+    }
+
+    private static String organisationPlaceholders(String input, Organisation organisation) {
+        String output = input;
+        // ORGANISATION_NAME
+        String name = organisation.getName();
+        output = output.replaceAll("#ORGANISATION_NAME", name);
         return output;
     }
 }

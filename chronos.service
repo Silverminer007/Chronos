@@ -11,8 +11,8 @@ Group=root
 Type=simple
 
 Environment="JAVA_HOME=/root/.sdkman/candidates/java/current"
-WorkingDirectory=/opt/kjgtermine
-ExecStart=/root/.sdkman/candidates/java/current/bin/java -jar /opt/kjgtermine/kjgtermine.jar
+WorkingDirectory=/opt/chronos
+ExecStart=/root/.sdkman/candidates/java/current/bin/java -jar /opt/chronos/chronos.jar
 ExecStop=/bin/kill -15 $MAINPID
 
 [Install]

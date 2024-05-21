@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/672d51f0-d845-42bd-936a-2e7ef19a2c65 -->
     <groupId>de.kjgstbarbara</groupId>
-    <artifactId>kjgtermine</artifactId>
-    <name>kjgtermine</name>
+    <artifactId>chronos</artifactId>
+    <name>chronos</name>
     <version>ALPHA</version>
     <packaging>jar</packaging>
 

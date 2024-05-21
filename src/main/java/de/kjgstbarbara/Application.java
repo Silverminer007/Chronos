@@ -16,14 +16,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  */
 @PWA(
-        name = "KjG Termine",
-        shortName = "KjG Termine",
+        name = "Chronos",
+        shortName = "Chronos",
         offlinePath="offline.html",
         offlineResources = { "./images/offline.png"}
 )
 @SpringBootApplication
 @Push
-@Theme(value = "kjgtermine", variant = Lumo.DARK)
+@Theme(value = "chronos", variant = Lumo.DARK)
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {
@@ -32,7 +32,7 @@ public class Application implements AppShellConfigurator {
 
     @Override
     public void configurePage(AppShellSettings settings) {
-        settings.addFavIcon("icon", "icons/seelenbohrer.svg", "840x840");
+        settings.addFavIcon("icon", "icons/favicon.ico", "16x16");
         settings.addLink("shortcut icon", "icons/favicon.ico");
     }
 }

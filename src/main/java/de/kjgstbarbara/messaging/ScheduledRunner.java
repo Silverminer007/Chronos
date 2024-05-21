@@ -83,7 +83,7 @@ public class ScheduledRunner implements CommandLineRunner {
     private static final String DATE_REMINDER_TEMPLATE =
             """
                     Hey #PERSON_FIRSTNAME,
-                    du hast #DATE_TIME_UNTIL_START einen Termin bei der KjG :)
+                    du hast #DATE_TIME_UNTIL_START einen Termin bei der #ORGANISATION_NAME :)
                     #DATE_TITLE (#BOARD_TITLE)
                     Von #DATE_START_TIME am #DATE_START_DATE
                     Bis #DATE_END_TIME am #DATE_END_DATE

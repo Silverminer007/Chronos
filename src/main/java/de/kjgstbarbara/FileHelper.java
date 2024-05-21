@@ -22,7 +22,7 @@ public class FileHelper {
     }
 
     public static Path getProfileImagePath(String username) {
-        return Path.of(System.getenv("HOME")).resolve(".kjgtermine").resolve("profile-image").resolve(username + ".png");
+        return Path.of(System.getenv("HOME")).resolve(".chronos").resolve("profile-image").resolve(username + ".png");
     }
 
     public static StreamResource getProfileImage(String username) {
