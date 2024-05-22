@@ -338,9 +338,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         NativeLabel pollStoppedLabel = new NativeLabel("Die Abfrage läuft nicht mehr");
         pollStoppedLabel.setVisible(!pollRunning);
-        this.add(pollStoppedLabel);
-
-        this.add(content);
+        content.add(pollStoppedLabel);
 
         commit.addClickListener(event -> {// TODO Direkt das Feedback zu ändern wirft eine Fehlermeldung, erst beim zweiten öffnen möglich
             Feedback feedback = Feedback.create(person, Feedback.Status.COMMITTED);
