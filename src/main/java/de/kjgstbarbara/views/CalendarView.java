@@ -59,7 +59,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
@@ -137,10 +136,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         });
         fullCalendar.addEntryClickedListener(event -> {
             if (event.getEntry() instanceof DateEntry dateEntry) {
-                Dialog dateOverviewDialog = new ClosableDialog(createDateWidgetHeader(dateEntry.getDate(), this.person))
-                        .setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll());
-                dateOverviewDialog.add(createDateWidget(dateEntry.getDate(), this.person));
-                dateOverviewDialog.open();
+                createDateOverviewDialog(dateEntry.getDate(), this.person);
             }
         });
         fullCalendar.addDatesRenderedListener(event -> {
@@ -236,7 +232,8 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         }
     }
 
-    private Component createDateWidgetHeader(Date date, Person person) {
+    private void createDateOverviewDialog(Date date, Person person) {
+        ClosableDialog dateOverview = new ClosableDialog();
         HorizontalLayout header = new HorizontalLayout();
         header.setAlignItems(FlexComponent.Alignment.CENTER);
 
@@ -261,6 +258,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                             feedbackRepository.delete(f);
                         }
                         dateRepository.delete(date);
+                        dateOverview.close();
                     }
             );
             confirmDelete.setCancelable(true);
@@ -270,7 +268,10 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         });
 
         header.add(delete);
-        return header;
+        dateOverview.setTitle(header);
+        dateOverview.setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll());
+        dateOverview.add(createDateWidget(date, this.person));
+        dateOverview.open();
     }
 
     private Component createDateWidget(Date date, Person person) {
@@ -677,7 +678,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         save.addClickListener(event -> {
             try {
                 binder.writeBean(date);
-                if(selectOrganisation.isVisible()) {
+                if (selectOrganisation.isVisible()) {
                     if (selectOrganisation.getValue() != null) {
                         if (date.getGroup().getOrganisation() == null) {
                             organisationRepository.save(selectOrganisation.getValue());
