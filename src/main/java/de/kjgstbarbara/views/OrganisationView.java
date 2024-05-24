@@ -35,6 +35,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FriendlyError;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
@@ -228,15 +229,8 @@ public class OrganisationView extends VerticalLayout {
         Button copyInvitationLink = new Button(VaadinIcon.COPY.create());
         ClipboardHelper clipboardHelper = new ClipboardHelper("Kopieren fehlgeschlagen", copyInvitationLink);
         UI.getCurrent().getPage().fetchCurrentURL(url -> {
-            StringBuilder urlBuilder = new StringBuilder();
-            urlBuilder.append(url.getProtocol()).append("://");
-            urlBuilder.append(url.getHost());
-            if (url.getPort() != -1) {
-                urlBuilder.append(":").append(url.getPort());
-            }
-            urlBuilder.append("/organisation/join/");
-            urlBuilder.append(organisation.getId());
-            String joinURL = urlBuilder.toString();
+            String joinURL = Utility.baseURL(url) + "/organisation/join/" +
+                    organisation.getId();
             invitationLink.setValue(joinURL);
             clipboardHelper.setContent(joinURL);
         });
@@ -550,7 +544,7 @@ public class OrganisationView extends VerticalLayout {
 
     private static final String EMAIL_TEST_MESSAGE =
             """
-                    Hey #PERSON_FIRST_NAME,
+                    Hey #PERSON_FIRSTNAME,
                     du hast eine neue E-Mail Konfiguration gespeichert.
                     Da du diese E-Mail erhalten hast war Einstellung erfolgreich.
                     """;

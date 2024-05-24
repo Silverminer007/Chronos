@@ -144,6 +144,9 @@ public class MessageFormatter {
         // ORGANISATION_NAME
         String name = organisation.getName();
         output = output.replaceAll("#ORGANISATION_NAME", name);
+        // ORGANISATION_ADMIN_NAME
+        String adminName = organisation.getAdmin().getName();
+        output = output.replaceAll("#ORGANISATION_ADMIN_HOME", adminName);
         return output;
     }
 }

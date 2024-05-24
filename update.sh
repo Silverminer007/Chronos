@@ -5,7 +5,7 @@ mvn clean package -Pproduction
 systemctl stop chronos
 cp chronos.service /etc/systemd/system/
 systemctl daemon-reload
-mkdirs /opt/chronos
+mkdir /opt/chronos
 mv target/chronos-ALPHA.jar /opt/chronos/chronos.jar
 PASSWORD=$(echo 'keyword' | sha1sum)
 echo "$PASSWORD"
