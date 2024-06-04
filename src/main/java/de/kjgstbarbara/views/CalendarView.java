@@ -46,6 +46,8 @@ import de.kjgstbarbara.views.components.NonNullValidator;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.vaadin.stefan.fullcalendar.*;
 import org.vaadin.stefan.fullcalendar.dataprovider.CallbackEntryProvider;
@@ -68,6 +70,8 @@ import java.util.function.Supplier;
 @PageTitle("Meine Termine")
 @PermitAll
 public class CalendarView extends VerticalLayout implements BeforeEnterObserver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CalendarView.class);
+
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
     private final DateRepository dateRepository;
@@ -81,6 +85,10 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
     private final H4 intervalLabel = new H4();
     private LocalDate week = LocalDate.now();
     private Layout calendarView = Layout.LIST;
+
+    private final Button previous = new Button(LumoIcon.ARROW_LEFT.create());
+    private final Button today = new Button(LumoIcon.CALENDAR.create());
+    private final Button next = new Button(LumoIcon.ARROW_RIGHT.create());
 
     public CalendarView(PersonsService personsService, OrganisationService organisationService, DatesService datesService, GroupService groupService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
@@ -97,10 +105,11 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         this.setSizeFull();
 
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setAlignItems(Alignment.CENTER);
-        header.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        FormLayout header = new FormLayout();
+        header.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0", 1),
+                new FormLayout.ResponsiveStep("600px", 3)
+        );
 
         MenuBar menu = new MenuBar();
         menu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
@@ -117,7 +126,14 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         }
         header.add(menu);
 
-        header.add(intervalLabel);
+        HorizontalLayout navigation = new HorizontalLayout();
+        navigation.setAlignItems(Alignment.CENTER);
+        navigation.setJustifyContentMode(JustifyContentMode.CENTER);
+        navigation.add(previous);
+        navigation.add(today);
+        navigation.add(intervalLabel);
+        navigation.add(next);
+        header.add(navigation);
 
         Button createNew = new Button("Neuer Termin", VaadinIcon.PLUS_SQUARE_O.create());
         createNew.addClickListener(event -> createEditDateDialog(new Date()).open());
@@ -158,48 +174,41 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         });
         fullCalendar.setPrefetchEnabled(true);
         CallbackEntryProvider<Entry> entryProvider = EntryProvider.fromCallbacks(
-                query -> dateRepository.findByStartBetweenAndGroupMembersIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new),
+                query ->
+                        this.calendarView == Layout.LIST_YEAR ?
+                                dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(), LocalDateTime.now().plusYears(1), this.person).limit(20).map(DateEntry::new)
+                                : dateRepository.findByStartBetweenAndGroupMembersIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new)
+                ,
                 entryId -> dateRepository.findById(Long.valueOf(entryId)).map(DateEntry::new).orElse(null)
         );
         fullCalendar.setEntryProvider(entryProvider);
         this.add(fullCalendar);
         this.setFlexGrow(1, fullCalendar);
 
-        this.add(new Hr());
-
-        HorizontalLayout buttons = new HorizontalLayout();
-        buttons.setWidthFull();
-        buttons.setJustifyContentMode(JustifyContentMode.CENTER);
-
-        Button previous = new Button(LumoIcon.ARROW_LEFT.create());
         previous.addThemeVariants(ButtonVariant.LUMO_LARGE);
         previous.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
                 new RouteParameters(new RouteParam("layout", this.calendarView.name()), new RouteParam("week", this.week.minus(1, this.calendarView.getStepSize()).toString()))));
-        buttons.add(previous);
 
-        Button today = new Button("Heute");
         today.addThemeVariants(ButtonVariant.LUMO_LARGE);
         today.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
                 new RouteParameters(new RouteParam("layout", this.calendarView.name()), new RouteParam("week", LocalDate.now().toString()))));
-        buttons.add(today);
 
-        Button next = new Button(LumoIcon.ARROW_RIGHT.create());
         next.addThemeVariants(ButtonVariant.LUMO_LARGE);
         next.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
                 new RouteParameters(new RouteParam("layout", this.calendarView.name()), new RouteParam("week", this.week.plus(1, this.calendarView.getStepSize()).toString()))));
-        buttons.add(next);
-
-        this.add(buttons);
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        this.calendarView = beforeEnterEvent.getRouteParameters().get("layout").map(Layout::valueOf).orElse(Layout.LIST);
+        this.calendarView = beforeEnterEvent.getRouteParameters().get("layout").map(Layout::valueOf).orElse(Layout.LIST_YEAR);
         this.fullCalendar.changeView(this.calendarView.getCalendarView());
         cL.setText(this.calendarView.getDisplayName());
         this.week = beforeEnterEvent.getRouteParameters().get("week").map(LocalDate::parse).orElse(LocalDate.now());
         LocalDate calDate = this.calendarView.getStepSize() == null ? LocalDate.now() : this.week;
         fullCalendar.gotoDate(calDate);
+        previous.setEnabled(this.calendarView != Layout.LIST_YEAR);
+        today.setEnabled(this.calendarView != Layout.LIST_YEAR);
+        next.setEnabled(this.calendarView != Layout.LIST_YEAR);
     }
 
     @Getter
@@ -217,7 +226,8 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     @Getter
     public enum Layout {
-        LIST(CalendarViewImpl.LIST_MONTH, ChronoUnit.MONTHS, "LISTE"),
+        LIST(CalendarViewImpl.LIST_MONTH, ChronoUnit.MONTHS, "MONATSLISTE"),
+        LIST_YEAR(CalendarViewImpl.LIST_YEAR, ChronoUnit.YEARS, "NÄCHSTE 20"),
         MONTH(CalendarViewImpl.DAY_GRID_MONTH, ChronoUnit.MONTHS, "MONAT"),
         YEAR(CalendarViewImpl.MULTI_MONTH, ChronoUnit.YEARS, "JAHR");
 
