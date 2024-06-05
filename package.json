@@ -79,8 +79,7 @@
     "date-fns": "2.29.3",
     "lit": "3.1.2",
     "moment": "2.29.4",
-    "moment-timezone": "0.5.40",
-    "swiper": "^10.0.3"
+    "moment-timezone": "0.5.40"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "5.0.5",
@@ -178,8 +177,7 @@
       "date-fns": "2.29.3",
       "lit": "3.1.2",
       "moment": "2.29.4",
-      "moment-timezone": "0.5.40",
-      "swiper": "^10.0.3"
+      "moment-timezone": "0.5.40"
     },
     "devDependencies": {
       "@rollup/plugin-replace": "5.0.5",
@@ -199,7 +197,7 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "e291810b98fdd86e571389f19309590980707e4731bcc1a973defc95917a360d"
+    "hash": "55c9cecd0b8b83712a1cf2ab53e6e2d459c936d43e8f96804fd3fa6a0b11f982"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -278,7 +276,6 @@
     "@fullcalendar/daygrid": "$@fullcalendar/daygrid",
     "moment-timezone": "$moment-timezone",
     "@fullcalendar/multimonth": "$@fullcalendar/multimonth",
-    "@fullcalendar/moment": "$@fullcalendar/moment",
-    "swiper": "$swiper"
+    "@fullcalendar/moment": "$@fullcalendar/moment"
   }
 }

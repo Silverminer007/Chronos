@@ -95,6 +95,7 @@ public class RegisterView extends VerticalLayout {
         layout.add(reTypePassword);
         ReCaptcha reCaptcha = new ReCaptcha();
         layout.add(reCaptcha);
+        layout.setColspan(reCaptcha, 2);
 
         Button back = new Button("zurück");
         back.setWidth("30%");
