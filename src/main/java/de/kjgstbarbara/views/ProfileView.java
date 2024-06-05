@@ -3,13 +3,14 @@ package de.kjgstbarbara.views;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -24,9 +25,11 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FileHelper;
+import de.kjgstbarbara.data.Group;
+import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.service.PersonsRepository;
-import de.kjgstbarbara.service.PersonsService;
+import de.kjgstbarbara.service.*;
+import de.kjgstbarbara.views.components.ClosableDialog;
 import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import de.kjgstbarbara.views.nav.MainNavigationView;
@@ -35,18 +38,20 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Route(value = "profile", layout = MainNavigationView.class)
 @PageTitle("Profil")
 @PermitAll
 public class ProfileView extends VerticalLayout {
 
-    public ProfileView(PersonsService personsService, PasswordEncoder passwordEncoder, AuthenticationContext authenticationContext) {
+    public ProfileView(PersonsService personsService, PasswordEncoder passwordEncoder, OrganisationService organisationService, FeedbackService feedbackService, GroupService groupService, AuthenticationContext authenticationContext) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
         Person person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
@@ -97,13 +102,14 @@ public class ProfileView extends VerticalLayout {
                     .bind(Person::getEMailAddress, Person::setEMailAddress);
             content.add(mailAddress);
 
+            add(content);
+
             Button changePassword = getChangePasswordButton(passwordEncoder, person, personsRepository);
-            content.add(changePassword);
+            add(changePassword);
 
             Button save = new Button("Speichern");
             save.addClickShortcut(Key.ENTER);
             save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            save.setWidthFull();
             save.addClickListener(event -> {
                 try {
                     binder.writeBean(person);
@@ -113,16 +119,66 @@ public class ProfileView extends VerticalLayout {
                     Notification.show(e.getLocalizedMessage());
                 }
             });
-            content.add(save);
-            binder.readBean(person);
+            add(save);
 
-            add(content);
+            Button deleteAccount = new Button("Account löschen");
+            deleteAccount.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            deleteAccount.addClickListener(event -> {
+                List<Organisation> organisations = organisationService.getOrganisationRepository().findByAdmin(person);
+                List<Group> groups = new ArrayList<>(groupService.getGroupRepository().findByAdminsIn(person));
+                groups.removeIf(g -> g.getAdmins().size() > 1);
+                if(organisations.isEmpty() && groups.isEmpty()) {
+                    PasswordField passwordField = new PasswordField();
+                    ConfirmDialog confirmDialog = new ConfirmDialog(
+                            "Account löschen",
+                            "Bist du sicher, dass du deinen Account löschen möchtest? Du kannst deinen Account nicht wiederherstellen und deine Daten werden unwiderruflich gelöscht. Um diese Aktion zu bestätigen, gib bitte dein Passwort erneut ein",
+                            "Ja, meinen Account löschen",
+                            e -> {
+                                if (person.getPassword().equals(passwordEncoder.encode(passwordField.getValue()))) {
+                                    personsRepository.delete(person);
+                                    feedbackService.getFeedbackRepository().deleteByPerson(person);
+                                    organisationService.getOrganisationRepository().findByMembersIn(person).forEach(org ->
+                                            org.getMembers().remove(person));
+                                    organisationService.getOrganisationRepository().findByMembershipRequestsIn(person).forEach(org ->
+                                            org.getMembershipRequests().remove(person));
+                                    groupService.getGroupRepository().findByMembersIn(person).forEach(group ->
+                                            group.getMembers().remove(person));
+                                    groupService.getGroupRepository().findByAdminsIn(person).forEach(group ->
+                                            group.getAdmins().remove(person));
+                                    authenticationContext.logout();
+                                }
+                            }
+                    );
+                    confirmDialog.add(passwordField);
+                    confirmDialog.open();
+                } else {
+                    ClosableDialog closableDialog = new ClosableDialog("Account löschen nicht möglich");
+                    StringBuilder labelText = new StringBuilder("Bevor du deinen Account löschen kannst musst du alle deine Administratorrechte an jemand anderen übertragen haben.");
+                    if(!organisations.isEmpty()) {
+                        labelText.append("Du bist noch in diesem Organisationen Admin:");
+                        for(Organisation o : organisations) {
+                            labelText.append("\n").append(o.getName());
+                        }
+                    }
+                    if(!groups.isEmpty()) {
+                        labelText.append("Du bist noch diesen Gruppen alleiniger Admin:");
+                        for(Group g : groups) {
+                            labelText.append("\n").append(g.getName());
+                        }
+                    }
+                    NativeLabel label = new NativeLabel(labelText.toString());
+                    closableDialog.add(label);
+                    closableDialog.open();
+                }
+            });
+            add(deleteAccount);
+
+            binder.readBean(person);
         }
     }
 
     private static Button getChangePasswordButton(PasswordEncoder passwordEncoder, Person person, PersonsRepository personsRepository) {
         Button changePassword = new Button("Passwort ändern");
-        changePassword.setWidthFull();
         changePassword.addClickListener(event -> {
             Dialog dialog = new Dialog();
             PasswordField password = new PasswordField("Altes Passwort");
