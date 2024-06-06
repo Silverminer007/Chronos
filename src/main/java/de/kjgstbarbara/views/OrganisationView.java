@@ -222,7 +222,7 @@ public class OrganisationView extends VerticalLayout {
         invite.setVisible(admin);
 
         TextField invitationLink = new TextField("Einladungslink");
-        invitationLink.setEnabled(false);
+        invitationLink.setEnabled(false);// Causes "Ignoring update for disabled return channel", but can be ignored, as it's not intended that something should change here, when the user expands the widget
         invitationLink.setValue("Temp");
         invite.add(invitationLink);
 
@@ -424,7 +424,7 @@ public class OrganisationView extends VerticalLayout {
             row.add(avatar);
 
             if (organisation.getAdmin().equals(p)) {
-                Icon icon = VaadinIcon.MONEY.create();// TODO Better Icon
+                Icon icon = VaadinIcon.STAR.create();
                 icon.setColor("#ffc60a");
                 row.add(icon);
             }
@@ -465,12 +465,14 @@ public class OrganisationView extends VerticalLayout {
         VerticalLayout whatsapp = new VerticalLayout();
         Image qrCode = new Image("", "");
         NativeLabel qrCodeDescription = new NativeLabel("QR Code wird geladen");
-        Whatsapp whatsappAccess = Whatsapp.webBuilder().lastConnection()
-                .unregistered(qrCodeString ->
-                        this.getUI().ifPresent(ui -> ui.access(() -> {
-                            qrCode.setSrc(qrHandler(qrCodeString));
-                            qrCodeDescription.setText("Bitte Scanne den QR Code um WhatsApp Nachrichten über dein Telefon zu verschicken");
-                        })));
+        Whatsapp whatsappAccess = Whatsapp.webBuilder().newConnection()
+                .unregistered(qrCodeString -> {
+                    System.out.println(qrCodeString);
+                    this.getUI().ifPresent(ui -> ui.access(() -> {
+                        qrCode.setSrc(qrHandler(qrCodeString));
+                        qrCodeDescription.setText("Bitte Scanne den QR Code um WhatsApp Nachrichten über dein Telefon zu verschicken");
+                    }));
+                });
         whatsappAccess.addLoggedInListener(api ->
                 api.store().phoneNumber().ifPresent(senderPhoneNumber ->
                         this.getUI().ifPresent(ui ->
