@@ -244,7 +244,6 @@ public class ProfileView extends VerticalLayout {
         MemoryBuffer memoryBuffer = new MemoryBuffer();
         Upload profileUpload = new Upload(memoryBuffer);
         profileUpload.setAcceptedFileTypes("image/*");
-        //profileUpload.setMaxFileSize(Integer.MAX_VALUE);
         profileUpload.setMaxFiles(1);
         profileUpload.addSucceededListener(event -> {
             InputStream inputStream = memoryBuffer.getInputStream();
@@ -259,12 +258,10 @@ public class ProfileView extends VerticalLayout {
                 personsRepository.save(person);
                 event.getSource().getUI().ifPresent(ui -> ui.getPage().reload());
             } catch (IOException e) {
-                Notification.show("Etwas ist beim lesen/speichern der Datei fehlgeschlagen")
+                Notification.show("Etwas ist beim lesen/speichern der Datei fehlgeschlagen. Bitte melde diesen Fehler")
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         });
-        profileUpload.addFileRejectedListener(event -> Notification.show(event.getErrorMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR));
-        profileUpload.addFailedListener(failedEvent -> Notification.show(String.valueOf(failedEvent.getContentLength())).addThemeVariants(NotificationVariant.LUMO_ERROR));
         VerticalLayout profilePic = new VerticalLayout(profileImage, profileUpload);
         profilePic.setJustifyContentMode(JustifyContentMode.CENTER);
         profilePic.setAlignItems(Alignment.CENTER);
