@@ -26,13 +26,17 @@ public class FileHelper {
     }
 
     public static StreamResource getProfileImage(String username) {
-        return new StreamResource("profile-picture.png", () -> {
-            try {
-                return new FileInputStream(getProfileImagePath(username).toFile());
-            } catch (FileNotFoundException e) {
-                return null;
-            }
-        });
+        if (Files.exists(getProfileImagePath(username))) {
+            return new StreamResource("profile-picture.png", () -> {
+                try {
+                    return new FileInputStream(getProfileImagePath(username).toFile());
+                } catch (FileNotFoundException ignored) {
+                    return null;
+                }
+            });
+        } else {
+            return null;
+        }
 
     }
 }

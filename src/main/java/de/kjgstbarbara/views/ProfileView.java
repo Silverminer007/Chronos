@@ -127,7 +127,7 @@ public class ProfileView extends VerticalLayout {
                 List<Organisation> organisations = organisationService.getOrganisationRepository().findByAdmin(person);
                 List<Group> groups = new ArrayList<>(groupService.getGroupRepository().findByAdminsIn(person));
                 groups.removeIf(g -> g.getAdmins().size() > 1);
-                if(organisations.isEmpty() && groups.isEmpty()) {
+                if (organisations.isEmpty() && groups.isEmpty()) {
                     PasswordField passwordField = new PasswordField();
                     ConfirmDialog confirmDialog = new ConfirmDialog(
                             "Account löschen",
@@ -154,15 +154,15 @@ public class ProfileView extends VerticalLayout {
                 } else {
                     ClosableDialog closableDialog = new ClosableDialog("Account löschen nicht möglich");
                     StringBuilder labelText = new StringBuilder("Bevor du deinen Account löschen kannst musst du alle deine Administratorrechte an jemand anderen übertragen haben.");
-                    if(!organisations.isEmpty()) {
+                    if (!organisations.isEmpty()) {
                         labelText.append("Du bist noch in diesem Organisationen Admin:");
-                        for(Organisation o : organisations) {
+                        for (Organisation o : organisations) {
                             labelText.append("\n").append(o.getName());
                         }
                     }
-                    if(!groups.isEmpty()) {
+                    if (!groups.isEmpty()) {
                         labelText.append("Du bist noch diesen Gruppen alleiniger Admin:");
-                        for(Group g : groups) {
+                        for (Group g : groups) {
                             labelText.append("\n").append(g.getName());
                         }
                     }
@@ -238,25 +238,23 @@ public class ProfileView extends VerticalLayout {
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {
         StreamResource profileImageStreamResource = FileHelper.getProfileImage(person.getUsername());
-        Image profileImage = profileImageStreamResource.getWriter() != null ?
-                new Image(profileImageStreamResource, "Profilbild")
-                : new Image("/images/no-profile-image.png", "Profilbild");
+        Image profileImage = profileImageStreamResource == null ? new Image("/images/no-profile-image.png", "Kein Profilbild") : new Image(profileImageStreamResource, "Profilbild");
         profileImage.setWidth("150px");
 
         MemoryBuffer memoryBuffer = new MemoryBuffer();
         Upload profileUpload = new Upload(memoryBuffer);
-        profileUpload.setAcceptedFileTypes("image/png");
-        profileUpload.setMaxFileSize(1024 * 1024 * 1024);
+        profileUpload.setAcceptedFileTypes("image/*");
+        //profileUpload.setMaxFileSize(Integer.MAX_VALUE);
         profileUpload.setMaxFiles(1);
         profileUpload.addSucceededListener(event -> {
             InputStream inputStream = memoryBuffer.getInputStream();
             try {
                 BufferedImage image = ImageIO.read(inputStream);
-                int width = image.getWidth();
-                BufferedImage circleBuffer = new BufferedImage(width, width, BufferedImage.TYPE_INT_ARGB);
+                int imageSize = Math.min(500, Math.min(image.getWidth(), image.getHeight()));
+                BufferedImage circleBuffer = new BufferedImage(imageSize, imageSize, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2 = circleBuffer.createGraphics();
-                g2.setClip(new Ellipse2D.Float(0, 0, width, width));
-                g2.drawImage(image.getSubimage(0, 0, Math.min(image.getHeight(), image.getWidth()), Math.min(image.getHeight(), image.getWidth())), 0, 0, width, width, null);
+                g2.setClip(new Ellipse2D.Float(0, 0, imageSize, imageSize));
+                g2.drawImage(image.getSubimage(0, 0, Math.min(image.getHeight(), image.getWidth()), Math.min(image.getHeight(), image.getWidth())), 0, 0, imageSize, imageSize, null);
                 FileHelper.saveProfileImage(circleBuffer, person.getUsername());
                 personsRepository.save(person);
                 event.getSource().getUI().ifPresent(ui -> ui.getPage().reload());
@@ -266,6 +264,7 @@ public class ProfileView extends VerticalLayout {
             }
         });
         profileUpload.addFileRejectedListener(event -> Notification.show(event.getErrorMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR));
+        profileUpload.addFailedListener(failedEvent -> Notification.show(String.valueOf(failedEvent.getContentLength())).addThemeVariants(NotificationVariant.LUMO_ERROR));
         VerticalLayout profilePic = new VerticalLayout(profileImage, profileUpload);
         profilePic.setJustifyContentMode(JustifyContentMode.CENTER);
         profilePic.setAlignItems(Alignment.CENTER);

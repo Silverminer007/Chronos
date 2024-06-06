@@ -64,7 +64,7 @@ public class Person {
     public Avatar getAvatar() {
         Avatar avatar = new Avatar(getName());
         StreamResource pp = FileHelper.getProfileImage(this.getUsername());
-        if (pp.getWriter() != null) {
+        if (pp != null) {
             avatar.setImageResource(pp);
         } else {
             avatar.setColorIndex((int) (id % 7));
@@ -75,7 +75,7 @@ public class Person {
     public AvatarGroup.AvatarGroupItem getAvatarGroupItem() {
         AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(getName());
         StreamResource pp = FileHelper.getProfileImage(this.getUsername());
-        if (pp.getWriter() != null) {
+        if (pp != null) {
             avatarGroupItem.setImageResource(pp);
         } else {
             avatarGroupItem.setColorIndex((int) (id % 7));
