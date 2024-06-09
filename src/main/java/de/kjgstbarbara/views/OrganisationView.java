@@ -10,7 +10,6 @@ import com.vaadin.flow.component.avatar.AvatarGroupVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -46,6 +45,8 @@ import de.kjgstbarbara.views.components.ClosableDialog;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.Whatsapp;
+import it.auties.whatsapp.model.jid.Jid;
+import it.auties.whatsapp.model.mobile.PhoneNumber;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -211,7 +212,7 @@ public class OrganisationView extends VerticalLayout {
         Button settingsButton = new Button(VaadinIcon.TOOLS.create());
         settingsButton.setVisible(organisation.getAdmin().equals(person));
         settingsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation).open());
+        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation));
         summary.add(settingsButton);
 
         boolean admin = organisation.getAdmin().equals(person);
@@ -458,34 +459,43 @@ public class OrganisationView extends VerticalLayout {
         return dialog;
     }
 
-    private Dialog createMessageSetupDialog(Organisation organisation) {
+
+
+    private void createMessageSetupDialog(Organisation organisation) {
         ClosableDialog closableDialog = new ClosableDialog("Absender von Nachrichten");
 
         TabSheet tabSheet = new TabSheet();
         VerticalLayout whatsapp = new VerticalLayout();
         Image qrCode = new Image("", "");
         NativeLabel qrCodeDescription = new NativeLabel("QR Code wird geladen");
-        Whatsapp whatsappAccess = Whatsapp.webBuilder().newConnection()
+        Whatsapp whatsappAccess = Whatsapp.webBuilder().newConnection(organisation.getIDAsUUID())
                 .unregistered(qrCodeString -> {
                     System.out.println(qrCodeString);
-                    this.getUI().ifPresent(ui -> ui.access(() -> {
-                        qrCode.setSrc(qrHandler(qrCodeString));
-                        qrCodeDescription.setText("Bitte Scanne den QR Code um WhatsApp Nachrichten über dein Telefon zu verschicken");
-                    }));
+                    this.getUI().ifPresent(ui -> ui.access(() ->
+                            qrCodeDescription.setText("Bitte Scanne den QR Code um WhatsApp Nachrichten über dein Telefon zu verschicken")));
                 });
+        Button reconnect = new Button("Trennen");
+        reconnect.addClickListener(event -> {
+            whatsappAccess.logout();
+            closableDialog.close();
+            createMessageSetupDialog(organisation);
+        });
         whatsappAccess.addLoggedInListener(api ->
                 api.store().phoneNumber().ifPresent(senderPhoneNumber ->
                         this.getUI().ifPresent(ui ->
                                 ui.access(() -> {
                                     qrCodeDescription.setVisible(false);
                                     qrCode.setVisible(false);
-                                    whatsapp.add(new H3("WhatsApp Nachrichten werden über " + senderPhoneNumber + " verschickt"));
-                                    Button reconnect = new Button("Trennen");
-                                    reconnect.addClickListener(event -> api.logout());
+                                    whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + senderPhoneNumber + " verschickt"));
                                     whatsapp.add(reconnect);
-                                    organisation.setWhatsapp(api);
                                 }))));
         whatsappAccess.connect().join();
+        if(whatsappAccess.store().chats() != null && !whatsappAccess.store().chats().isEmpty()) {
+            qrCodeDescription.setVisible(false);
+            qrCode.setVisible(false);
+            whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + whatsappAccess.store().phoneNumber().map(PhoneNumber::number).orElse(0L) + " verschickt"));
+            whatsapp.add(reconnect);
+        }
         whatsapp.add(qrCode);
         whatsapp.add(qrCodeDescription);
 
@@ -531,7 +541,7 @@ public class OrganisationView extends VerticalLayout {
         });
 
         closableDialog.add(tabSheet);
-        return closableDialog;
+        closableDialog.open();
     }
 
     private StreamResource qrHandler(String qr) {

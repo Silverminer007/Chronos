@@ -52,9 +52,6 @@ public class ScheduledRunner implements CommandLineRunner {
             for (Person p : d.getGroup().getMembers()) {
                 Feedback.Status feedback = d.getStatusFor(p);
                 if (!feedback.equals(Feedback.Status.CANCELLED)) {
-                    // TODO Wann soll jemand diese Nachricht bekommen?
-                    //  Nur wenn man zugesagt hat oder auch bei keiner Rückmeldung?
-                    //  Oder wenn jemand spontan vielleicht doch kommt?
                     if ((p.getRemindMeTime().contains(now.getHour()) || p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                             || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
                         try {
