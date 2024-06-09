@@ -18,6 +18,8 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
 @Entity
 @Data
@@ -36,7 +38,7 @@ public class Organisation {
     private List<Person> membershipRequests = new ArrayList<>();
 
     @Transient
-    private Whatsapp whatsapp = Whatsapp.webBuilder().lastConnection().unregistered(qr -> {}).connect().join();
+    private Whatsapp whatsapp;
     @Embedded
     private EMailSender emailSender = new EMailSender();
 
@@ -44,20 +46,61 @@ public class Organisation {
         return name;
     }
 
+    public UUID getIDAsUUID() {
+        String hexId = Long.toHexString(id);
+        StringBuilder uuidString = new StringBuilder();
+        uuidString.append("0".repeat((32 - hexId.length())));
+        uuidString.append(hexId);
+        uuidString.insert(20, "-");
+        uuidString.insert(16, "-");
+        uuidString.insert(12, "-");
+        uuidString.insert(8, "-");
+        return UUID.fromString(uuidString.toString());
+    }
+
+    public Whatsapp getWhatsapp() {
+        if(whatsapp != null) {
+            return whatsapp;
+        }
+        try {
+            Semaphore semaphore = new Semaphore(1);
+            semaphore.acquire();
+            whatsapp = Whatsapp.webBuilder().newConnection(getIDAsUUID()).unregistered(qr -> {
+                LOGGER.error("WhatsApp ist not connected for: {}", name);
+                semaphore.release();
+            });
+            whatsapp.addLoggedInListener(api -> {
+                semaphore.release();
+                api.store().findChatByJid(Jid.of(4915752657194L)).ifPresent(chat -> {
+                    System.out.println("Logged in");
+                    api.sendMessage(chat, "Hi Justus, WhatsApp wurde gestartet und funktioniert");
+                });
+            });
+            whatsapp.connect().join();
+            if(whatsapp.store().chats() != null && !whatsapp.store().chats().isEmpty()) {
+                semaphore.release();
+            }
+            semaphore.acquire();
+            return whatsapp;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void sendMessageTo(String message, Person person) throws FriendlyError {
         sendMessageTo(message, person, person.getReminder());
     }
 
     public void sendMessageTo(String message, Person person, Person.Reminder reminder) throws FriendlyError {
-        if (whatsapp == null || reminder.equals(Person.Reminder.EMAIL)) {
+        if (getWhatsapp() == null || reminder.equals(Person.Reminder.EMAIL)) {
             emailSender.sendMessage(message, person);
         } else {
-            whatsapp.sendMessage(getChat(person), message);
+            getWhatsapp().sendMessage(getChat(person), message);
         }
     }
 
     private Chat getChat(Person sendTo) throws FriendlyError {
-        Optional<Chat> optionalChat = whatsapp.store().findChatByJid(Jid.of(sendTo.getPhoneNumber().number()));
+        Optional<Chat> optionalChat = getWhatsapp().store().findChatByJid(Jid.of(sendTo.getPhoneNumber().number()));
         if (optionalChat.isPresent()) {
             return optionalChat.get();
         } else {
@@ -75,7 +118,7 @@ public class Organisation {
                 error = true;
             }
         }
-        if(error) {
+        if (error) {
             throw new FriendlyError("Die Terminabfrage konnte nicht an alle Personen verschickt werden");
         }
     }
@@ -90,6 +133,7 @@ public class Organisation {
     }
 
     public void sendDatePollWhatsApp(Date date, Person sendTo) throws FriendlyError {
+        Whatsapp api = getWhatsapp();
         String title = String.format("(%s) Am %s um %s:%s Uhr ist %s. Bist du dabei?",
                 date.getId(),
                 date.getStart().getDayOfWeek().getDisplayName(TextStyle.FULL, sendTo.getUserLocale()),
@@ -104,7 +148,8 @@ public class Organisation {
                 ))
                 .selectableOptionsCount(1)
                 .build();
-        whatsapp.sendMessage(getChat(sendTo), message);
+        System.out.println("Poll send");
+        api.sendMessage(getChat(sendTo), message);
     }
 
     public void sendDatePollEmail(Date date, Person person) {

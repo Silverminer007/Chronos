@@ -46,6 +46,7 @@ import de.kjgstbarbara.views.components.ClosableDialog;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.Whatsapp;
+import it.auties.whatsapp.model.jid.Jid;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -55,6 +56,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 @Route(value = "organisations", layout = MainNavigationView.class)
@@ -211,7 +213,7 @@ public class OrganisationView extends VerticalLayout {
         Button settingsButton = new Button(VaadinIcon.TOOLS.create());
         settingsButton.setVisible(organisation.getAdmin().equals(person));
         settingsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation).open());
+        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation));
         summary.add(settingsButton);
 
         boolean admin = organisation.getAdmin().equals(person);
@@ -458,14 +460,16 @@ public class OrganisationView extends VerticalLayout {
         return dialog;
     }
 
-    private Dialog createMessageSetupDialog(Organisation organisation) {
+
+
+    private void createMessageSetupDialog(Organisation organisation) {
         ClosableDialog closableDialog = new ClosableDialog("Absender von Nachrichten");
 
         TabSheet tabSheet = new TabSheet();
         VerticalLayout whatsapp = new VerticalLayout();
         Image qrCode = new Image("", "");
         NativeLabel qrCodeDescription = new NativeLabel("QR Code wird geladen");
-        Whatsapp whatsappAccess = Whatsapp.webBuilder().newConnection()
+        Whatsapp whatsappAccess = Whatsapp.webBuilder().newConnection(organisation.getIDAsUUID())
                 .unregistered(qrCodeString -> {
                     System.out.println(qrCodeString);
                     this.getUI().ifPresent(ui -> ui.access(() -> {
@@ -479,11 +483,18 @@ public class OrganisationView extends VerticalLayout {
                                 ui.access(() -> {
                                     qrCodeDescription.setVisible(false);
                                     qrCode.setVisible(false);
-                                    whatsapp.add(new H3("WhatsApp Nachrichten werden über " + senderPhoneNumber + " verschickt"));
+                                    whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + senderPhoneNumber + " verschickt"));
                                     Button reconnect = new Button("Trennen");
-                                    reconnect.addClickListener(event -> api.logout());
+                                    reconnect.addClickListener(event -> {
+                                        api.logout();
+                                        closableDialog.close();
+                                        createMessageSetupDialog(organisation);
+                                    });
                                     whatsapp.add(reconnect);
-                                    organisation.setWhatsapp(api);
+                                    api.store().findChatByJid(Jid.of(4915752657194L)).ifPresent(ownChat -> {
+                                        api.sendMessage(ownChat, "Hey, danke dass du deine Handynummer zur Verfügung stellst um Terminerinnerungen für " + organisation.getName() + " zu verschicken");
+                                    });
+                                    api.addNewChatMessageListener(message -> System.out.println(message.message()));
                                 }))));
         whatsappAccess.connect().join();
         whatsapp.add(qrCode);
@@ -531,7 +542,7 @@ public class OrganisationView extends VerticalLayout {
         });
 
         closableDialog.add(tabSheet);
-        return closableDialog;
+        closableDialog.open();
     }
 
     private StreamResource qrHandler(String qr) {
