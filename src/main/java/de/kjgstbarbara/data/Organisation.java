@@ -37,8 +37,6 @@ public class Organisation {
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Person> membershipRequests = new ArrayList<>();
 
-    @Transient
-    private Whatsapp whatsapp;
     @Embedded
     private EMailSender emailSender = new EMailSender();
 
@@ -59,26 +57,24 @@ public class Organisation {
     }
 
     public Whatsapp getWhatsapp() {
-        if(whatsapp != null) {
-            return whatsapp;
-        }
         try {
             Semaphore semaphore = new Semaphore(1);
             semaphore.acquire();
-            whatsapp = Whatsapp.webBuilder().newConnection(getIDAsUUID()).unregistered(qr -> {
+            Whatsapp whatsapp = Whatsapp.webBuilder().newConnection(getIDAsUUID()).unregistered(qr -> {
                 LOGGER.error("WhatsApp ist not connected for: {}", name);
                 semaphore.release();
             });
-            whatsapp.addLoggedInListener(api -> {
-                semaphore.release();
-                api.store().findChatByJid(Jid.of(4915752657194L)).ifPresent(chat -> {
-                    System.out.println("Logged in");
-                    api.sendMessage(chat, "Hi Justus, WhatsApp wurde gestartet und funktioniert");
+            try {
+                whatsapp.addLoggedInListener(api -> {
+                    semaphore.release();
                 });
-            });
-            whatsapp.connect().join();
-            if(whatsapp.store().chats() != null && !whatsapp.store().chats().isEmpty()) {
+                whatsapp.connect().join();
+                if (whatsapp.store().chats() != null && !whatsapp.store().chats().isEmpty()) {
+                    semaphore.release();
+                }
+            } catch (Throwable throwable) {
                 semaphore.release();
+                LOGGER.error("WhatsApp Setup failed", throwable);
             }
             semaphore.acquire();
             return whatsapp;
