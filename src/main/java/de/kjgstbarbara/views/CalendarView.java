@@ -184,7 +184,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         CallbackEntryProvider<Entry> entryProvider = EntryProvider.fromCallbacks(
                 query ->
                         this.selectedCalendarLayout == Layout.LIST_YEAR ?
-                                dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(), LocalDateTime.now().plusYears(1), this.person).limit(20).map(DateEntry::new)
+                                dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(), LocalDateTime.now().plusYears(1), this.person).sorted().limit(20).map(DateEntry::new)
                                 : dateRepository.findByStartBetweenAndGroupMembersIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new)
                 ,
                 entryId -> dateRepository.findById(Long.valueOf(entryId)).map(DateEntry::new).orElse(null)
@@ -211,6 +211,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         this.selectedCalendarLayout = beforeEnterEvent.getRouteParameters().get("layout").map(Layout::valueOf).orElse(Layout.LIST_YEAR);
         this.fullCalendar.changeView(this.selectedCalendarLayout.getCalendarView());
+        this.fullCalendar.getEntryProvider().refreshAll();
         this.selectedStartDate = beforeEnterEvent.getRouteParameters().get("week").map(LocalDate::parse).orElse(LocalDate.now());
         LocalDate calDate = this.selectedCalendarLayout.getStepSize() == null ? LocalDate.now() : this.selectedStartDate;
         fullCalendar.gotoDate(calDate);
