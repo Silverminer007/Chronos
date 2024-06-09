@@ -139,7 +139,7 @@ public class Organisation {
                 .title(title)
                 .selectableOptions(List.of(
                         new PollOptionBuilder().name("(" + date.getId() + "-1) Bin dabei").build(),
-                        new PollOptionBuilder().name("(" + date.getId() + "2) Bin raus").build()
+                        new PollOptionBuilder().name("(" + date.getId() + "-2) Bin raus").build()
                 ))
                 .selectableOptionsCount(1)
                 .build();
