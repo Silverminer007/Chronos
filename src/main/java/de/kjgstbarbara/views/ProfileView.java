@@ -34,6 +34,7 @@ import de.kjgstbarbara.views.components.PhoneNumberField;
 import de.kjgstbarbara.views.components.ReCaptcha;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
+import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -248,7 +249,7 @@ public class ProfileView extends VerticalLayout {
         profileUpload.addSucceededListener(event -> {
             InputStream inputStream = memoryBuffer.getInputStream();
             try {
-                BufferedImage image = ImageIO.read(inputStream);
+                BufferedImage image = Thumbnails.of(inputStream).scale(1).asBufferedImage();
                 int imageSize = Math.min(500, Math.min(image.getWidth(), image.getHeight()));
                 BufferedImage circleBuffer = new BufferedImage(imageSize, imageSize, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2 = circleBuffer.createGraphics();

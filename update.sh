@@ -18,4 +18,4 @@ mysql -u root --execute="GRANT ALL ON *.* TO 'chronos'@'localhost';"
 systemctl start chronos
 chmod +x ./update.sh
 chmod +x ./install.sh
-systemctl status chronos
+tail -f -n 50 ../logs/spring.log

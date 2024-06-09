@@ -167,6 +167,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             LocalDate intervalStart = event.getIntervalStart();
             Locale locale = fullCalendar.getLocale();
             this.selectedStartDateIndicator.setText(
+                    selectedCalendarLayout.equals(Layout.LIST) ? "Nächste 20" :
                     switch (this.selectedCalendarLayout.getCalendarView()) {
                         default -> intervalStart.format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(locale));
                         case TIME_GRID_DAY, DAY_GRID_DAY, LIST_DAY ->
