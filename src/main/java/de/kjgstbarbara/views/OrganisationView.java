@@ -45,9 +45,10 @@ import de.kjgstbarbara.views.components.ClosableDialog;
 import de.kjgstbarbara.views.nav.MainNavigationView;
 import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.Whatsapp;
-import it.auties.whatsapp.model.jid.Jid;
 import it.auties.whatsapp.model.mobile.PhoneNumber;
 import jakarta.annotation.security.PermitAll;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.vaadin.olli.ClipboardHelper;
@@ -62,6 +63,7 @@ import java.util.stream.Stream;
 @PageTitle("Organisationen")
 @PermitAll
 public class OrganisationView extends VerticalLayout {
+    private static final Logger LOGGER = LogManager.getLogger(OrganisationView.class);
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
     private final GroupRepository groupRepository;
@@ -460,7 +462,6 @@ public class OrganisationView extends VerticalLayout {
     }
 
 
-
     private void createMessageSetupDialog(Organisation organisation) {
         ClosableDialog closableDialog = new ClosableDialog("Absender von Nachrichten");
 
@@ -470,9 +471,11 @@ public class OrganisationView extends VerticalLayout {
         NativeLabel qrCodeDescription = new NativeLabel("QR Code wird geladen");
         Whatsapp whatsappAccess = Whatsapp.webBuilder().newConnection(organisation.getIDAsUUID())
                 .unregistered(qrCodeString -> {
-                    System.out.println(qrCodeString);
-                    this.getUI().ifPresent(ui -> ui.access(() ->
-                            qrCodeDescription.setText("Bitte Scanne den QR Code um WhatsApp Nachrichten über dein Telefon zu verschicken")));
+                    LOGGER.info("Setting up Whatsapp with QR Code: {}", qrCodeString);
+                    this.getUI().ifPresent(ui -> ui.access(() -> {
+                        qrCode.setSrc(qrHandler(qrCodeString));
+                        qrCodeDescription.setText("Bitte Scanne den QR Code um WhatsApp Nachrichten über dein Telefon zu verschicken");
+                    }));
                 });
         Button reconnect = new Button("Trennen");
         reconnect.addClickListener(event -> {
@@ -490,7 +493,7 @@ public class OrganisationView extends VerticalLayout {
                                     whatsapp.add(reconnect);
                                 }))));
         whatsappAccess.connect().join();
-        if(whatsappAccess.store().chats() != null && !whatsappAccess.store().chats().isEmpty()) {
+        if (whatsappAccess.store().chats() != null && !whatsappAccess.store().chats().isEmpty()) {
             qrCodeDescription.setVisible(false);
             qrCode.setVisible(false);
             whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + whatsappAccess.store().phoneNumber().map(PhoneNumber::number).orElse(0L) + " verschickt"));
