@@ -40,6 +40,7 @@ import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageFormatter;
 import de.kjgstbarbara.messaging.EMailSender;
+import de.kjgstbarbara.messaging.ScheduledRunner;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.ClosableDialog;
 import de.kjgstbarbara.views.nav.MainNavigationView;
@@ -491,6 +492,7 @@ public class OrganisationView extends VerticalLayout {
                                     qrCode.setVisible(false);
                                     whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + senderPhoneNumber + " verschickt"));
                                     whatsapp.add(reconnect);
+                                    api.addNewChatMessageListener(newMessage -> ScheduledRunner.newWAMessageListener(newMessage, dateRepository, personsRepository, feedbackRepository));
                                 }))));
         whatsappAccess.connect().join();
         if (whatsappAccess.store().chats() != null && !whatsappAccess.store().chats().isEmpty()) {

@@ -2,8 +2,10 @@ package de.kjgstbarbara.messaging;
 
 import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.data.*;
-import de.kjgstbarbara.service.DatesService;
-import de.kjgstbarbara.service.PersonsService;
+import de.kjgstbarbara.service.*;
+import it.auties.whatsapp.api.Whatsapp;
+import it.auties.whatsapp.model.info.MessageInfo;
+import it.auties.whatsapp.model.message.standard.PollUpdateMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,10 @@ public class ScheduledRunner implements CommandLineRunner {
     private PersonsService personsService;
     @Autowired
     private DatesService datesService;
+    @Autowired
+    private OrganisationService organisationService;
+    @Autowired
+    private FeedbackService feedbackService;
 
     @Override
     public void run(String... args) {
@@ -40,6 +46,14 @@ public class ScheduledRunner implements CommandLineRunner {
         SCHEDULER.schedule(() -> {
             repeatingTask.cancel(true);
         }, 60 * 60, SECONDS);
+
+        organisationService.getOrganisationRepository().findAll().forEach(org -> {
+            Whatsapp whatsapp = org.getWhatsapp();
+            whatsapp.addNewChatMessageListener(this::newWAMessageListener);
+            if (whatsapp.store().chats() == null || whatsapp.store().chats() != null && whatsapp.store().chats().isEmpty()) {
+                whatsapp.disconnect();
+            }
+        });
     }
 
     /**
@@ -49,6 +63,9 @@ public class ScheduledRunner implements CommandLineRunner {
         LocalDateTime now = LocalDateTime.now();
         // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
         for (Date d : datesService.getDateRepository().findAll()) {
+            if(d.getStart().isBefore(now)) {
+                continue;
+            }
             for (Person p : d.getGroup().getMembers()) {
                 Feedback.Status feedback = d.getStatusFor(p);
                 if (!feedback.equals(Feedback.Status.CANCELLED)) {
@@ -86,4 +103,54 @@ public class ScheduledRunner implements CommandLineRunner {
                     Bis #DATE_END_TIME am #DATE_END_DATE
                                        \s
                     Deine Rückmeldung zu diesem Termin: #FEEDBACK_STATUS""";//Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK
+
+    private void newWAMessageListener(MessageInfo newMessage) {
+        newWAMessageListener(newMessage, datesService.getDateRepository(), personsService.getPersonsRepository(), feedbackService.getFeedbackRepository());
+    }
+
+    public static void newWAMessageListener(MessageInfo newMessage, DateRepository dateRepository, PersonsRepository personsRepository, FeedbackRepository feedbackRepository) {
+        LOGGER.info(newMessage.message().unbox().content().type().toString());
+        if (newMessage.message().content() instanceof PollUpdateMessage pollUpdateMessage) {
+            LOGGER.info(newMessage.message().content().toString());
+            try {
+                if(pollUpdateMessage.votes() == null || pollUpdateMessage.votes().isEmpty()) {
+                    return;
+                }
+                String selectedOption = pollUpdateMessage.votes().getFirst().name();
+                if (!selectedOption.contains(")")) {
+                    return;
+                }
+                selectedOption = selectedOption.substring(1, selectedOption.indexOf(')'));
+                if(!selectedOption.contains("-")) {
+                    return;
+                }
+                String dateIDString = selectedOption.substring(0, selectedOption.indexOf("-"));
+                selectedOption = selectedOption.substring(selectedOption.indexOf("-"));
+                int optionID = Integer.parseInt(selectedOption);
+                long dateID = Long.parseLong(dateIDString);
+                dateRepository.findById(dateID).ifPresent(date -> {
+                    boolean pollRunning = date.isPollRunning() && LocalDateTime.now().isBefore(date.getStart());
+                    StringBuilder phoneNumber = new StringBuilder(newMessage.senderJid().toPhoneNumber().substring(1));
+                    phoneNumber.insert(2, " ");
+                    phoneNumber.insert(6, " ");
+                    personsRepository.findByPhoneNumber(new Person.PhoneNumber(phoneNumber.toString())).ifPresent(person -> {
+                        if (pollUpdateMessage.votes().isEmpty()) {
+                            return;
+                        }
+                        if (optionID > 0 && optionID < 3) {
+                            if (pollRunning) {
+                                Feedback feedback = Feedback.create(person, optionID == 1 ? Feedback.Status.COMMITTED : Feedback.Status.CANCELLED);
+                                feedbackRepository.save(feedback);
+                                date.addFeedback(feedback);
+                                dateRepository.save(date);
+                            } else {
+                                date.getGroup().getOrganisation().getWhatsapp().sendMessage(newMessage.senderJid(), "Du kannst für diesen Termin nicht mehr abstimmen. Die Abstimmung ist bereits beendet worden. Alle Änderungen musst du jetzt persönlich mitteilen");
+                            }
+                        }
+                    });
+                });
+            } catch (NumberFormatException ignored) {
+            }
+        }
+    }
 }

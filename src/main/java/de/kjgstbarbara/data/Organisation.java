@@ -130,8 +130,7 @@ public class Organisation {
 
     public void sendDatePollWhatsApp(Date date, Person sendTo) throws FriendlyError {
         Whatsapp api = getWhatsapp();
-        String title = String.format("(%s) Am %s um %s:%s Uhr ist %s. Bist du dabei?",
-                date.getId(),
+        String title = String.format("Am %s um %s:%s Uhr ist %s. Bist du dabei?",
                 date.getStart().getDayOfWeek().getDisplayName(TextStyle.FULL, sendTo.getUserLocale()),
                 date.getStart().getHour(),
                 date.getStart().getMinute(),
@@ -139,8 +138,8 @@ public class Organisation {
         Message message = new PollCreationMessageBuilder()
                 .title(title)
                 .selectableOptions(List.of(
-                        new PollOptionBuilder().name("(1) Bin dabei").build(),
-                        new PollOptionBuilder().name("(2) Bin raus").build()
+                        new PollOptionBuilder().name("(" + date.getId() + "-1) Bin dabei").build(),
+                        new PollOptionBuilder().name("(" + date.getId() + "2) Bin raus").build()
                 ))
                 .selectableOptionsCount(1)
                 .build();
