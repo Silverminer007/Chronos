@@ -41,7 +41,7 @@ public class ScheduledRunner implements CommandLineRunner {
         LOGGER.info("Hourly runner setup");
 
         final ScheduledFuture<?> repeatingTask =
-                SCHEDULER.scheduleAtFixedRate(this::runTasks, 0, 1, MINUTES);
+                SCHEDULER.scheduleAtFixedRate(this::runTasks, 0, 1, HOURS);
         SCHEDULER.schedule(() -> {
             repeatingTask.cancel(true);
         }, 60 * 60, SECONDS);
