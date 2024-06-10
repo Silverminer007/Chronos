@@ -102,16 +102,15 @@ public class ScheduledRunner implements CommandLineRunner {
                     Von #DATE_START_TIME am #DATE_START_DATE
                     Bis #DATE_END_TIME am #DATE_END_DATE
                                        \s
-                    Deine Rückmeldung zu diesem Termin: #FEEDBACK_STATUS""";//Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK
+                    Deine Rückmeldung zu diesem Termin: #FEEDBACK_STATUS
+                    Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK""";
 
     private void newWAMessageListener(MessageInfo newMessage) {
         newWAMessageListener(newMessage, datesService.getDateRepository(), personsService.getPersonsRepository(), feedbackService.getFeedbackRepository());
     }
 
     public static void newWAMessageListener(MessageInfo newMessage, DateRepository dateRepository, PersonsRepository personsRepository, FeedbackRepository feedbackRepository) {
-        LOGGER.info(newMessage.message().unbox().content().type().toString());
         if (newMessage.message().content() instanceof PollUpdateMessage pollUpdateMessage) {
-            LOGGER.info(newMessage.message().content().toString());
             try {
                 if(pollUpdateMessage.votes() == null || pollUpdateMessage.votes().isEmpty()) {
                     return;

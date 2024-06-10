@@ -1,6 +1,7 @@
 package de.kjgstbarbara.data;
 
 import com.google.common.collect.ImmutableList;
+import com.vaadin.flow.component.avatar.AvatarGroup;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -62,5 +63,9 @@ public class Date implements Comparable<Date> {
         if (pollRunning) {
             this.feedbackList.add(feedback);
         }
+    }
+
+    public List<AvatarGroup.AvatarGroupItem> getAvatars(Feedback.Status status) {
+        return this.getGroup().getMembers().stream().filter(p -> this.getStatusFor(p).equals(status)).map(Person::getAvatarGroupItem).toList();
     }
 }

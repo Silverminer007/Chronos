@@ -5,6 +5,7 @@ curl -OL https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb
 apt install ./mysql-apt-config_0.8.29-1_all.deb
 apt install mysql-server
 mkdir /opt/chronos/logs
+sudo echo "chronos.base-url=http://localhost:8080" | sudo tee /opt/chronos/chronos.properties
 PASSWORD=$(echo 'keyword' | sha1sum)
 sudo mkdir /etc/config
 sudo echo "spring.datasource.password = ""$PASSWORD" | sudo tee /etc/config/chronos.properties

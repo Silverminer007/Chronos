@@ -317,7 +317,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         AvatarGroup committedAvatars = new AvatarGroup();
         committedAvatars.setMaxItemsVisible(4);
         committedAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
-        committedAvatars.setItems(getAvatars(date, Feedback.Status.COMMITTED));
+        committedAvatars.setItems(date.getAvatars(Feedback.Status.COMMITTED));
         committedWithLabel.add(committedAvatars);
 
         HorizontalLayout cancelledWithLabel = new HorizontalLayout();
@@ -329,7 +329,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         AvatarGroup cancelledAvatars = new AvatarGroup();
         cancelledAvatars.setMaxItemsVisible(4);
         cancelledAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
-        cancelledAvatars.setItems(getAvatars(date, Feedback.Status.CANCELLED));
+        cancelledAvatars.setItems(date.getAvatars(Feedback.Status.CANCELLED));
         cancelledWithLabel.add(cancelledAvatars);
 
         feedbacks.add(committedWithLabel, cancelledWithLabel);
@@ -365,8 +365,8 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             feedbackRepository.save(feedback);
             date.addFeedback(feedback);
             dateRepository.save(date);
-            committedAvatars.setItems(getAvatars(date, Feedback.Status.COMMITTED));
-            cancelledAvatars.setItems(getAvatars(date, Feedback.Status.CANCELLED));
+            committedAvatars.setItems(date.getAvatars(Feedback.Status.COMMITTED));
+            cancelledAvatars.setItems(date.getAvatars(Feedback.Status.CANCELLED));
             commit.setEnabled(false);
             cancel.setEnabled(true);
         });
@@ -375,16 +375,12 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             feedbackRepository.save(feedback);
             date.addFeedback(feedback);
             dateRepository.save(date);
-            committedAvatars.setItems(getAvatars(date, Feedback.Status.COMMITTED));
-            cancelledAvatars.setItems(getAvatars(date, Feedback.Status.CANCELLED));
+            committedAvatars.setItems(date.getAvatars(Feedback.Status.COMMITTED));
+            cancelledAvatars.setItems(date.getAvatars(Feedback.Status.CANCELLED));
             commit.setEnabled(true);
             cancel.setEnabled(false);
         });
         return content;
-    }
-
-    private List<AvatarGroup.AvatarGroupItem> getAvatars(Date date, Feedback.Status status) {
-        return date.getGroup().getMembers().stream().filter(p -> date.getStatusFor(p).equals(status)).map(Person::getAvatarGroupItem).toList();
     }
 
     private Dialog feedbackOverviewDialog(Date date, Person person) {

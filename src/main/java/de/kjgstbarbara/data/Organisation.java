@@ -2,6 +2,7 @@ package de.kjgstbarbara.data;
 
 import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.messaging.EMailSender;
+import de.kjgstbarbara.messaging.MessageFormatter;
 import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.chat.Chat;
 import it.auties.whatsapp.model.jid.Jid;
@@ -121,10 +122,13 @@ public class Organisation {
 
     public void sendDatePoll(Date date, Person person) throws FriendlyError {
         if (date.getStatusFor(person) == Feedback.Status.DONTKNOW) {
-            switch (person.getReminder()) {
+            MessageFormatter messageFormatter = new MessageFormatter()
+                    .person(person).date(date);
+            sendMessageTo(messageFormatter.format(DATE_POLL_FORMAT), person);
+            /*switch (person.getReminder()) {
                 case WHATSAPP -> sendDatePollWhatsApp(date, person);
-                case EMAIL -> sendDatePollEmail(date, person);
-            }
+                case EMAIL -> send(date, person);
+            }*/
         }
     }
 
@@ -147,7 +151,13 @@ public class Organisation {
         api.sendMessage(getChat(sendTo), message);
     }
 
-    public void sendDatePollEmail(Date date, Person person) {
-        // TODO
-    }
+    private static final String DATE_POLL_FORMAT =
+            """
+                    Hey #PERSON_FIRSTNAME,
+                    am #DATE_START_DATE um #DATE_START_TIME ist #DATE_TITLE. Bist du dabei?
+                    Wenn ja klicke bitte hier:
+                    #DATE_LINK/vote/1/#PERSON_ID
+                    Wenn nicht klicke bitte hier:
+                    #DATE_LINK/vote/2/#PERSON_ID
+                    """;
 }

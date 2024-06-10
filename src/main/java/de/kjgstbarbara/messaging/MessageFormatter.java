@@ -1,14 +1,16 @@
 package de.kjgstbarbara.messaging;
 
 import de.kjgstbarbara.data.*;
-import jakarta.annotation.Nullable;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
+import java.util.Properties;
 
 @Setter
 @Accessors(fluent = true)
@@ -18,37 +20,45 @@ public class MessageFormatter {
     private Person person;
     private Group group;
     private Feedback.Status feedback;
+    private String baseURL = "";
 
-    public static String placeholders(String input, @Nullable Organisation organisation, @Nullable Date date, @Nullable Person person, @Nullable Group group, @Nullable Feedback.Status feedback) {
+    public String format(String input) {
+        Properties properties = new Properties();
+        try {
+            properties.load(new FileInputStream("chronos.properties"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        if(baseURL.isBlank()) {
+            baseURL = properties.getProperty("chronos.base-url");
+        }
         String output = input;
         if(date != null) {
-            output = datePlaceholder(output, date);
+            output = datePlaceholder(output);
             if(group == null) {
                 group = date.getGroup();
             }
-            output = boardPlaceholders(output, group);
+            output = boardPlaceholders(output);
             if(organisation == null) {
                 organisation = group.getOrganisation();
             }
-            output = organisationPlaceholders(output, organisation);
+            output = organisationPlaceholders(output);
         }
         if(person != null) {
-            output = personPlaceholder(output, person);
+            output = personPlaceholder(output);
         }
         if(feedback == null && date != null && person != null) {
             feedback = date.getStatusFor(person);
         }
         if(feedback != null) {
-            output = feedbackPlaceholder(output, feedback);
+            output = feedbackPlaceholder(output);
         }
+        // BASE_URL
+        output = output.replaceAll("#BASE_URL", baseURL);
         return output;
     }
 
-    public String format(String input) {
-        return placeholders(input, organisation, date, person, group, feedback);
-    }
-
-    private static String datePlaceholder(String input, Date date) {
+    private String datePlaceholder(String input) {
         String output = input;
         // DATE_TITLE
         String dateTitle = date.getTitle();
@@ -83,12 +93,14 @@ public class MessageFormatter {
         };
         output = output.replaceAll("#DATE_TIME_UNTIL_START", timeUntilStart);
         // DATE_LINK
-        String link = "";// TODO
+        String link = baseURL + "/date/" + date.getId();
         output = output.replaceAll("#DATE_LINK", link);
+        // DATE_ID
+        output = output.replaceAll("#DATE_ID", String.valueOf(date.getId()));
         return output;
     }
 
-    private static String personPlaceholder(String input, Person person) {
+    private String personPlaceholder(String input) {
         String output = input;
         // PERSON_NAME
         String name = person.getName();
@@ -120,10 +132,12 @@ public class MessageFormatter {
             String resetExpiresIn = String.valueOf(hoursUntilExpired);
             output = output.replaceAll("#PERSON_RESET_EXPIRES_IN", resetExpiresIn);
         }
+        // PERSON_ID
+        output = output.replaceAll("#PERSON_ID", String.valueOf(person.getId()));
         return output;
     }
 
-    private static String boardPlaceholders(String input, Group group) {
+    private String boardPlaceholders(String input) {
         String output = input;
         // BOARD_TITLE
         String title = group.getName();
@@ -131,7 +145,7 @@ public class MessageFormatter {
         return output;
     }
 
-    private static String feedbackPlaceholder(String input, Feedback.Status feedback) {
+    private String feedbackPlaceholder(String input) {
         String output = input;
         // FEEDBACK_STATUS
         String status = feedback.getReadable();
@@ -139,7 +153,7 @@ public class MessageFormatter {
         return output;
     }
 
-    private static String organisationPlaceholders(String input, Organisation organisation) {
+    private String organisationPlaceholders(String input) {
         String output = input;
         // ORGANISATION_NAME
         String name = organisation.getName();
