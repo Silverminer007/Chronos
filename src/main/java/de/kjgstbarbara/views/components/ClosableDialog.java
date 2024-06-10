@@ -9,7 +9,6 @@ import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.theme.lumo.LumoIcon;
-import lombok.Setter;
 
 public class ClosableDialog extends Dialog {
     private final Div titleWrapper = new Div();

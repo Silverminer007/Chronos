@@ -503,6 +503,7 @@ public class OrganisationView extends VerticalLayout {
         }
         whatsapp.add(qrCode);
         whatsapp.add(qrCodeDescription);
+        closableDialog.setCloseListener(whatsappAccess::disconnect);
 
         tabSheet.add(new Tab("WhatsApp"), whatsapp);
 

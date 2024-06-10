@@ -62,7 +62,6 @@ public class ScheduledRunner implements CommandLineRunner {
         LocalDateTime now = LocalDateTime.now();
         // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
         for (Date d : datesService.getDateRepository().findAll()) {
-            System.out.println(d.getTitle());
             if (d.getStart().isBefore(now)) {
                 continue;
             }
