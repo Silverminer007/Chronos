@@ -67,13 +67,13 @@ public class MessageFormatter {
         String startDate = date.getStart().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
         output = output.replaceAll("#DATE_START_DATE", startDate);
         // DATE_START_TIME
-        String startTime = date.getStart().format(DateTimeFormatter.ofPattern("hh:mm", Locale.GERMAN)) + " Uhr";
+        String startTime = date.getStart().format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
         output = output.replaceAll("#DATE_START_TIME", startTime);
         // DATE_END_DATE
         String endDate = date.getEnd().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
         output = output.replaceAll("#DATE_END_DATE", endDate);
         // DATE_END_TIME
-        String endTime = date.getStart().format(DateTimeFormatter.ofPattern("hh:mm", Locale.GERMAN)) + " Uhr";
+        String endTime = date.getStart().format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
         output = output.replaceAll("#DATE_END_TIME", endTime);
         // DATE_POLL_DATE
         if(date.getPollScheduledFor() != null) {
