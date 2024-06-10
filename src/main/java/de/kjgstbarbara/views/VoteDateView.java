@@ -22,6 +22,7 @@ import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.FeedbackService;
 import de.kjgstbarbara.service.PersonsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 
@@ -39,6 +40,9 @@ public class VoteDateView extends VerticalLayout implements BeforeEnterObserver 
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+        Person principal = authenticationContext.getAuthenticatedUser(UserDetails.class)
+                .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
+                .orElse(null);
         DateRepository dateRepository = datesService.getDateRepository();
         Date date = beforeEnterEvent.getRouteParameters().get("dateID").map(Long::valueOf).flatMap(dateRepository::findById).orElse(null);
         if (date != null) {
@@ -75,6 +79,9 @@ public class VoteDateView extends VerticalLayout implements BeforeEnterObserver 
                         });
                         HorizontalLayout confirmIdentity = new HorizontalLayout(lastName, confirm);
                         this.add(confirmIdentity);
+                        if(person.equals(principal)) {
+                            confirm.click();
+                        }
                         return;
                     }
                 }
