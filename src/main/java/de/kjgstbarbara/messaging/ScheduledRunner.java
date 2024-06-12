@@ -109,8 +109,9 @@ public class ScheduledRunner implements CommandLineRunner {
                 for (Person p : d.getGroup().getMembers()) {
                     LOGGER.info("Hourly update messages for date {} and person {}", d.getTitle(), p.getName());
                     Feedback.Status feedback = d.getStatusFor(p);
+                    LOGGER.info("Status der Rückmeldung: {}", feedback);
                     if (!feedback.equals(Feedback.Status.CANCELLED)) {
-                        if ((p.getRemindMeTime().contains(now.getHour()) || p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
+                        if ((p.getRemindMeTime().contains(now.getHour()) && p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                                 || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
                             try {
                                 d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(DATE_REMINDER_TEMPLATE), p);
