@@ -72,37 +72,33 @@ public class ScheduledRunner implements CommandLineRunner {
 
                 if (now.until(d.getStart(), ChronoUnit.HOURS) == 2) {
                     d.getGroup().getAdmins().forEach(admin -> {
-                        try {
-                            StringBuilder summary = new StringBuilder();
-                            summary.append("Hey ").append(admin.getFirstName()).append(",\n");
-                            summary.append("gleich ist ").append(d.getTitle()).append("\n\n");
-                            summary.append("Dabei sind:\n");
-                            StringBuilder cancelled = new StringBuilder("Nicht dabei sind:\n");
-                            StringBuilder noAnswer = new StringBuilder("Bisher nicht gemeldet haben sich:\n");
-                            for (Person p : d.getGroup().getMembers()) {
-                                Feedback.Status status = d.getStatusFor(p);
-                                if (status.equals(Feedback.Status.COMMITTED)) {
-                                    summary.append("- ").append(p.getName()).append("\n");
-                                } else if (status.equals(Feedback.Status.CANCELLED)) {
-                                    cancelled.append("- ").append(p.getName()).append("\n");
-                                } else {
-                                    noAnswer.append("- ").append(p.getName()).append("\n");
-                                }
+                        StringBuilder summary = new StringBuilder();
+                        summary.append("Hey ").append(admin.getFirstName()).append(",\n");
+                        summary.append("gleich ist ").append(d.getTitle()).append("\n\n");
+                        summary.append("Dabei sind:\n");
+                        StringBuilder cancelled = new StringBuilder("Nicht dabei sind:\n");
+                        StringBuilder noAnswer = new StringBuilder("Bisher nicht gemeldet haben sich:\n");
+                        for (Person p : d.getGroup().getMembers()) {
+                            Feedback.Status status = d.getStatusFor(p);
+                            if (status.equals(Feedback.Status.COMMITTED)) {
+                                summary.append("- ").append(p.getName()).append("\n");
+                            } else if (status.equals(Feedback.Status.CANCELLED)) {
+                                cancelled.append("- ").append(p.getName()).append("\n");
+                            } else {
+                                noAnswer.append("- ").append(p.getName()).append("\n");
                             }
-                            if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.COMMITTED::equals)) {
-                                summary.append("--> Niemand\n");
-                            }
-                            if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
-                                cancelled.append("--> Niemand\n");
-                            }
-                            if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.DONTKNOW::equals)) {
-                                noAnswer.append("--> Niemand\n");
-                            }
-                            summary.append(cancelled).append(noAnswer);
-                            d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin);
-                        } catch (FriendlyError e) {
-                            LOGGER.error("Die Abfrageergebnisse konnten nicht an {} verschickt werden", admin.getName(), e);
                         }
+                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.COMMITTED::equals)) {
+                            summary.append("--> Niemand\n");
+                        }
+                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
+                            cancelled.append("--> Niemand\n");
+                        }
+                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.DONTKNOW::equals)) {
+                            noAnswer.append("--> Niemand\n");
+                        }
+                        summary.append(cancelled).append(noAnswer);
+                        d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin);
                     });
                 }
 
@@ -113,11 +109,7 @@ public class ScheduledRunner implements CommandLineRunner {
                     if (!feedback.equals(Feedback.Status.CANCELLED)) {
                         if ((p.getRemindMeTime().contains(now.getHour()) && p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                                 || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
-                            try {
-                                d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(DATE_REMINDER_TEMPLATE), p);
-                            } catch (FriendlyError e) {
-                                LOGGER.error("Die Terminerinnerung konnte nicht an {} verschickt werden", p.getName(), e);
-                            }
+                            d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(DATE_REMINDER_TEMPLATE), p);
                         }
                     }
 
@@ -198,7 +190,7 @@ public class ScheduledRunner implements CommandLineRunner {
                                 date.addFeedback(feedback);
                                 dateRepository.save(date);
                             } else {
-                                date.getGroup().getOrganisation().getWhatsapp().sendMessage(newMessage.senderJid(), "Du kannst für diesen Termin nicht mehr abstimmen. Die Abstimmung ist bereits beendet worden. Alle Änderungen musst du jetzt persönlich mitteilen");
+                                date.getGroup().getOrganisation().sendMessageTo("Du kannst für diesen Termin nicht mehr abstimmen. Die Abstimmung ist bereits beendet worden. Alle Änderungen musst du jetzt persönlich mitteilen", person);
                             }
                         }
                     });

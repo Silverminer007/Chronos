@@ -57,7 +57,7 @@ public class Organisation {
         return UUID.fromString(uuidString.toString());
     }
 
-    public Whatsapp getWhatsapp() {
+    public Optional<Whatsapp> getWhatsapp() {
         try {
             Semaphore semaphore = new Semaphore(1);
             semaphore.acquire();
@@ -66,45 +66,46 @@ public class Organisation {
                 semaphore.release();
             });
             try {
-                whatsapp.addLoggedInListener(api -> {
-                    semaphore.release();
-                });
                 whatsapp.connect().join();
                 if (whatsapp.store().chats() != null && !whatsapp.store().chats().isEmpty()) {
                     semaphore.release();
+                    return Optional.of(whatsapp);
                 }
             } catch (Throwable throwable) {
                 semaphore.release();
                 LOGGER.error("WhatsApp Setup failed", throwable);
             }
             semaphore.acquire();
-            return whatsapp;
+            whatsapp.disconnect();
+            return Optional.empty();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void sendMessageTo(String message, Person person) throws FriendlyError {
+    public void sendMessageTo(String message, Person person) {
         sendMessageTo(message, person, person.getReminder());
     }
 
-    public void sendMessageTo(String message, Person person, Person.Reminder reminder) throws FriendlyError {
-        if (getWhatsapp() == null || reminder.equals(Person.Reminder.EMAIL)) {
+    public void sendMessageTo(String message, Person person, Person.Reminder reminder) {
+        if (getWhatsapp().isEmpty() || reminder.equals(Person.Reminder.EMAIL)) {
             emailSender.sendMessage(message, person);
         } else {
             LOGGER.info("Message send via WhatsApp");
             LOGGER.info(message);
-            getWhatsapp().sendMessage(getChat(person), message);
+            getWhatsapp().ifPresent(whatsapp -> getChat(person).ifPresent(chat ->
+                    whatsapp.sendMessage(chat, message).join()));
             LOGGER.info("Sending successful");
         }
     }
 
-    private Chat getChat(Person sendTo) throws FriendlyError {
-        Optional<Chat> optionalChat = getWhatsapp().store().findChatByJid(Jid.of(sendTo.getPhoneNumber().number()));
+    private Optional<Chat> getChat(Person sendTo) {
+        Optional<Chat> optionalChat = getWhatsapp().flatMap(whatsapp -> whatsapp.store().findChatByJid(Jid.of(sendTo.getPhoneNumber().number())));
         if (optionalChat.isPresent()) {
-            return optionalChat.get();
+            return optionalChat;
         } else {
-            throw new FriendlyError("Es konnte kein Kontakt zur Telefonnummer +" + sendTo.getPhoneNumber().number() + " von " + sendTo.getName() + " gefunden werden");
+            LOGGER.info("Es konnte kein Kontakt zur Telefonnummer +{} von {} gefunden werden", sendTo.getPhoneNumber().number(), sendTo.getName());
+            return Optional.empty();
         }
     }
 
@@ -135,23 +136,26 @@ public class Organisation {
         }
     }
 
-    public void sendDatePollWhatsApp(Date date, Person sendTo) throws FriendlyError {
-        Whatsapp api = getWhatsapp();
-        String title = String.format("Am %s um %s:%s Uhr ist %s. Bist du dabei?",
-                date.getStart().getDayOfWeek().getDisplayName(TextStyle.FULL, sendTo.getUserLocale()),
-                date.getStart().getHour(),
-                date.getStart().getMinute(),
-                date.getTitle());
-        Message message = new PollCreationMessageBuilder()
-                .title(title)
-                .selectableOptions(List.of(
-                        new PollOptionBuilder().name("(" + date.getId() + "-1) Bin dabei").build(),
-                        new PollOptionBuilder().name("(" + date.getId() + "-2) Bin raus").build()
-                ))
-                .selectableOptionsCount(1)
-                .build();
-        System.out.println("Poll send");
-        api.sendMessage(getChat(sendTo), message);
+    public void sendDatePollWhatsApp(Date date, Person sendTo) {
+        getWhatsapp().ifPresent(api -> {
+            String title = String.format("Am %s um %s:%s Uhr ist %s. Bist du dabei?",
+                    date.getStart().getDayOfWeek().getDisplayName(TextStyle.FULL, sendTo.getUserLocale()),
+                    date.getStart().getHour(),
+                    date.getStart().getMinute(),
+                    date.getTitle());
+            Message message = new PollCreationMessageBuilder()
+                    .title(title)
+                    .selectableOptions(List.of(
+                            new PollOptionBuilder().name("(" + date.getId() + "-1) Bin dabei").build(),
+                            new PollOptionBuilder().name("(" + date.getId() + "-2) Bin raus").build()
+                    ))
+                    .selectableOptionsCount(1)
+                    .build();
+            System.out.println("Poll send");
+            getChat(sendTo).ifPresent(chat -> {
+                api.sendMessage(chat, message);
+            });
+        });
     }
 
     private static final String DATE_POLL_FORMAT =
