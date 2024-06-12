@@ -59,6 +59,7 @@ public class ScheduledRunner implements CommandLineRunner {
      * Runs every 60 Minutes
      */
     private void runTasks() {
+        LOGGER.info("Hourly Updates run started");
         LocalDateTime now = LocalDateTime.now();
         // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
         for (Date d : datesService.getDateRepository().findAll()) {

@@ -274,7 +274,10 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                     date.getTitle() + " - Das löschen kann nicht Rückgängig gemacht werden",
                     "Ja, löschen",
                     e -> {
-                        for (Feedback f : date.getFeedbackList()) {
+                        List<Feedback> feedbackList = date.getFeedbackList();
+                        date.setFeedbackList(List.of());
+                        dateRepository.save(date);
+                        for (Feedback f : feedbackList) {
                             feedbackRepository.delete(f);
                         }
                         dateRepository.delete(date);
