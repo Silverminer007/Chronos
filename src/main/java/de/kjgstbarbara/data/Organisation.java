@@ -101,7 +101,7 @@ public class Organisation {
         if (optionalChat.isPresent()) {
             return optionalChat.get();
         } else {
-            throw new FriendlyError("Es konnte kein Kontakt zur Telefonnummer " + sendTo.getPhoneNumber().number() + " von " + sendTo.getName() + " gefunden werden");
+            throw new FriendlyError("Es konnte kein Kontakt zur Telefonnummer +" + sendTo.getPhoneNumber().number() + " von " + sendTo.getName() + " gefunden werden");
         }
     }
 
