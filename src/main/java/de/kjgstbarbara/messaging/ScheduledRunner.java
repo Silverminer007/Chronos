@@ -122,14 +122,21 @@ public class ScheduledRunner implements CommandLineRunner {
                     }
 
                     LOGGER.info("Poll scheduled for {}, is running {}", d.getPollScheduledFor(), d.isPollRunning());
-                    if (d.getPollScheduledFor() != null &&
-                            LocalDate.now().isEqual(d.getPollScheduledFor())
-                            && d.isPollRunning()
-                            && p.getRemindMeTime().contains(now.getHour())) {
-                        try {
-                            d.getGroup().getOrganisation().sendDatePoll(d, p);
-                        } catch (FriendlyError e) {
-                            LOGGER.error("Die geplante Terminabfrage konnte nicht verschickt werden", e);
+                    if (d.getPollScheduledFor() != null) {
+                        LOGGER.info("Poll scheduled != null");
+                        if(LocalDate.now().isEqual(d.getPollScheduledFor())) {
+                            LOGGER.info("Poll scheduled for today");
+                            if(d.isPollRunning()) {
+                                LOGGER.info("Poll is running");
+                                if(p.getRemindMeTime().contains(now.getHour())) {
+                                    LOGGER.info("Hour suits");
+                                    try {
+                                        d.getGroup().getOrganisation().sendDatePoll(d, p);
+                                    } catch (FriendlyError e) {
+                                        LOGGER.error("Die geplante Terminabfrage konnte nicht verschickt werden", e);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
