@@ -65,7 +65,7 @@ public class ScheduledRunner implements CommandLineRunner {
             LOGGER.info("Running hourly update checker for {} dates", datesService.getDateRepository().count());
             // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
             for (Date d : datesService.getDateRepository().findAll()) {
-                LOGGER.debug("Hourly update messages for date {}", d.getTitle());
+                LOGGER.info("Hourly update messages for date {}", d.getTitle());
                 if (d.getStart().isBefore(now)) {
                     continue;
                 }
@@ -107,7 +107,7 @@ public class ScheduledRunner implements CommandLineRunner {
                 }
 
                 for (Person p : d.getGroup().getMembers()) {
-                    LOGGER.debug("Hourly update messages for date {} and person {}", d.getTitle(), p.getName());
+                    LOGGER.info("Hourly update messages for date {} and person {}", d.getTitle(), p.getName());
                     Feedback.Status feedback = d.getStatusFor(p);
                     if (!feedback.equals(Feedback.Status.CANCELLED)) {
                         if ((p.getRemindMeTime().contains(now.getHour()) || p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
