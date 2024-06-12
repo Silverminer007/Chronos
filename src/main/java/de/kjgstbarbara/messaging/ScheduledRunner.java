@@ -128,6 +128,7 @@ public class ScheduledRunner implements CommandLineRunner {
                             LOGGER.info("Poll scheduled for today");
                             if(d.isPollRunning()) {
                                 LOGGER.info("Poll is running");
+                                LOGGER.info("Remind me time [{}] and hour {}", p.getRemindMeTime(), now.getHour());
                                 if(p.getRemindMeTime().contains(now.getHour())) {
                                     LOGGER.info("Hour suits");
                                     try {
