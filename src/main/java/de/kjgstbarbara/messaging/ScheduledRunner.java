@@ -62,6 +62,7 @@ public class ScheduledRunner implements CommandLineRunner {
         LOGGER.info("Hourly Updates run started");
         try {
             LocalDateTime now = LocalDateTime.now();
+            LOGGER.info("Running hourly update checker for {} dates", datesService.getDateRepository().count());
             // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
             for (Date d : datesService.getDateRepository().findAll()) {
                 LOGGER.debug("Hourly update messages for date {}", d.getTitle());
