@@ -60,50 +60,50 @@ public class ScheduledRunner implements CommandLineRunner {
      */
     private void runTasks() {
         LOGGER.info("Hourly Updates run started");
-        LocalDateTime now = LocalDateTime.now();
-        // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
-        for (Date d : datesService.getDateRepository().findAll()) {
-            if (d.getStart().isBefore(now)) {
-                continue;
-            }
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
+            for (Date d : datesService.getDateRepository().findAll()) {
+                if (d.getStart().isBefore(now)) {
+                    continue;
+                }
 
-            if (now.until(d.getStart(), ChronoUnit.HOURS) == 2) {
-                d.getGroup().getAdmins().forEach(admin -> {
-                    try {
-                        StringBuilder summary = new StringBuilder();
-                        summary.append("Hey ").append(admin.getFirstName()).append(",\n");
-                        summary.append("gleich ist ").append(d.getTitle()).append("\n\n");
-                        summary.append("Dabei sind:\n");
-                        StringBuilder cancelled = new StringBuilder("Nicht dabei sind:\n");
-                        StringBuilder noAnswer = new StringBuilder("Bisher nicht gemeldet haben sich:\n");
-                        for (Person p : d.getGroup().getMembers()) {
-                            Feedback.Status status = d.getStatusFor(p);
-                            if (status.equals(Feedback.Status.COMMITTED)) {
-                                summary.append("- ").append(p.getName()).append("\n");
-                            } else if (status.equals(Feedback.Status.CANCELLED)) {
-                                cancelled.append("- ").append(p.getName()).append("\n");
-                            } else {
-                                noAnswer.append("- ").append(p.getName()).append("\n");
+                if (now.until(d.getStart(), ChronoUnit.HOURS) == 2) {
+                    d.getGroup().getAdmins().forEach(admin -> {
+                        try {
+                            StringBuilder summary = new StringBuilder();
+                            summary.append("Hey ").append(admin.getFirstName()).append(",\n");
+                            summary.append("gleich ist ").append(d.getTitle()).append("\n\n");
+                            summary.append("Dabei sind:\n");
+                            StringBuilder cancelled = new StringBuilder("Nicht dabei sind:\n");
+                            StringBuilder noAnswer = new StringBuilder("Bisher nicht gemeldet haben sich:\n");
+                            for (Person p : d.getGroup().getMembers()) {
+                                Feedback.Status status = d.getStatusFor(p);
+                                if (status.equals(Feedback.Status.COMMITTED)) {
+                                    summary.append("- ").append(p.getName()).append("\n");
+                                } else if (status.equals(Feedback.Status.CANCELLED)) {
+                                    cancelled.append("- ").append(p.getName()).append("\n");
+                                } else {
+                                    noAnswer.append("- ").append(p.getName()).append("\n");
+                                }
                             }
+                            if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.COMMITTED::equals)) {
+                                summary.append("--> Niemand\n");
+                            }
+                            if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
+                                cancelled.append("--> Niemand\n");
+                            }
+                            if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.DONTKNOW::equals)) {
+                                noAnswer.append("--> Niemand\n");
+                            }
+                            summary.append(cancelled).append(noAnswer);
+                            d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin);
+                        } catch (FriendlyError e) {
+                            LOGGER.error("Die Abfrageergebnisse konnten nicht an {} verschickt werden", admin.getName(), e);
                         }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.COMMITTED::equals)) {
-                            summary.append("--> Niemand\n");
-                        }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
-                            cancelled.append("--> Niemand\n");
-                        }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.DONTKNOW::equals)) {
-                            noAnswer.append("--> Niemand\n");
-                        }
-                        summary.append(cancelled).append(noAnswer);
-                        d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin);
-                    } catch (FriendlyError e) {
-                        LOGGER.error("Die Abfrageergebnisse konnten nicht an {} verschickt werden", admin.getName(), e);
-                    }
-                });
-            }
+                    });
+                }
 
-            try {
                 for (Person p : d.getGroup().getMembers()) {
                     Feedback.Status feedback = d.getStatusFor(p);
                     if (!feedback.equals(Feedback.Status.CANCELLED)) {
@@ -128,11 +128,11 @@ public class ScheduledRunner implements CommandLineRunner {
                         }
                     }
                 }
-            } catch (Throwable e) {
-                LOGGER.error("Es ist ein Fehler beim verarbeiten von {} für die Terminerinnerungen aufgetreten", d.getTitle(), e);
-            }
-        }
 
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Es ist ein Fehler für die Terminerinnerungen aufgetreten", e);
+        }
         // Neue Termine?
     }
 

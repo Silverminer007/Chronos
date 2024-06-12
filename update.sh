@@ -1,8 +1,8 @@
 git stash
 git fetch
 git pull
-mvn clean package -Pproduction
 systemctl stop chronos
+mvn clean package -Pproduction
 cp chronos.service /etc/systemd/system/
 systemctl daemon-reload
 mkdir /opt/chronos
