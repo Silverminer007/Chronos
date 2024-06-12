@@ -95,6 +95,7 @@ public class Organisation {
             LOGGER.info("Message send via WhatsApp");
             LOGGER.info(message);
             getWhatsapp().sendMessage(getChat(person), message);
+            LOGGER.info("Sending successful");
         }
     }
 
