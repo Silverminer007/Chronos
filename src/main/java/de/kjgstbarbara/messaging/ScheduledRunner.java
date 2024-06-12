@@ -121,6 +121,7 @@ public class ScheduledRunner implements CommandLineRunner {
                         }
                     }
 
+                    LOGGER.info("Poll scheduled for {}, is running {}", d.getPollScheduledFor(), d.isPollRunning());
                     if (d.getPollScheduledFor() != null &&
                             LocalDate.now().isEqual(d.getPollScheduledFor())
                             && d.isPollRunning()
