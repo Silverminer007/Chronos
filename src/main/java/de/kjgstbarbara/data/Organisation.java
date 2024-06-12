@@ -92,6 +92,8 @@ public class Organisation {
         if (getWhatsapp() == null || reminder.equals(Person.Reminder.EMAIL)) {
             emailSender.sendMessage(message, person);
         } else {
+            LOGGER.info("Message send via WhatsApp");
+            LOGGER.info(message);
             getWhatsapp().sendMessage(getChat(person), message);
         }
     }
