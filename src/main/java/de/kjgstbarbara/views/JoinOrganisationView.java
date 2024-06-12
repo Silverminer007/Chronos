@@ -49,19 +49,15 @@ public class JoinOrganisationView extends Div implements BeforeEnterObserver {
                     organisationRepository.save(organisation);
                     Notification.show("Deine Beitrittsanfrage für " + organisation.getName() + " wurde verschickt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                     UI.getCurrent().getPage().fetchCurrentURL(url -> {
-                        try {
-                            MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(person);
-                            String newUrl = Utility.baseURL(url) + "/organisations";
-                            organisation.sendMessageTo(messageFormatter.format(
-                                    """
-                                            Hi #ORGANISATION_ADMIN_NAME,
-                                            #PERSON_NAME möchte gerne deiner Organisation #ORGANISATION_NAME beitreten. Wenn du diese Anfrage bearbeiten möchtest, klicke bitte auf diesen Link
-                                            
-                                            """ + newUrl
-                            ), organisation.getAdmin());
-                        } catch (FriendlyError e) {
-                            LOGGER.error("Der Admin von {} konnte nicht über die Beitrittsanfrage von {} informiert werden", organisation.getName(), person.getName(), e);
-                        }
+                        MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(person);
+                        String newUrl = Utility.baseURL(url) + "/organisations";
+                        organisation.sendMessageTo(messageFormatter.format(
+                                """
+                                        Hi #ORGANISATION_ADMIN_NAME,
+                                        #PERSON_NAME möchte gerne deiner Organisation #ORGANISATION_NAME beitreten. Wenn du diese Anfrage bearbeiten möchtest, klicke bitte auf diesen Link
+                                        
+                                        """ + newUrl
+                        ), organisation.getAdmin());
                     });
                 } else {
                     Notification.show("Du gehörst schon zu dieser Organisation: " + organisation.getName()).addThemeVariants(NotificationVariant.LUMO_WARNING);

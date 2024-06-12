@@ -539,8 +539,6 @@ public class OrganisationView extends VerticalLayout {
                 MessageFormatter messageFormatter = new MessageFormatter().person(this.person);
                 organisation.sendMessageTo(messageFormatter.format(EMAIL_TEST_MESSAGE), this.person, Person.Reminder.EMAIL);
                 Notification.show("Die E-Mail Konfiguration wurde erfolgreich gespeichert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            } catch (FriendlyError e) {
-                Notification.show("Das versenden der E-Mail ist fehlgeschlagen. Wahrscheinlich die E-Mail Adresse, die in deinem Profil hinterlegt ist, ungültig").addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (ValidationException e) {
                 Notification.show("Ungültige Konfiguration").addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
