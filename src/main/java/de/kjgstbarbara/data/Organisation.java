@@ -77,6 +77,7 @@ public class Organisation {
             }
             semaphore.acquire();
             whatsapp.disconnect();
+            LOGGER.info("WhatsApp not available");
             return Optional.empty();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
