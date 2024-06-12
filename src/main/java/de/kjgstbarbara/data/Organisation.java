@@ -121,7 +121,7 @@ public class Organisation {
     }
 
     public void sendDatePoll(Date date, Person person) throws FriendlyError {
-        if (date.getStatusFor(person) == Feedback.Status.DONTKNOW) {
+        if (Feedback.Status.DONTKNOW.equals(date.getStatusFor(person))) {
             MessageFormatter messageFormatter = new MessageFormatter()
                     .person(person).date(date);
             sendMessageTo(messageFormatter.format(DATE_POLL_FORMAT), person);
