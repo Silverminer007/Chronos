@@ -149,6 +149,12 @@ public class Utils {
             Cell sumHeaderCell = header.createCell(gameEvaluation.getGames().size() + 1);
             sumHeaderCell.setCellValue("Gesamtpunktzahl");
             sumHeaderCell.setCellStyle(headerStyle);
+            Cell maxPointsHeaderCell = header.createCell(gameEvaluation.getGames().size() + 2);
+            maxPointsHeaderCell.setCellValue("Maximalpunktzahl");
+            maxPointsHeaderCell.setCellStyle(headerStyle);
+            Cell scoreHeaderCell = header.createCell(gameEvaluation.getGames().size() + 3);
+            scoreHeaderCell.setCellValue("Score");
+            scoreHeaderCell.setCellStyle(headerStyle);
             for (int i = 0; i < gameEvaluation.getParticipants().size(); i++) {
                 Row row = sheet.createRow(i + 1);
                 Cell nameCell = row.createCell(0);
@@ -156,17 +162,29 @@ public class Utils {
 
                 for (int j = 0; j < gameEvaluation.getGames().size(); j++) {
                     Cell pointsCell = row.createCell(j + 1);
-                    pointsCell.setCellValue(gameEvaluation.getGames().get(j).getPointsOf(scoreBoard.get(i)));
+                    if (gameEvaluation.getGames().get(j).didParticipate(scoreBoard.get(i))) {
+                        pointsCell.setCellValue(gameEvaluation.getGames().get(j).getPointsOf(scoreBoard.get(i)));
+                    } else {
+                        pointsCell.setCellValue("");
+                    }
                 }
 
                 Cell sumCell = row.createCell(gameEvaluation.getGames().size() + 1);
                 sumCell.setCellFormula("SUM(B" + (i + 2) + ":" + row.getCell(gameEvaluation.getGames().size()).getAddress() + ")");
                 CellStyle sumCellStyle = workbook.createCellStyle();
-                sumCellStyle.setFillBackgroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+                sumCellStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
                 XSSFFont font = workbook.createFont();
                 font.setBold(true);
                 sumCellStyle.setFont(font);
                 sumCell.setCellStyle(sumCellStyle);
+
+                Cell maxPointsCell = row.createCell(gameEvaluation.getGames().size() + 2);
+                maxPointsCell.setCellValue(gameEvaluation.getMaxPointsFor(scoreBoard.get(i)));
+                maxPointsCell.setCellStyle(sumCellStyle);
+
+                Cell scoreCell = row.createCell(gameEvaluation.getGames().size() + 3);
+                scoreCell.setCellFormula("ROUND(" + sumCell.getAddress() + "/" + maxPointsCell.getAddress() + "*100,2)&\"%\"");
+                scoreCell.setCellStyle(sumCellStyle);
             }
             workbook.write(result);
         }
@@ -187,7 +205,7 @@ public class Utils {
             headerFontSecond.setFontHeight(20);
             headerFontSecond.setBold(true);
             headerStyleSecond.setFont(headerFontFirst);
-            for(int i = 0; i < game.getGameGroups().size(); i++) {
+            for (int i = 0; i < game.getGameGroups().size(); i++) {
                 Cell groupNameCell = header.createCell(i);
                 groupNameCell.setCellValue(game.getGameGroups().get(i).getName());
                 groupNameCell.setCellStyle(i % 2 == 0 ? headerStyleFirst : headerStyleSecond);
@@ -198,11 +216,11 @@ public class Utils {
             cellStyleSecond.setFillForegroundColor(IndexedColors.GREEN.getIndex());
             boolean hasNext = true;
             int rowID = 1;
-            while(hasNext) {
+            while (hasNext) {
                 hasNext = false;
                 Row row = sheet.createRow(rowID);
-                for(int i = 0; i < game.getGameGroups().size(); i++) {
-                    if(game.getGameGroups().get(i).getParticipants().size() >= rowID) {
+                for (int i = 0; i < game.getGameGroups().size(); i++) {
+                    if (game.getGameGroups().get(i).getParticipants().size() >= rowID) {
                         hasNext = true;
                         Cell nameCell = row.createCell(i);
                         nameCell.setCellValue(game.getGameGroups().get(i).getParticipants().get(rowID - 1).getName());

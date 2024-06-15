@@ -146,7 +146,6 @@ public class GameEvaluationView extends Composite<VerticalLayout> implements Bef
             save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             save.addClickListener(saveEvent -> {
                 Game game = new Game();
-                game.setMaxPoints(5);
                 game.setName(name.getValue());
                 gameService.update(game);
                 gameEvaluation.getGames().add(game);
@@ -211,7 +210,7 @@ public class GameEvaluationView extends Composite<VerticalLayout> implements Bef
         List<Participant> participants = gameEvaluation.getScoreBoard();
         for (int i = 0; i < 3; i++) {
             if (participants.size() > i) {
-                this.scoreBoard.add(new H5((i + 1) + ". " + participants.get(i).getName() + " (" + this.gameEvaluation.getPointsOf(participants.get(i)) + " Pkt)"));
+                this.scoreBoard.add(new H5((i + 1) + ". " + participants.get(i).getName() + " (" + this.gameEvaluation.getPointsOf(participants.get(i)) + " Pkt - " + Math.round(this.gameEvaluation.getScoreOf(participants.get(i)) * 100) + "%)"));
             }
         }
         if (participants.isEmpty()) {

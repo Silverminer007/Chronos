@@ -310,10 +310,11 @@ public class GameView extends Composite<VerticalLayout> implements BeforeEnterOb
                 remove.setAriaLabel("Aus Gruppe entfernen");
                 remove.setIcon(VaadinIcon.CLOSE.create());
                 remove.addClickListener(event -> {
-                    g.getParticipants().remove(participant);
-                    this.gameGroupService.update(g);
+                    GameGroup gameGroup = this.gameGroupService.get(g.getId()).orElse(g);
+                    gameGroup.getParticipants().remove(participant);
+                    this.gameGroupService.update(gameGroup);
                     this.game = this.gameService.get(this.game.getId()).orElse(this.game);
-                    this.updateGroupTabs(g);
+                    this.updateGroupTabs(gameGroup);
                 });
                 return remove;
             }).setTextAlign(ColumnTextAlign.END).setWidth("20px");

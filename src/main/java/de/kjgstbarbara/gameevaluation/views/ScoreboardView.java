@@ -54,7 +54,7 @@ public class ScoreboardView extends Composite<VerticalLayout> implements BeforeE
 
     private final Person principal;
 
-    public ScoreboardView(PersonsRepository personsRepository, AuthenticationContext authenticationContext) {// TODO Edit Participant view + list of games and points
+    public ScoreboardView(PersonsRepository personsRepository, AuthenticationContext authenticationContext) {
         this.principal = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
                 .orElse(null);
@@ -169,6 +169,7 @@ public class ScoreboardView extends Composite<VerticalLayout> implements BeforeE
         participants.addColumn(person -> (this.gameEvaluation.getScoreBoard().indexOf(person) + 1) + ".").setAutoWidth(true);
         participants.addColumn(Participant::getName).setAutoWidth(true);
         participants.addColumn(person -> this.gameEvaluation.getPointsOf(person) + " Pkt").setTextAlign(ColumnTextAlign.END).setWidth("min-content");
+        participants.addColumn(participant -> Math.round(this.gameEvaluation.getScoreOf(participant) * 100) + "%").setTextAlign(ColumnTextAlign.END).setWidth("min-content");
         participants.addComponentColumn(person -> {
             Button delete = new Button();
             delete.setAriaLabel("Teilnehmer entfernen");

@@ -32,15 +32,22 @@ public class GameEvaluation extends AbstractEntity {
         return points;
     }
 
-    public double getScoreOf(Participant participant) {// TODO
-        double points = 0;
+    public double getScoreOf(Participant participant) {
+        double maxPoints = getMaxPointsFor(participant);
+        return maxPoints == 0 ? 1.0D : getPointsOf(participant) / maxPoints;
+    }
+
+    public double getMaxPointsFor(Participant participant) {
+        double maxPoints = 0;
         for (Game game : games) {
-            points += game.getMaxPoints();
+            if (game.didParticipate(participant)) {
+                maxPoints += game.getMaxPoints();
+            }
         }
-        return getPointsOf(participant) / points;
+        return maxPoints;
     }
 
     public List<Participant> getScoreBoard() {
-        return participants.stream().sorted(Comparator.comparing(this::getPointsOf).reversed()).toList();
+        return participants.stream().sorted(Comparator.comparing(this::getScoreOf).reversed()).toList();
     }
 }
