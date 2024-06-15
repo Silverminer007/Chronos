@@ -37,7 +37,7 @@ import java.util.List;
 @Route(value = "gameevaluation/:game-evaluation", layout = MainNavigationView.class)
 public class GameEvaluationView extends Composite<VerticalLayout> implements BeforeEnterObserver {
 
-    private final H1 title = new H1();
+    private final H2 title = new H2();
     private final Grid<Game> gameList = new Grid<>();
     private final VerticalLayout scoreBoard = new VerticalLayout();
 
@@ -149,10 +149,9 @@ public class GameEvaluationView extends Composite<VerticalLayout> implements Bef
                 game.setMaxPoints(5);
                 game.setName(name.getValue());
                 gameService.update(game);
-                gameEvaluation.getGames().add(game);// TODO Es ist nicht möglich zwei neue Spiele zu erstellen hintereinander ohne die Seite neu zu laden
-                gameEvaluationService.update(gameEvaluation);
+                gameEvaluation.getGames().add(game);
+                this.gameEvaluation = gameEvaluationService.update(gameEvaluation);
                 gameList.setItems(gameEvaluation.getGames());
-                this.gameEvaluation = this.gameEvaluationService.get(this.gameEvaluation.getId()).orElse(this.gameEvaluation);
                 dialog.close();
             });
             dialog.getFooter().add(save);
@@ -183,10 +182,11 @@ public class GameEvaluationView extends Composite<VerticalLayout> implements Bef
                 this.gameEvaluation.getGames().remove(game);
                 this.gameEvaluation = this.gameEvaluationService.update(this.gameEvaluation);
                 this.gameService.delete(game.getId());
-                gameList.setItems(this.gameEvaluation.getGames());// TODO Update Scoreboard
+                gameList.setItems(this.gameEvaluation.getGames());
+                updateScoreboard();
             });
             return delete;
-        }).setTextAlign(ColumnTextAlign.END);
+        }).setTextAlign(ColumnTextAlign.END).setAutoWidth(true);
         getContent().add(gameList);
     }
 
@@ -203,6 +203,10 @@ public class GameEvaluationView extends Composite<VerticalLayout> implements Bef
             return;
         }
         this.gameList.setItems(gameEvaluation.getGames());
+        updateScoreboard();
+    }
+
+    private void updateScoreboard() {
         this.scoreBoard.removeAll();
         List<Participant> participants = gameEvaluation.getScoreBoard();
         for (int i = 0; i < 3; i++) {

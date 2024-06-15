@@ -8,9 +8,11 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -20,6 +22,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.gameevaluation.Utils;
 import de.kjgstbarbara.gameevaluation.data.GameEvaluation;
@@ -60,7 +63,10 @@ public class ScoreboardView extends Composite<VerticalLayout> implements BeforeE
         }
         getContent().setSizeFull();
 
-        HorizontalLayout header = new HorizontalLayout();
+        FlexLayout header = new FlexLayout();
+        header.addClassName(LumoUtility.Gap.MEDIUM);
+        header.setFlexWrap(FlexLayout.FlexWrap.WRAP);
+        header.setAlignItems(FlexComponent.Alignment.CENTER);
 
         Button back = new Button();
         back.setAriaLabel("Vorherige Seite");
@@ -68,8 +74,10 @@ public class ScoreboardView extends Composite<VerticalLayout> implements BeforeE
         back.setIcon(VaadinIcon.ARROW_LEFT.create());
         header.add(back);
 
-        H1 title = new H1("Teilnehmende");
+        H2 title = new H2("Teilnehmende");
         header.add(title);
+
+        HorizontalLayout menu = new HorizontalLayout();
 
         MultiFileMemoryBuffer multiFileMemoryBuffer = new MultiFileMemoryBuffer();
 
@@ -94,7 +102,7 @@ public class ScoreboardView extends Composite<VerticalLayout> implements BeforeE
             participants.setItems(this.gameEvaluation.getScoreBoard());
             Notification.show(participantList.size() + " Teilnehmende importiert");
         });
-        header.add(upload);
+        menu.add(upload);
 
         Button addNew = new Button();
         addNew.setIcon(LumoIcon.PLUS.create());
@@ -118,14 +126,14 @@ public class ScoreboardView extends Composite<VerticalLayout> implements BeforeE
                 participant.setName(name.getValue());
                 participantService.update(participant);
                 gameEvaluation.getParticipants().add(participant);
-                gameEvaluationService.update(gameEvaluation);
+                this.gameEvaluation = gameEvaluationService.update(gameEvaluation);
                 participants.setItems(this.gameEvaluation.getScoreBoard());
                 dialog.close();
             });
             dialog.getFooter().add(save);
             dialog.open();
         });
-        header.add(addNew);
+        menu.add(addNew);
 
         Button export = new Button();
         export.setAriaLabel("Scoreboard als xlsx exportieren");
@@ -143,7 +151,9 @@ public class ScoreboardView extends Composite<VerticalLayout> implements BeforeE
                 })
         );
         exportWrapper.wrapComponent(export);
-        header.add(exportWrapper);
+        menu.add(exportWrapper);
+
+        header.add(menu);
 
         getContent().add(header);
 

@@ -8,9 +8,10 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.icon.Icon;
@@ -26,7 +27,6 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
@@ -34,7 +34,6 @@ import de.kjgstbarbara.gameevaluation.data.GameEvaluation;
 import de.kjgstbarbara.gameevaluation.services.GameEvaluationService;
 import de.kjgstbarbara.service.GroupService;
 import de.kjgstbarbara.service.OrganisationService;
-import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.components.NonNullValidator;
 import de.kjgstbarbara.views.nav.MainNavigationView;
@@ -67,7 +66,7 @@ public class GameEvaluationListView extends Composite<VerticalLayout> {
         header.setWidth("100%");
         header.setHeight("min-content");
 
-        H1 title = new H1();
+        H2 title = new H2();
         title.setText("Spieleauswertungen");
         title.setWidth("max-content");
         header.add(title);
@@ -111,6 +110,17 @@ public class GameEvaluationListView extends Composite<VerticalLayout> {
                             new RouteParameters(new RouteParam("game-evaluation", gameEvaluation.getId()))));
             return gameEvaluationWidget;
         });
+        stripedGrid.addComponentColumn(gameEvaluation -> {
+            Button delete = new Button();
+            delete.setAriaLabel("Spieleauswertung entfernen");
+            delete.setIcon(VaadinIcon.TRASH.create());
+            delete.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+            delete.addClickListener(deleteEvent -> {
+                this.gameEvaluationService.delete(gameEvaluation.getId());
+                this.setGridData(stripedGrid);
+            });
+            return delete;
+        }).setTextAlign(ColumnTextAlign.END).setAutoWidth(true);
 
         addNew.addClickListener(event -> {
             Dialog dialog = new Dialog();
@@ -119,10 +129,12 @@ public class GameEvaluationListView extends Composite<VerticalLayout> {
             GameEvaluation gameEvaluation = new GameEvaluation();
             Binder<GameEvaluation> binder = new Binder<>();
 
+            VerticalLayout content = new VerticalLayout();
+
             TextField name = new TextField("Name");
             name.focus();
             binder.forField(name).bind(GameEvaluation::getName, GameEvaluation::setName);
-            dialog.add(name);
+            content.add(name);
 
             ComboBox<Group> selectGroup = new ComboBox<>();
             selectGroup.setLabel("Gruppe");
@@ -137,7 +149,7 @@ public class GameEvaluationListView extends Composite<VerticalLayout> {
             });
             binder.forField(selectGroup).withValidator(new NonNullValidator<>()).bind(GameEvaluation::getGroup, GameEvaluation::setGroup);
             selectGroup.setItems(groupService.getGroupRepository().findByMembersIn(this.principal));
-            dialog.add(selectGroup);
+            content.add(selectGroup);
 
             ComboBox<Organisation> selectOrganisation = new ComboBox<>();
             selectOrganisation.setLabel("Organisation");
@@ -152,9 +164,11 @@ public class GameEvaluationListView extends Composite<VerticalLayout> {
                 organisation.getMembers().add(this.principal);
                 selectOrganisation.setValue(organisation);
             });
-            dialog.add(selectOrganisation);
+            content.add(selectOrganisation);
 
             selectGroup.addValueChangeListener(e -> selectOrganisation.setVisible(e.getValue().getOrganisation() == null));
+
+            dialog.add(content);
 
             binder.readBean(gameEvaluation);
             Button save = new Button("Erstellen");
@@ -190,13 +204,9 @@ public class GameEvaluationListView extends Composite<VerticalLayout> {
     }
 
     private void setGridData(Grid<GameEvaluation> grid) {
-        grid.setItems(query -> {
-            System.out.println(gameEvaluationService.count());
-            return gameEvaluationService.listForPerson(
-                            PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)), this.principal)
-                    .stream();
-
-        });
+        grid.setItems(query -> gameEvaluationService.listForPerson(
+                        PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)), this.principal)
+                .stream());
     }
 
     @Autowired()
