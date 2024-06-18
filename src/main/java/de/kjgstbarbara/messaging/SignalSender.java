@@ -22,7 +22,7 @@ public class SignalSender {
     public void sendMessage(String message, Person sendTo) {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("/bin/signal-cli", "-a", "+" + phoneNumber, "send", "-m", message, "+" + sendTo.getPhoneNumber().number());
+            processBuilder.command("/usr/local/bin/signal-cli", "-a", "+" + phoneNumber, "send", "-m", message, "+" + sendTo.getPhoneNumber().number());
             processBuilder.directory(new File(System.getProperty("user.home")));
             Process process = processBuilder.start();
             StreamGobbler streamGobbler =
@@ -41,7 +41,7 @@ public class SignalSender {
     public void register(UI ui, BiConsumer<UI, String> linkConsumer) {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("/bin/signal-cli", "link", "-n", "Chronos");
+            processBuilder.command("/usr/local/bin/signal-cli", "link", "-n", "Chronos");
             processBuilder.directory(new File(System.getProperty("user.home")));
             Process process = processBuilder.start();
             StreamGobbler streamGobbler =
@@ -55,7 +55,7 @@ public class SignalSender {
     public void unregister() {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("/bin/signal-cli", "-a", "+" + phoneNumber, "unregister");
+            processBuilder.command("/usr/local/bin/signal-cli", "-a", "+" + phoneNumber, "unregister");
             processBuilder.directory(new File(System.getProperty("user.home")));
             Process process = processBuilder.start();
             StreamGobbler streamGobbler =
