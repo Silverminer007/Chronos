@@ -182,6 +182,11 @@
             <artifactId>itextpdf</artifactId>
             <version>[5.5,)</version>
         </dependency>
+        <dependency>
+            <groupId>org.signal</groupId>
+            <artifactId>libsignal-client</artifactId>
+            <version>[0.51,)</version>
+        </dependency>
     </dependencies>
 
     <build>

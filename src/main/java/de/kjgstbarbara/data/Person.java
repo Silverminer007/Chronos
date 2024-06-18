@@ -128,7 +128,7 @@ public class Person {
 
     @Getter
     public enum Reminder {
-        WHATSAPP("WhatsApp"), EMAIL("E-Mail");
+        WHATSAPP("WhatsApp"), SIGNAL("Signal"), EMAIL("E-Mail");
 
         private final String text;
 

@@ -33,7 +33,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Organisation;
@@ -41,6 +40,7 @@ import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageFormatter;
 import de.kjgstbarbara.messaging.EMailSender;
 import de.kjgstbarbara.messaging.ScheduledRunner;
+import de.kjgstbarbara.messaging.SignalSender;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.components.ClosableDialog;
 import de.kjgstbarbara.views.nav.MainNavigationView;
@@ -215,7 +215,7 @@ public class OrganisationView extends VerticalLayout {
         Button settingsButton = new Button(VaadinIcon.TOOLS.create());
         settingsButton.setVisible(organisation.getAdmin().equals(person));
         settingsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation));
+        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation, Person.Reminder.SIGNAL));
         summary.add(settingsButton);
 
         boolean admin = organisation.getAdmin().equals(person);
@@ -463,7 +463,7 @@ public class OrganisationView extends VerticalLayout {
     }
 
 
-    private void createMessageSetupDialog(Organisation organisation) {
+    private void createMessageSetupDialog(Organisation organisation, Person.Reminder open) {
         ClosableDialog closableDialog = new ClosableDialog("Absender von Nachrichten");
 
         TabSheet tabSheet = new TabSheet();
@@ -482,7 +482,7 @@ public class OrganisationView extends VerticalLayout {
         reconnect.addClickListener(event -> {
             whatsappAccess.logout();
             closableDialog.close();
-            createMessageSetupDialog(organisation);
+            createMessageSetupDialog(organisation, Person.Reminder.WHATSAPP);
         });
         whatsappAccess.addLoggedInListener(api ->
                 api.store().phoneNumber().ifPresent(senderPhoneNumber ->
@@ -505,7 +505,46 @@ public class OrganisationView extends VerticalLayout {
         whatsapp.add(qrCodeDescription);
         closableDialog.setCloseListener(whatsappAccess::disconnect);
 
-        tabSheet.add(new Tab("WhatsApp"), whatsapp);
+        Tab whatsAppTab = new Tab("WhatsApp");
+        tabSheet.add(whatsAppTab, whatsapp);
+
+        VerticalLayout signal = new VerticalLayout();
+        if (organisation.getSignalSender() != null && organisation.getSignalSender().getPhoneNumber() != 0) {
+            signal.add(new H3("Signal Nachrichten werden über +" + organisation.getSignalSender().getPhoneNumber() + " verschickt"));
+            Button signOutSignal = new Button("Abmelden");
+            signOutSignal.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            signOutSignal.addClickListener(event -> {
+                organisation.getSignalSender().unregister();
+                organisation.setSignalSender(null);
+                organisationRepository.save(organisation);
+                closableDialog.close();
+                createMessageSetupDialog(organisation, Person.Reminder.SIGNAL);
+            });
+            signal.add(signOutSignal);
+        } else {
+            signal.add("Bitte öffne auf deinem Handy Signal, gehe dort auf \"Einstellungen\" -> \"Gekoppelte Geräte\" -> \"+\" und scanne den unten stehenden QR-Code. Dadurch wird deine Organisation mit deinem Signal Account verknüpft und Terminerinnerungen und ähnliches werden dafür verschickt");
+            Image signalQRCode = new Image("", "");
+            SignalSender newSignalSender = new SignalSender();
+            newSignalSender.register(UI.getCurrent(), (ui, line) -> {
+                if (line.startsWith("sgnl")) {
+                    ui.access(() -> signalQRCode.setSrc(qrHandler(line)));
+                } else if (line.startsWith("Associated with: +")) {
+                    long signalPhoneNumber = Long.parseLong(line.replaceAll("Associated with: +", ""));
+                    newSignalSender.setPhoneNumber(signalPhoneNumber);
+                    organisation.setSignalSender(newSignalSender);
+                    organisationRepository.save(organisation);
+                    ui.access(() -> {
+                        closableDialog.close();
+                        createMessageSetupDialog(organisation, Person.Reminder.SIGNAL);
+                    });
+                }
+                LOGGER.info(line);
+            });
+            signal.add(signalQRCode);
+        }
+
+        Tab signalTab = new Tab("Signal");
+        tabSheet.add(signalTab, signal);
 
         VerticalLayout email = new VerticalLayout();
         Binder<EMailSender> emailBinder = new Binder<>();
@@ -530,7 +569,6 @@ public class OrganisationView extends VerticalLayout {
         emailBinder.readBean(emailSender);
         Button testMail = new Button("Speichern & Test Nachricht schicken");
         email.add(testMail);
-        tabSheet.add(new Tab("E-Mail"), email);
         testMail.addClickListener(event -> {
             try {
                 emailBinder.writeBean(emailSender);
@@ -544,6 +582,17 @@ public class OrganisationView extends VerticalLayout {
             }
         });
 
+        Tab emailTab = new Tab("E-Mail");
+        tabSheet.add(emailTab, email);
+
+        if(open.equals(Person.Reminder.WHATSAPP)) {
+            tabSheet.setSelectedTab(whatsAppTab);
+        } else if(open.equals(Person.Reminder.SIGNAL)) {
+            tabSheet.setSelectedTab(signalTab);
+        } else if(open.equals(Person.Reminder.EMAIL)) {
+            tabSheet.setSelectedTab(emailTab);
+        }
+
         closableDialog.add(tabSheet);
         closableDialog.open();
     }
@@ -552,7 +601,7 @@ public class OrganisationView extends VerticalLayout {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
             MatrixToImageWriter.writeToStream(QrHandler.createMatrix(qr, 400, 5), "jpg", os);
-            return new StreamResource("WhatsApp QR Code", () -> new ByteArrayInputStream(os.toByteArray()));
+            return new StreamResource("QR Code", () -> new ByteArrayInputStream(os.toByteArray()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

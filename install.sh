@@ -13,3 +13,7 @@ sudo echo "spring.datasource.password = ""$PASSWORD" | sudo tee /etc/config/chro
 mysql -u root --execute="CREATE DATABASE chronos;"
 mysql -u root --execute="CREATE USER 'chronos'@'localhost' IDENTIFIED BY '""$PASSWORD""';"
 mysql -u root --execute="GRANT ALL ON *.* TO 'chronos'@'localhost';"
+export VERSION=0.13.4
+wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
+sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
+sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/

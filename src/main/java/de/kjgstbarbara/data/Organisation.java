@@ -3,6 +3,7 @@ package de.kjgstbarbara.data;
 import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.messaging.EMailSender;
 import de.kjgstbarbara.messaging.MessageFormatter;
+import de.kjgstbarbara.messaging.SignalSender;
 import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.chat.Chat;
 import it.auties.whatsapp.model.jid.Jid;
@@ -40,6 +41,8 @@ public class Organisation {
 
     @Embedded
     private EMailSender emailSender = new EMailSender();
+    @Embedded
+    private SignalSender signalSender = new SignalSender();
 
     public String toString() {
         return name;
@@ -89,7 +92,9 @@ public class Organisation {
     }
 
     public void sendMessageTo(String message, Person person, Person.Reminder reminder) {
-        if (getWhatsapp().isEmpty() || reminder.equals(Person.Reminder.EMAIL)) {
+        if (reminder.equals(Person.Reminder.SIGNAL)) {
+            signalSender.sendMessage(message, person);
+        } else if (getWhatsapp().isEmpty() || reminder.equals(Person.Reminder.EMAIL)) {
             emailSender.sendMessage(message, person);
         } else {
             LOGGER.info("Message send via WhatsApp");
