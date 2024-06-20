@@ -249,7 +249,7 @@ public class OrganisationView extends VerticalLayout {
         HorizontalLayout buttons = new HorizontalLayout();
 
         Button leave = new Button("Verlassen");
-        leave.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        leave.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
         leave.setEnabled(!admin);
         leave.addClickListener(event -> {
             ConfirmDialog confirmLeave = new ConfirmDialog(
@@ -315,6 +315,7 @@ public class OrganisationView extends VerticalLayout {
         requests.add(requestsLabel);
         if (!organisation.getMembershipRequests().isEmpty()) {
             AvatarGroup requestAvatars = new AvatarGroup();
+            requestAvatars.setMaxItemsVisible(7);
             requestAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
             requestAvatars.setItems(getRequestAvatars(organisation));
             requests.add(requestAvatars);
@@ -336,6 +337,7 @@ public class OrganisationView extends VerticalLayout {
         members.add(membersLabel);
         if (!organisation.getMembers().isEmpty()) {
             AvatarGroup membersAvatars = new AvatarGroup();
+            membersAvatars.setMaxItemsVisible(7);
             membersAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
             membersAvatars.setItems(getMemberAvatars(organisation));
             members.add(membersAvatars);
@@ -365,7 +367,8 @@ public class OrganisationView extends VerticalLayout {
         ClosableDialog dialog = new ClosableDialog("Beitrittsanfragen");
 
         Grid<Person> requests = new Grid<>();
-        requests.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
+        requests.setSelectionMode(Grid.SelectionMode.NONE);
+        requests.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
 
         requests.addComponentColumn(p -> {
             HorizontalLayout row = new HorizontalLayout();
@@ -418,7 +421,8 @@ public class OrganisationView extends VerticalLayout {
         ClosableDialog dialog = new ClosableDialog("Mitglieder");
 
         Grid<Person> members = new Grid<>();
-        members.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
+        members.setSelectionMode(Grid.SelectionMode.NONE);
+        members.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
 
         members.addComponentColumn(p -> {
             HorizontalLayout row = new HorizontalLayout();
@@ -427,14 +431,15 @@ public class OrganisationView extends VerticalLayout {
             Avatar avatar = p.getAvatar();
             row.add(avatar);
 
+            NativeLabel name = new NativeLabel(p.getName());
+            row.add(name);
+
             if (organisation.getAdmin().equals(p)) {
                 Icon icon = VaadinIcon.STAR.create();
                 icon.setColor("#ffc60a");
+                icon.setTooltipText("Admin");
                 row.add(icon);
             }
-
-            NativeLabel name = new NativeLabel(p.getName());
-            row.add(name);
 
             return row;
         }).setHeader("Name");
@@ -452,7 +457,7 @@ public class OrganisationView extends VerticalLayout {
             row.add(remove);
 
             return row;
-        }).setFlexGrow(0).setHeader("Entfernen").setTextAlign(ColumnTextAlign.END);
+        }).setFlexGrow(0).setTextAlign(ColumnTextAlign.END);
 
         members.setItems(organisation.getMembers());
 

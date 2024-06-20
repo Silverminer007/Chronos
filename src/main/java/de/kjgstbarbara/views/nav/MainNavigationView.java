@@ -102,7 +102,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
     }
 
     private void addDrawerContent() {
-        H1 appName = new H1("KjG Termine");
+        H1 appName = new H1("Chronos");
         appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
         Header header = new Header(appName);
 

@@ -29,28 +29,32 @@ public class MessageFormatter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        if(baseURL.isBlank()) {
+        if (baseURL.isBlank()) {
             baseURL = properties.getProperty("chronos.base-url");
         }
         String output = input;
-        if(date != null) {
+        if (date != null) {
             output = datePlaceholder(output);
-            if(group == null) {
+            if (group == null) {
                 group = date.getGroup();
             }
-            output = boardPlaceholders(output);
-            if(organisation == null) {
+            if (organisation == null) {
                 organisation = group.getOrganisation();
             }
+        }
+        if (group != null) {
+            output = groupPlaceholder(output);
+        }
+        if (organisation != null) {
             output = organisationPlaceholders(output);
         }
-        if(person != null) {
+        if (person != null) {
             output = personPlaceholder(output);
         }
-        if(feedback == null && date != null && person != null) {
+        if (feedback == null && date != null && person != null) {
             feedback = date.getStatusFor(person);
         }
-        if(feedback != null) {
+        if (feedback != null) {
             output = feedbackPlaceholder(output);
         }
         // BASE_URL
@@ -76,7 +80,7 @@ public class MessageFormatter {
         String endTime = date.getStart().format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
         output = output.replaceAll("#DATE_END_TIME", endTime);
         // DATE_POLL_DATE
-        if(date.getPollScheduledFor() != null) {
+        if (date.getPollScheduledFor() != null) {
             String pollDate = date.getPollScheduledFor().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
             output = output.replaceAll("#DATE_POLL_DATE", pollDate);
         }
@@ -127,7 +131,7 @@ public class MessageFormatter {
         String resetLink = person.getResetToken();
         output = output.replaceAll("#PERSON_RESET_LINK", resetLink);
         // PERSON_RESET_EXPIRES_IN
-        if(person.getResetTokenExpires() != null) {
+        if (person.getResetTokenExpires() != null) {
             long hoursUntilExpired = person.getResetTokenExpires().until(LocalDateTime.now(), ChronoUnit.HOURS);
             String resetExpiresIn = String.valueOf(hoursUntilExpired);
             output = output.replaceAll("#PERSON_RESET_EXPIRES_IN", resetExpiresIn);
@@ -137,7 +141,7 @@ public class MessageFormatter {
         return output;
     }
 
-    private String boardPlaceholders(String input) {
+    private String groupPlaceholder(String input) {
         String output = input;
         // BOARD_TITLE
         String title = group.getName();
@@ -155,12 +159,15 @@ public class MessageFormatter {
 
     private String organisationPlaceholders(String input) {
         String output = input;
+        // ORGANISATION_ID
+        String id = String.valueOf(organisation.getId());
+        output = output.replaceAll("#ORGANISATION_ID", id);
         // ORGANISATION_NAME
         String name = organisation.getName();
         output = output.replaceAll("#ORGANISATION_NAME", name);
         // ORGANISATION_ADMIN_NAME
         String adminName = organisation.getAdmin().getName();
-        output = output.replaceAll("#ORGANISATION_ADMIN_HOME", adminName);
+        output = output.replaceAll("#ORGANISATION_ADMIN_NAME", adminName);
         return output;
     }
 }

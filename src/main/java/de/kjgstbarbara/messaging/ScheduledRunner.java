@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -62,13 +63,9 @@ public class ScheduledRunner implements CommandLineRunner {
         LOGGER.info("Hourly Updates run started");
         try {
             LocalDateTime now = LocalDateTime.now();
-            LOGGER.info("Running hourly update checker for {} dates", datesService.getDateRepository().count());
             // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
-            for (Date d : datesService.getDateRepository().findAll()) {
-                LOGGER.info("Hourly update messages for date {}", d.getTitle());
-                if (d.getStart().isBefore(now)) {
-                    continue;
-                }
+            for (Date d : datesService.getDateRepository().findByStartBetween(now, now.plusDays(8)).stream().sorted(Comparator.comparing(Date::getStart)).toList()) {
+                LOGGER.info("Hourly update messages for date {} at {}", d.getTitle(), d.getStart());
 
                 if (now.until(d.getStart(), ChronoUnit.HOURS) == 2) {
                     d.getGroup().getAdmins().forEach(admin -> {
@@ -97,32 +94,29 @@ public class ScheduledRunner implements CommandLineRunner {
                         if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.DONTKNOW::equals)) {
                             noAnswer.append("--> Niemand\n");
                         }
-                        summary.append(cancelled).append(noAnswer);
+                        summary.append("\n").append(cancelled).append("\n").append(noAnswer);
                         d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin);
                     });
                 }
 
                 for (Person p : d.getGroup().getMembers()) {
-                    LOGGER.info("Hourly update messages for date {} and person {}", d.getTitle(), p.getName());
                     Feedback.Status feedback = d.getStatusFor(p);
-                    LOGGER.info("Status der Rückmeldung: {}", feedback);
                     if (!feedback.equals(Feedback.Status.CANCELLED)) {
                         if ((p.getRemindMeTime().contains(now.getHour()) && p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                                 || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
                             d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(DATE_REMINDER_TEMPLATE), p);
                         }
                     }
+                }
 
-                    LOGGER.info("Poll scheduled for {}, is running {}", d.getPollScheduledFor(), d.isPollRunning());
-                    if (d.getPollScheduledFor() != null) {
-                        LOGGER.info("Poll scheduled != null");
-                        if(LocalDate.now().isEqual(d.getPollScheduledFor())) {
-                            LOGGER.info("Poll scheduled for today");
-                            if(d.isPollRunning()) {
-                                LOGGER.info("Poll is running");
-                                LOGGER.info("Remind me time [{}] and hour {}", p.getRemindMeTime(), now.getHour());
-                                if(p.getRemindMeTime().contains(now.getHour())) {
-                                    LOGGER.info("Hour suits");
+            }
+            for (Date d : datesService.getDateRepository().findByPollScheduledFor(LocalDate.now())) {
+                if (d.getPollScheduledFor() != null) {
+                    if (LocalDate.now().isEqual(d.getPollScheduledFor())) {
+                        if (d.isPollRunning()) {
+                            for (Person p : d.getGroup().getMembers()) {
+                                if (p.getRemindMeTime().contains(now.getHour())) {
+                                    LOGGER.info("Poll sending started for {} and {}", d.getTitle(), p.getName());
                                     try {
                                         d.getGroup().getOrganisation().sendDatePoll(d, p);
                                     } catch (FriendlyError e) {
@@ -133,7 +127,6 @@ public class ScheduledRunner implements CommandLineRunner {
                         }
                     }
                 }
-
             }
         } catch (Throwable e) {
             LOGGER.error("Es ist ein Fehler für die Terminerinnerungen aufgetreten", e);

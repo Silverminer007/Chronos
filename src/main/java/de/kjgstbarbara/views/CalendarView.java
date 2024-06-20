@@ -316,7 +316,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         committedWithLabel.setWidth("50%");
 
         AvatarGroup committedAvatars = new AvatarGroup();
-        committedAvatars.setMaxItemsVisible(4);
+        committedAvatars.setMaxItemsVisible(3);
         committedAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
         committedAvatars.setItems(date.getAvatars(Feedback.Status.COMMITTED));
         committedWithLabel.add(committedAvatars);
@@ -328,7 +328,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         cancelledWithLabel.setWidth("50%");
 
         AvatarGroup cancelledAvatars = new AvatarGroup();
-        cancelledAvatars.setMaxItemsVisible(4);
+        cancelledAvatars.setMaxItemsVisible(3);
         cancelledAvatars.addThemeVariants(AvatarGroupVariant.LUMO_SMALL);
         cancelledAvatars.setItems(date.getAvatars(Feedback.Status.CANCELLED));
         cancelledWithLabel.add(cancelledAvatars);

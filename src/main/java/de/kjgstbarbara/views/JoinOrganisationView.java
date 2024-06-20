@@ -2,9 +2,13 @@ package de.kjgstbarbara.views;
 
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FriendlyError;
@@ -21,7 +25,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 @Route(value = "organisation/join/:organisationID", layout = MainNavigationView.class)
 @PermitAll
-public class JoinOrganisationView extends Div implements BeforeEnterObserver {
+public class JoinOrganisationView extends VerticalLayout implements BeforeEnterObserver {
     private static final Logger LOGGER = LoggerFactory.getLogger(JoinOrganisationView.class);
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
@@ -41,31 +45,41 @@ public class JoinOrganisationView extends Div implements BeforeEnterObserver {
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+        this.removeAll();
         Organisation organisation = beforeEnterEvent.getRouteParameters().get("organisationID").map(Long::valueOf).flatMap(organisationRepository::findById).orElse(null);
         if (organisation != null) {
             if (!organisation.getMembershipRequests().contains(person)) {
                 if (!organisation.getMembers().contains(person)) {
                     organisation.getMembershipRequests().add(person);
                     organisationRepository.save(organisation);
-                    Notification.show("Deine Beitrittsanfrage für " + organisation.getName() + " wurde verschickt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                    UI.getCurrent().getPage().fetchCurrentURL(url -> {
+                    this.add("Deine Beitrittsanfrage für " + organisation.getName() + " wurde verschickt");
                         MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(person);
-                        String newUrl = Utility.baseURL(url) + "/organisations";
                         organisation.sendMessageTo(messageFormatter.format(
                                 """
                                         Hi #ORGANISATION_ADMIN_NAME,
                                         #PERSON_NAME möchte gerne deiner Organisation #ORGANISATION_NAME beitreten. Wenn du diese Anfrage bearbeiten möchtest, klicke bitte auf diesen Link
                                         
-                                        """ + newUrl
+                                        Anfrage annehmen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/yes
+                                        
+                                        Anfrage ablehnen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/no
+                                        """
                         ), organisation.getAdmin());
-                    });
                 } else {
-                    Notification.show("Du gehörst schon zu dieser Organisation: " + organisation.getName()).addThemeVariants(NotificationVariant.LUMO_WARNING);
+                    this.add("Du gehörst schon zu dieser Organisation: " + organisation.getName());
                 }
             } else {
-                Notification.show("Deine Beitrittsanfrage zu dieser Organisation läuft noch: " + organisation.getName());
+                this.add("Deine Beitrittsanfrage zu dieser Organisation läuft noch: " + organisation.getName());
             }
+        } else {
+            this.add("Die Organisation existiert nicht mehr. Bitte frage nach einem neuen Beitrittslink");
         }
-        beforeEnterEvent.rerouteTo(OrganisationView.class);
+
+        Button startPage = new Button("Zur Startseite");
+        startPage.addClickListener(event -> {
+            UI.getCurrent().navigate("");
+        });
+        startPage.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        startPage.setIcon(VaadinIcon.HOME.create());
+        this.add(startPage);
     }
 }
