@@ -20,8 +20,8 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsService;
-import de.kjgstbarbara.views.components.PhoneNumberField;
-import de.kjgstbarbara.views.components.ReCaptcha;
+import de.kjgstbarbara.components.PhoneNumberField;
+import de.kjgstbarbara.components.ReCaptcha;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Route("register")

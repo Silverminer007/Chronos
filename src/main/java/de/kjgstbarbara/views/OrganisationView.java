@@ -33,17 +33,16 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageFormatter;
 import de.kjgstbarbara.messaging.EMailSender;
-import de.kjgstbarbara.messaging.ScheduledRunner;
 import de.kjgstbarbara.messaging.SignalSender;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.views.components.ClosableDialog;
-import de.kjgstbarbara.views.nav.MainNavigationView;
+import de.kjgstbarbara.components.ClosableDialog;
 import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.mobile.PhoneNumber;
@@ -58,6 +57,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 @Route(value = "organisations", layout = MainNavigationView.class)
@@ -356,11 +357,11 @@ public class OrganisationView extends VerticalLayout {
     }
 
     private List<AvatarGroup.AvatarGroupItem> getMemberAvatars(Organisation organisation) {
-        return organisation.getMembers().stream().map(Person::getAvatarGroupItem).toList();
+        return organisation.getMembers().stream().map(FrontendUtils::getAvatarGroupItem).toList();
     }
 
     private List<AvatarGroup.AvatarGroupItem> getRequestAvatars(Organisation organisation) {
-        return organisation.getMembershipRequests().stream().map(Person::getAvatarGroupItem).toList();
+        return organisation.getMembershipRequests().stream().map(FrontendUtils::getAvatarGroupItem).toList();
     }
 
     private ClosableDialog createManageRequestsDialog(Organisation organisation, Person person) {
@@ -374,7 +375,7 @@ public class OrganisationView extends VerticalLayout {
             HorizontalLayout row = new HorizontalLayout();
             row.setAlignItems(Alignment.CENTER);
 
-            Avatar avatar = p.getAvatar();
+            Avatar avatar = FrontendUtils.getAvatar(p);
             row.add(avatar);
 
             NativeLabel name = new NativeLabel(p.getName());
@@ -428,7 +429,7 @@ public class OrganisationView extends VerticalLayout {
             HorizontalLayout row = new HorizontalLayout();
             row.setAlignItems(Alignment.CENTER);
 
-            Avatar avatar = p.getAvatar();
+            Avatar avatar = FrontendUtils.getAvatar(p);
             row.add(avatar);
 
             NativeLabel name = new NativeLabel(p.getName());
@@ -497,7 +498,6 @@ public class OrganisationView extends VerticalLayout {
                                     qrCode.setVisible(false);
                                     whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + senderPhoneNumber + " verschickt"));
                                     whatsapp.add(reconnect);
-                                    api.addNewChatMessageListener(newMessage -> ScheduledRunner.newWAMessageListener(newMessage, dateRepository, personsRepository, feedbackRepository));
                                 }))));
         whatsappAccess.connect().join();
         if (whatsappAccess.store().chats() != null && !whatsappAccess.store().chats().isEmpty()) {
@@ -530,7 +530,7 @@ public class OrganisationView extends VerticalLayout {
             signal.add("Bitte öffne auf deinem Handy Signal, gehe dort auf \"Einstellungen\" -> \"Gekoppelte Geräte\" -> \"+\" und scanne den unten stehenden QR-Code. Dadurch wird deine Organisation mit deinem Signal Account verknüpft und Terminerinnerungen und ähnliches werden dafür verschickt");
             Image signalQRCode = new Image("", "");
             SignalSender newSignalSender = new SignalSender();
-            newSignalSender.register(UI.getCurrent(), (ui, line) -> {
+            newSignalSender.register(new SignalRegisterConsumer(UI.getCurrent(), (ui, line) -> {
                 if (line.startsWith("sgnl")) {
                     ui.access(() -> signalQRCode.setSrc(qrHandler(line)));
                 } else if (line.startsWith("Associated with: +")) {
@@ -544,7 +544,7 @@ public class OrganisationView extends VerticalLayout {
                     });
                 }
                 LOGGER.info(line);
-            });
+            }));
             signal.add(signalQRCode);
         }
 
@@ -590,11 +590,11 @@ public class OrganisationView extends VerticalLayout {
         Tab emailTab = new Tab("E-Mail");
         tabSheet.add(emailTab, email);
 
-        if(open.equals(Person.Reminder.WHATSAPP)) {
+        if (open.equals(Person.Reminder.WHATSAPP)) {
             tabSheet.setSelectedTab(whatsAppTab);
-        } else if(open.equals(Person.Reminder.SIGNAL)) {
+        } else if (open.equals(Person.Reminder.SIGNAL)) {
             tabSheet.setSelectedTab(signalTab);
-        } else if(open.equals(Person.Reminder.EMAIL)) {
+        } else if (open.equals(Person.Reminder.EMAIL)) {
             tabSheet.setSelectedTab(emailTab);
         }
 
@@ -618,4 +618,11 @@ public class OrganisationView extends VerticalLayout {
                     du hast eine neue E-Mail Konfiguration gespeichert.
                     Da du diese E-Mail erhalten hast war Einstellung erfolgreich.
                     """;
+
+    private record SignalRegisterConsumer(UI ui, BiConsumer<UI, String> registerCallback) implements Consumer<String> {
+        @Override
+        public void accept(String string) {
+            registerCallback.accept(ui, string);
+        }
+    }
 }

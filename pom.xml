@@ -29,7 +29,16 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>chronos-lib-mvn-repo</id>
+            <url>https://github.com/Silverminer007/chronos-lib/raw/mvn-repo/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
     </repositories>
+
 
     <dependencyManagement>
         <dependencies>
@@ -44,6 +53,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>de.kjgstbarbara</groupId>
+            <!-- Replace artifactId with vaadin-core to use only free components -->
+            <artifactId>chronos-lib</artifactId>
+            <version>0.0.2</version>
+        </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
             <!-- Replace artifactId with vaadin-core to use only free components -->

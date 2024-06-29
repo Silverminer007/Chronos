@@ -29,13 +29,13 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.views.components.ClosableDialog;
-import de.kjgstbarbara.views.nav.MainNavigationView;
+import de.kjgstbarbara.components.ClosableDialog;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -311,7 +311,7 @@ public class GroupView extends VerticalLayout {
     }
 
     private List<AvatarGroup.AvatarGroupItem> getMemberAvatars(Group group) {
-        return group.getMembers().stream().map(Person::getAvatarGroupItem).toList();
+        return group.getMembers().stream().map(FrontendUtils::getAvatarGroupItem).toList();
     }
 
     private ClosableDialog createEditMembersDialog(Group group, Person person) {
@@ -346,7 +346,7 @@ public class GroupView extends VerticalLayout {
             HorizontalLayout row = new HorizontalLayout();
             row.setAlignItems(Alignment.CENTER);
 
-            Avatar avatar = p.getAvatar();
+            Avatar avatar = FrontendUtils.getAvatar(p);
             row.add(avatar);
 
             NativeLabel name = new NativeLabel(p.getName());
