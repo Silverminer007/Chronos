@@ -7,7 +7,7 @@
     <groupId>de.kjgstbarbara</groupId>
     <artifactId>chronos</artifactId>
     <name>chronos</name>
-    <version>BETA</version>
+    <version>v0.2.0</version>
     <packaging>jar</packaging>
 
     <properties>
