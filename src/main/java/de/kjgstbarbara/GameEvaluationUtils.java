@@ -1,17 +1,20 @@
 package de.kjgstbarbara;
 
-import com.itextpdf.text.*;
-import com.itextpdf.text.Font;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.*;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.UnitValue;
 import de.kjgstbarbara.data.Game;
 import de.kjgstbarbara.data.GameEvaluation;
 import de.kjgstbarbara.data.Participant;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -22,29 +25,33 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 
 public class GameEvaluationUtils {
-    private static final Logger LOGGER = LogManager.getLogger(GameEvaluationUtils.class);
 
-    public static void xlsxToPdf(InputStream xlsx, OutputStream pdf) throws IOException, DocumentException {
+    public static void xlsxToPdf(InputStream xlsx, OutputStream outputStream) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook(xlsx);
 
-        Document document = new Document();
-        PdfWriter.getInstance(document, pdf);
-        document.open();
+        PdfDocument pdf = new PdfDocument(new PdfWriter(outputStream/*, new WriterProperties().addXmpMetadata()*/));
+        Document document = new Document(pdf, PageSize.A4.rotate());
 
         XSSFSheet worksheet = workbook.getSheetAt(0);
-        document.addTitle(worksheet.getSheetName());
-        PdfPTable table = new PdfPTable(worksheet.getRow(0).getLastCellNum());
+
+        PdfDocumentInfo info = pdf.getDocumentInfo();
+        info.setTitle(worksheet.getSheetName());
+
+        PdfFont font = PdfFontFactory.createFont();
+
+        int columns = worksheet.getRow(0).getLastCellNum();
+        Table table = new Table(columns);
+        table.setWidth(UnitValue.createPercentValue(100));
         for (Row row : worksheet) {
-            for (int i = 0; i < row.getPhysicalNumberOfCells(); i++) {
+            for (int i = 0; i < columns; i++) {
                 Cell cell = row.getCell(i);
-                String cellValue = switch (cell.getCellType()) {
+                String cellValue = cell == null ? "" : switch (cell.getCellType()) {
                     case STRING -> cell.getStringCellValue();
                     case NUMERIC -> String.valueOf(BigDecimal.valueOf(cell.getNumericCellValue()));
                     default -> "";
                 };
-                PdfPCell cellPdf = new PdfPCell(new Phrase(cellValue, getCellStyle(cell)));
-                setBackgroundColor(cell, cellPdf);
-                setCellAlignment(cell, cellPdf);
+                com.itextpdf.layout.element.Cell cellPdf = new com.itextpdf.layout.element.Cell();
+                cellPdf.add(new Paragraph(cellValue).setFont(font));
                 table.addCell(cellPdf);
             }
         }
@@ -52,80 +59,6 @@ public class GameEvaluationUtils {
         document.add(table);
         document.close();
         workbook.close();
-    }
-
-    private static void setCellAlignment(Cell cell, PdfPCell cellPdf) {
-        CellStyle cellStyle = cell.getCellStyle();
-
-        HorizontalAlignment horizontalAlignment = cellStyle.getAlignment();
-
-        switch (horizontalAlignment) {
-            case LEFT:
-                cellPdf.setHorizontalAlignment(Element.ALIGN_LEFT);
-                break;
-            case CENTER:
-                cellPdf.setHorizontalAlignment(Element.ALIGN_CENTER);
-                break;
-            case JUSTIFY:
-            case FILL:
-                cellPdf.setVerticalAlignment(Element.ALIGN_JUSTIFIED);
-                break;
-            case RIGHT:
-                cellPdf.setHorizontalAlignment(Element.ALIGN_RIGHT);
-                break;
-        }
-    }
-
-    private static void setBackgroundColor(Cell cell, PdfPCell cellPdf) {
-        short bgColorIndex = cell.getCellStyle()
-                .getFillForegroundColor();
-        if (bgColorIndex != IndexedColors.AUTOMATIC.getIndex()) {
-            XSSFColor bgColor = (XSSFColor) cell.getCellStyle()
-                    .getFillForegroundColorColor();
-            if (bgColor != null) {
-                byte[] rgb = bgColor.getRGB();
-                if (rgb != null && rgb.length == 3) {
-                    cellPdf.setBackgroundColor(new BaseColor(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF));
-                }
-            }
-        }
-    }
-
-    private static Font getCellStyle(Cell cell) throws DocumentException, IOException {
-        Font font = new Font();
-        CellStyle cellStyle = cell.getCellStyle();
-        org.apache.poi.ss.usermodel.Font cellFont = cell.getSheet()
-                .getWorkbook()
-                .getFontAt(cellStyle.getFontIndex());
-
-        if (cellFont.getItalic()) {
-            font.setStyle(Font.ITALIC);
-        }
-
-        if (cellFont.getStrikeout()) {
-            font.setStyle(Font.STRIKETHRU);
-        }
-
-        if (cellFont.getUnderline() == 1) {
-            font.setStyle(Font.UNDERLINE);
-        }
-
-        short fontSize = cellFont.getFontHeightInPoints();
-        font.setSize(fontSize);
-
-        if (cellFont.getBold()) {
-            font.setStyle(Font.BOLD);
-        }
-
-        String fontName = cellFont.getFontName();
-        if (FontFactory.isRegistered(fontName)) {
-            font.setFamily(fontName);
-        } else {
-            LOGGER.warn("Unsupported font type: {}", fontName);
-            font.setFamily("Helvetica");
-        }
-
-        return font;
     }
 
     public static void createScoreboard(GameEvaluation gameEvaluation, OutputStream result) throws IOException {
