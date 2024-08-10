@@ -19,7 +19,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - name: build
-        run: mvn -f pom.xml -Pproduction
+        run: mvn package -f pom.xml -Pproduction
       - name: Bundle installation scripts
         uses: vimtor/action-zip@v1.2
         with:
