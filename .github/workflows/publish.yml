@@ -1,0 +1,39 @@
+name: Build & Upload on release
+
+on: 
+  release: 
+    type: 
+      published
+
+jobs:
+  release:
+    name: Build and upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: setup java 21
+        uses: actions/setup-java@v2
+        with:
+          version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: build
+        run: mvn -f pom.xml -Pproduction
+      - name: Bundle installation scripts
+        uses: vimtor/action-zip@v1.2
+        with:
+          files: install
+          dest: install.zip
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            frontend/target/chronos-frontend-*.jar
+            cron/target/chronos-cron-*.jar
+            install.zip
+          body: |
+            Download the install.zip bundle and extract it on your machine. Then cd into the directory and run > sudo ./install.sh
+            This will install everything neccéssary and creates Chronos at /opt/chronos
+          
