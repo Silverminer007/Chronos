@@ -27,7 +27,7 @@ function downloadAssets {
 
     wget -q --auth-no-challenge --header='Accept:application/octet-stream' \
       https://"$TOKEN":@api.github.com/repos/$REPO/releases/assets/"$asset_id" \
-      -O "$2"
+      -O "$FILE"
 }
 
 cd /opt/chronos || (echo "Updating Chronos failed" & exit)
@@ -35,9 +35,9 @@ echo Please enter your GitHub PAT
 read -r TOKEN
 echo "Update Frontend START"
 systemctl stop chronos
-downloadAssets chronos-frontend.jar chronos.jar
+downloadAssets chronos-frontend.jar
 systemctl stop chronos
 echo "Update Frontend END"
 echo "Update Cronjob START"
-downloadAssets chronos-cron.jar chronos-cron.jar
+downloadAssets chronos-cron.jar
 echo "Update Cronjob END"

@@ -6,7 +6,7 @@
 
     <groupId>de.kjgstbarbara</groupId>
     <artifactId>ChronosParent</artifactId>
-    <version>0.2.0</version>
+    <version>0.4.4</version>
     <packaging>pom</packaging>
     <modules>
         <module>shared</module>
@@ -26,4 +26,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

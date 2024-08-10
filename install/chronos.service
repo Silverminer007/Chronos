@@ -12,7 +12,7 @@ Type=simple
 
 Environment="JAVA_HOME=/root/.sdkman/candidates/java/current"
 WorkingDirectory=/opt/chronos
-ExecStart=/root/.sdkman/candidates/java/current/bin/java -jar /opt/chronos/chronos.jar
+ExecStart=/root/.sdkman/candidates/java/current/bin/java -jar /opt/chronos/chronos-frontend.jar
 ExecStop=/bin/kill -15 $MAINPID
 
 [Install]
