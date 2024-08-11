@@ -39,7 +39,7 @@ build/
 
 logs
 # The following files are generated/updated by vaadin-maven-plugin
-frontend/node_modules/
+/frontend/node_modules/
 frontend/frontend/generated/
 frontend/pnpmfile.js
 frontend/vite.generated.ts

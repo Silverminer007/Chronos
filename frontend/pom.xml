@@ -13,8 +13,8 @@
     <name>chronos-frontend</name>
 
     <properties>
-        <maven.compiler.source>22</maven.compiler.source>
-        <maven.compiler.target>22</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <vaadin.version>24.4.8</vaadin.version>
         <itext.version>7.2.6</itext.version>
@@ -274,6 +274,9 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <mainClass>de.kjgstbarbara.chronos.Fr</mainClass>
+                        </configuration>
                     </plugin>
 
                     <plugin>
