@@ -274,9 +274,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <configuration>
-                            <mainClass>de.kjgstbarbara.chronos.Fr</mainClass>
-                        </configuration>
                     </plugin>
 
                     <plugin>
