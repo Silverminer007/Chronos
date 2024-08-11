@@ -29,8 +29,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            frontend/target/frontend-*.jar
-            cron/target/cron-*.jar
+            frontend/target/chronos-frontend.jar
+            cron/target/chronos-cron.jar
             install.zip
           body: |
             Download the install.zip bundle and extract it on your machine. Then cd into the directory and run > sudo ./install.sh

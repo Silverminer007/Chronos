@@ -115,6 +115,7 @@
     </dependencies>
 
     <build>
+        <finalName>${project.name}</finalName>
         <defaultGoal>spring-boot:run</defaultGoal>
         <plugins>
             <plugin>
