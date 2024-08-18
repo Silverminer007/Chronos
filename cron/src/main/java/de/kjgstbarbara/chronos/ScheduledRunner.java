@@ -4,6 +4,7 @@ import de.kjgstbarbara.chronos.data.Date;
 import de.kjgstbarbara.chronos.data.Feedback;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
+import de.kjgstbarbara.chronos.messaging.Messages;
 import de.kjgstbarbara.chronos.service.DatesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class ScheduledRunner implements CommandLineRunner {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
         LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: START", now.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+        Result result = Result.success();
         try {
             // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
             for (Date d : datesService.getDateRepository().findByStartBetween(now, now.plusDays(8)).stream().sorted(Comparator.comparing(Date::getStart)).toList()) {
@@ -63,7 +65,7 @@ public class ScheduledRunner implements CommandLineRunner {
                             noAnswer.append("--> Niemand\n");
                         }
                         summary.append("\n").append(cancelled).append("\n").append(noAnswer);
-                        d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin);
+                        result.and(d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin));
                     });
                 }
 
@@ -72,7 +74,7 @@ public class ScheduledRunner implements CommandLineRunner {
                     if (!feedback.equals(Feedback.Status.CANCELLED)) {
                         if ((p.getRemindMeTime().contains(now.getHour()) && p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                                 || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
-                            d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(DATE_REMINDER_TEMPLATE), p);
+                            result.and(d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(Messages.DATE_REMINDER), p));
                         }
                     }
                 }
@@ -86,11 +88,7 @@ public class ScheduledRunner implements CommandLineRunner {
                             for (Person p : d.getGroup().getMembers()) {
                                 if (p.getRemindMeTime().contains(now.getHour())) {
                                     LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), p.getName());
-                                    try {
-                                        d.getGroup().getOrganisation().sendDatePoll(d, p);
-                                    } catch (FriendlyError e) {
-                                        LOGGER.error("Die geplante Terminabfrage konnte nicht verschickt werden", e);
-                                    }
+                                    result.and(d.getGroup().getOrganisation().sendDatePoll(d, p));
                                 }
                             }
                         }
@@ -100,18 +98,12 @@ public class ScheduledRunner implements CommandLineRunner {
         } catch (Throwable e) {
             LOGGER.error("Es ist ein Fehler für die Terminerinnerungen aufgetreten", e);
         }
-        LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: ENDE", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+        if(result.isSuccess()) {
+            LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: ERFOLG", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+        } else {
+            LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: FEHLER", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+            LOGGER.error(result.getErrorMessage());
+        }
         LOGGER.info("------------------------------------------------------------------------------------------------");
     }
-
-    private static final String DATE_REMINDER_TEMPLATE =
-            """
-                    Hey #PERSON_FIRSTNAME,
-                    du hast #DATE_TIME_UNTIL_START einen Termin bei der #ORGANISATION_NAME :)
-                    #DATE_TITLE (#BOARD_TITLE)
-                    Von #DATE_START_TIME am #DATE_START_DATE
-                    Bis #DATE_END_TIME am #DATE_END_DATE
-                                       \s
-                    Deine Rückmeldung zu diesem Termin: #FEEDBACK_STATUS
-                    Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK""";
 }

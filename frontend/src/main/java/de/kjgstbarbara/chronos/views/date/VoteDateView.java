@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @AnonymousAllowed
 @Route("date/:dateID/vote/:answer/:personID")
@@ -46,7 +47,7 @@ public class VoteDateView extends VerticalLayout implements BeforeEnterObserver 
         DateRepository dateRepository = datesService.getDateRepository();
         Date date = beforeEnterEvent.getRouteParameters().get("dateID").map(Long::valueOf).flatMap(dateRepository::findById).orElse(null);
         if (date != null) {
-            boolean pollRunning = date.isPollRunning() && LocalDateTime.now().isBefore(date.getStart());
+            boolean pollRunning = date.isPollRunning() && LocalDateTime.now(ZoneOffset.UTC).isBefore(date.getStartAtTimezone(ZoneOffset.UTC));
             if (pollRunning) {
                 int answer = beforeEnterEvent.getRouteParameters().get("answer").map(Integer::parseInt).orElse(0);
                 if (answer > 0) {

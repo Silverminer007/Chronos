@@ -68,16 +68,16 @@ public class MessageFormatter {
         String dateTitle = date.getTitle();
         output = output.replaceAll("#DATE_TITLE", dateTitle);
         // DATE_START_DATE
-        String startDate = date.getStart().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
+        String startDate = date.getStartAtTimezone(this.person.getTimezone()).format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
         output = output.replaceAll("#DATE_START_DATE", startDate);
         // DATE_START_TIME
-        String startTime = date.getStart().format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
+        String startTime = date.getStartAtTimezone(this.person.getTimezone()).format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
         output = output.replaceAll("#DATE_START_TIME", startTime);
         // DATE_END_DATE
-        String endDate = date.getEnd().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
+        String endDate = date.getEndAtTimezone(this.person.getTimezone()).format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
         output = output.replaceAll("#DATE_END_DATE", endDate);
         // DATE_END_TIME
-        String endTime = date.getStart().format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
+        String endTime = date.getStartAtTimezone(this.person.getTimezone()).format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
         output = output.replaceAll("#DATE_END_TIME", endTime);
         // DATE_POLL_DATE
         if (date.getPollScheduledFor() != null) {
@@ -86,8 +86,8 @@ public class MessageFormatter {
         }
         // DATE_TIME_UNTIL_START
         LocalDateTime now = LocalDateTime.now();
-        long daysUntilStart = now.until(date.getStart(), ChronoUnit.DAYS);
-        long hoursUntilStart = now.until(date.getStart(), ChronoUnit.HOURS);
+        long daysUntilStart = now.until(date.getStartAtTimezone(this.person.getTimezone()), ChronoUnit.DAYS);
+        long hoursUntilStart = now.until(date.getStartAtTimezone(this.person.getTimezone()), ChronoUnit.HOURS);
         String timeUntilStart = switch ((int) daysUntilStart) {
             case 0 -> hoursUntilStart == 1 ? "in einer Stunde" : "in " + hoursUntilStart + " Stunden";
             case 1 -> "morgen";

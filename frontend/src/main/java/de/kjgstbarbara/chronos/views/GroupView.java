@@ -48,8 +48,8 @@ import java.util.stream.Stream;
 @PageTitle("Gruppen")
 @PermitAll
 public class GroupView extends VerticalLayout {
-    private final PersonsRepository personsRepository;// TODO Wie kann man beim Inline erstellen einer Gruppe beim erstellen eines Termin eine neu Organisation auswählen?
-    private final OrganisationRepository organisationRepository; // TODO Inline erstellen von Organisationen beim erstellen von Gruppen
+    private final PersonsRepository personsRepository;
+    private final OrganisationRepository organisationRepository;
     private final GroupRepository groupRepository;
     private final DateRepository dateRepository;
     private final FeedbackRepository feedbackRepository;

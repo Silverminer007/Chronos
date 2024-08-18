@@ -25,6 +25,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.chronos.FileHelper;
+import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.data.Group;
 import de.kjgstbarbara.chronos.data.Organisation;
 import de.kjgstbarbara.chronos.data.Person;
@@ -51,7 +52,7 @@ import java.util.List;
 @PermitAll
 public class ProfileView extends VerticalLayout {
 
-    public ProfileView(PersonsService personsService, PasswordEncoder passwordEncoder, OrganisationService organisationService, FeedbackService feedbackService, GroupService groupService, AuthenticationContext authenticationContext) {
+    public ProfileView(Translator translator, PersonsService personsService, PasswordEncoder passwordEncoder, OrganisationService organisationService, FeedbackService feedbackService, GroupService groupService, AuthenticationContext authenticationContext) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
         Person person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
@@ -91,7 +92,7 @@ public class ProfileView extends VerticalLayout {
                     .bind(Person::getLastName, Person::setLastName);
             content.add(lastName);
 
-            PhoneNumberField phoneNumber = new PhoneNumberField();
+            PhoneNumberField phoneNumber = new PhoneNumberField(translator);
             binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
             content.add(phoneNumber);
 

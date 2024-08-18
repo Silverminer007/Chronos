@@ -3,6 +3,7 @@ package de.kjgstbarbara.chronos.views;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.avatar.AvatarGroupVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -33,8 +35,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.FrontendUtils;
 import de.kjgstbarbara.chronos.Utility;
+import de.kjgstbarbara.chronos.data.Date;
 import de.kjgstbarbara.chronos.data.Feedback;
 import de.kjgstbarbara.chronos.data.Organisation;
 import de.kjgstbarbara.chronos.data.Person;
@@ -73,7 +77,7 @@ public class OrganisationView extends VerticalLayout {
     private final FeedbackRepository feedbackRepository;
 
     private final Grid<Organisation> grid = new Grid<>(Organisation.class, false);
-    private final TextField search = new TextField();
+    private String search = null;
 
     private final Person person;
 
@@ -89,72 +93,118 @@ public class OrganisationView extends VerticalLayout {
         if (person == null) {
             authenticationContext.logout();
         }
-
         this.setHeightFull();
+        this.setPadding(false);
+        this.setSpacing(false);
 
-        HorizontalLayout header = new HorizontalLayout();
-        header.setJustifyContentMode(JustifyContentMode.BETWEEN);
-        header.setWidthFull();
-        HorizontalLayout filter = new HorizontalLayout();
-        filter.setAlignItems(Alignment.CENTER);
-        NativeLabel searchLabel = new NativeLabel("Suche: ");
-        filter.add(searchLabel);
-        search.setValueChangeMode(ValueChangeMode.LAZY);
-        filter.add(search);
-        header.add(filter);
-        Button add = new Button("Neue Organisation", VaadinIcon.PLUS_SQUARE_O.create());
-        header.add(add);
-        this.add(header);
+        this.add(createHeader());
+        this.add(this.createOrganisationAndGroupList());
+        this.add(this.createFooter());
+    }
 
-        this.add(new Hr());
-
+    private Component createOrganisationAndGroupList() {
         grid.setHeightFull();
         grid.addComponentColumn(organisation -> createOrganisationWidget(organisation, this.person));
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
         grid.setSelectionMode(Grid.SelectionMode.NONE);
         grid.setItems(this::updateGrid);
-        search.addValueChangeListener(event -> grid.setItems(this::updateGrid));
-
-        add.addClickListener(event -> {
-            ClosableDialog createNewGroupDialog = new ClosableDialog("Neue Organisation");
-            TextField name = new TextField("Name der Organisation");
-            name.focus();
-            Button create = new Button("Erstellen");
-            create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            create.addClickShortcut(Key.ENTER);
-            create.addClickListener(e -> {
-                if (name.getValue().isBlank()) {
-                    name.setInvalid(true);
-                    name.setErrorMessage("Dieses Feld ist erforderlich");
-                } else {
-                    Organisation newOrg = new Organisation();
-                    newOrg.setName(name.getValue());
-                    newOrg.getMembers().add(person);
-                    newOrg.setAdmin(person);
-                    organisationRepository.save(newOrg);
-                    grid.setItems(this::updateGrid);
-                    createNewGroupDialog.close();
-                }
-            });
-            createNewGroupDialog.add(name);
-            HorizontalLayout dialogFooter = new HorizontalLayout(create);
-            dialogFooter.setWidthFull();
-            dialogFooter.setAlignItems(Alignment.END);
-            dialogFooter.setJustifyContentMode(JustifyContentMode.END);
-            createNewGroupDialog.getFooter().add(dialogFooter);
-            createNewGroupDialog.open();
-        });
-
-        this.add(grid);
+        return grid;
     }
 
     private Stream<Organisation> updateGrid(Query<Organisation, Void> query) {
         return organisationRepository.findByNameIgnoreCaseLikeAndMembersIn(
-                "%" + search.getValue() + "%",
+                "%" + search + "%",
                 List.of(this.person),
                 PageRequest.of(query.getPage(),
                         query.getPageSize())
         ).stream();
+    }
+
+    private Component createHeader() {
+        HorizontalLayout header = new HorizontalLayout();
+        header.setWidthFull();
+        header.setAlignItems(Alignment.CENTER);
+        header.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        header.setPadding(true);
+        header.setSpacing(true);
+
+        header.add(new H4("Gruppen"));
+
+        TextField searchTextField = new TextField();
+        searchTextField.addValueChangeListener(event -> {
+            this.search = event.getValue();
+        });
+        searchTextField.setVisible(false);
+        header.add(searchTextField);
+
+        Button searchButton = new Button(VaadinIcon.SEARCH.create());
+        searchButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        searchButton.addClickShortcut(Key.KEY_F, KeyModifier.CONTROL);
+        searchButton.addClickListener(event -> {
+            if (!searchTextField.isVisible()) {
+                searchTextField.setVisible(true);
+                searchTextField.focus();
+                this.search = searchTextField.getValue();
+            } else {
+                searchTextField.setVisible(false);
+                this.search = null;
+            }
+        });
+        header.add(searchButton);
+
+        return header;
+    }
+
+    private Component createFooter() {
+        HorizontalLayout footer = new HorizontalLayout();
+        footer.setSpacing(true);
+        footer.setPadding(true);
+        footer.addClassNames(LumoUtility.Width.FULL,
+                LumoUtility.JustifyContent.BETWEEN,
+                LumoUtility.AlignSelf.STRETCH);
+        footer.setAlignItems(Alignment.CENTER);
+
+        Button joinButton = new Button("Beitreten");
+        joinButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_LARGE);
+        joinButton.addClickListener(event -> {});
+        footer.add(joinButton);
+
+        Button createButton = new Button("Neu", VaadinIcon.PLUS.create());
+        createButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_LARGE);
+        createButton.addClickListener(event -> createCreateDialog().open());
+        footer.add(createButton);
+
+        return footer;
+    }
+
+    private Dialog createCreateDialog() {
+        ClosableDialog createNewGroupDialog = new ClosableDialog("Neue Organisation");
+        TextField name = new TextField("Name der Organisation");
+        name.focus();
+        Button create = new Button("Erstellen");
+        create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        create.addClickShortcut(Key.ENTER);
+        create.addClickListener(e -> {
+            if (name.getValue().isBlank()) {
+                name.setInvalid(true);
+                name.setErrorMessage("Dieses Feld ist erforderlich");
+            } else {
+                Organisation newOrg = new Organisation();
+                newOrg.setName(name.getValue());
+                newOrg.getMembers().add(person);
+                newOrg.setAdmin(person);
+                organisationRepository.save(newOrg);
+                grid.setItems(this::updateGrid);
+                createNewGroupDialog.close();
+            }
+        });
+        createNewGroupDialog.add(name);
+        HorizontalLayout dialogFooter = new HorizontalLayout(create);
+        dialogFooter.setWidthFull();
+        dialogFooter.setAlignItems(Alignment.END);
+        dialogFooter.setJustifyContentMode(JustifyContentMode.END);
+        createNewGroupDialog.getFooter().add(dialogFooter);
+        return createNewGroupDialog;
     }
 
     private Component createOrganisationWidget(Organisation organisation, Person person) {

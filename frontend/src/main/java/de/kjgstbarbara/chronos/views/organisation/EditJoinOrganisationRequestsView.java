@@ -10,6 +10,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import de.kjgstbarbara.chronos.Result;
 import de.kjgstbarbara.chronos.data.Organisation;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
@@ -58,24 +59,30 @@ public class EditJoinOrganisationRequestsView extends VerticalLayout implements 
                         organisationRepository.save(organisation);
                         this.add("Die Beitrittsanfrage von " + requester.getName() + " wurde akzeptiert. Sie*er ist jetzt Mitglied deiner Organisation");
                         MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(requester);
-                        organisation.sendMessageTo(messageFormatter.format(
+                        Result result = organisation.sendMessageTo(messageFormatter.format(
                                 """
                                         Hi #PERSON_NAME,
                                         deine Beitrittsanfrage zu #ORGANISATION_NAME wurde akzeptiert. Du kannst jetzt Mitglied von Gruppen dieser Organisation werden um Termine zu sehen und neue Gruppen erstellen
                                         #BASE_URL/groups
                                         """
                         ), requester);
+                        if (result.isError()) {
+                            LOGGER.error(result.getErrorMessage());
+                        }
                     } else {
                         organisation.getMembershipRequests().remove(requester);
                         organisationRepository.save(organisation);
                         this.add("Die Beitrittsanfrage von " + requester.getName() + " wurde abgelehnt");
                         MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(requester);
-                        organisation.sendMessageTo(messageFormatter.format(
+                        Result result = organisation.sendMessageTo(messageFormatter.format(
                                 """
                                         Hi #PERSON_NAME,
                                         deine Beitrittsanfrage zu #ORGANISATION_NAME wurde abgelehnt
                                         """
                         ), requester);
+                        if (result.isError()) {
+                            LOGGER.error(result.getErrorMessage());
+                        }
                     }
                 } else {
                     this.add("Diese Person ist schon Mitglied deiner Organisation: " + organisation.getName());

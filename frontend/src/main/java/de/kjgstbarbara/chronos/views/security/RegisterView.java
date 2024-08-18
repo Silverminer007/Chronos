@@ -18,6 +18,7 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.service.PersonsService;
 import de.kjgstbarbara.chronos.components.PhoneNumberField;
@@ -29,7 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @AnonymousAllowed
 public class RegisterView extends VerticalLayout {
 
-    public RegisterView(PersonsService personsService, PasswordEncoder passwordEncoder) {
+    public RegisterView(Translator translator, PersonsService personsService, PasswordEncoder passwordEncoder) {
         Binder<Person> binder = new Binder<>();
         Person person = new Person();
         addClassName("login-view");
@@ -66,7 +67,7 @@ public class RegisterView extends VerticalLayout {
         layout.add(username);
         layout.setColspan(username, 2);
 
-        PhoneNumberField phoneNumberField = new PhoneNumberField();
+        PhoneNumberField phoneNumberField = new PhoneNumberField(translator);
         binder.forField(phoneNumberField).bind(Person::getPhoneNumber, Person::setPhoneNumber);
         layout.add(phoneNumberField);
 

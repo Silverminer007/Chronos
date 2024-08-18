@@ -1,27 +1,24 @@
 package de.kjgstbarbara.chronos.data;
 
-import de.kjgstbarbara.chronos.FriendlyError;
+import de.kjgstbarbara.chronos.Result;
 import de.kjgstbarbara.chronos.messaging.EMailSender;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
+import de.kjgstbarbara.chronos.messaging.Messages;
 import de.kjgstbarbara.chronos.messaging.SignalSender;
+import de.kjgstbarbara.chronos.whatsapp.WhatsAppInstances;
 import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.chat.Chat;
 import it.auties.whatsapp.model.jid.Jid;
-import it.auties.whatsapp.model.message.model.Message;
-import it.auties.whatsapp.model.message.standard.PollCreationMessageBuilder;
-import it.auties.whatsapp.model.poll.PollOptionBuilder;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.Semaphore;
 
 @Entity
 @Data
@@ -61,47 +58,35 @@ public class Organisation {
     }
 
     public Optional<Whatsapp> getWhatsapp() {
-        try {
-            Semaphore semaphore = new Semaphore(1);
-            semaphore.acquire();
-            Whatsapp whatsapp = Whatsapp.webBuilder().newConnection(getIDAsUUID()).unregistered(qr -> {
-                LOGGER.error("WhatsApp ist not connected for: {}", name);
-                semaphore.release();
-            });
-            try {
-                whatsapp.connect().join();
-                if (whatsapp.store().chats() != null && !whatsapp.store().chats().isEmpty()) {
-                    semaphore.release();
-                    return Optional.of(whatsapp);
-                }
-            } catch (Throwable throwable) {
-                semaphore.release();
-                LOGGER.error("WhatsApp Setup failed", throwable);
-            }
-            semaphore.acquire();
-            whatsapp.disconnect();
-            LOGGER.info("WhatsApp not available");
-            return Optional.empty();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        return Optional.ofNullable(WhatsAppInstances.getWhatsApp(this.id));
     }
 
-    public void sendMessageTo(String message, Person person) {
-        sendMessageTo(message, person, person.getReminder());
+    public Result sendMessageTo(String message, Person person) {
+        return sendMessageTo(message, person, person.getReminder());
     }
 
-    public void sendMessageTo(String message, Person person, Person.Reminder reminder) {
+    public Result sendMessageTo(String message, Person person, Person.Reminder reminder) {
         if (reminder.equals(Person.Reminder.SIGNAL)) {
-            signalSender.sendMessage(message, person);
-        } else if (getWhatsapp().isEmpty() || reminder.equals(Person.Reminder.EMAIL)) {
-            emailSender.sendMessage(message, person);
-        } else {
+            Result result = signalSender.sendMessage(message, person);
+            if (result.isError()) {
+                return Result.error(result.getErrorMessage() + ", falling back to WhatsApp").and(sendMessageTo(message, person, Person.Reminder.WHATSAPP));
+            }
+            return Result.success();
+        } else if (reminder.equals(Person.Reminder.WHATSAPP)) {
             LOGGER.info("Message send via WhatsApp");
             LOGGER.info(message);
-            getWhatsapp().ifPresent(whatsapp -> getChat(person).ifPresent(chat ->
-                    whatsapp.sendMessage(chat, message).join()));
+
+            Result result = getWhatsapp().map(whatsapp -> getChat(person).map(chat -> {
+                whatsapp.sendMessage(chat, message).join();
+                return Result.success();
+            }).orElse(Result.error(person.getName() + " does not use WhatsApp, falling back to E-Mail"))).orElse(Result.error("WhatsApp is not available for " + this.getName() + ", falling back to E-Mail"));
+            if(result.isError()) {
+                return result.and(sendMessageTo(message, person, Person.Reminder.EMAIL));
+            }
             LOGGER.info("Sending successful");
+            return Result.success();
+        } else {
+            return emailSender.sendMessage(message, person);
         }
     }
 
@@ -115,62 +100,20 @@ public class Organisation {
         }
     }
 
-    public void sendDatePollToAll(Date date) throws FriendlyError {
-        boolean error = false;
+    public Result sendDatePollToAll(Date date) {
+        Result result = Result.success();
         for (Person p : date.getGroup().getMembers()) {
-            try {
-                sendDatePoll(date, p);
-            } catch (FriendlyError e) {
-                LOGGER.error("Fehler unterschlagen:", e);
-                error = true;
-            }
+            result.and(sendDatePoll(date, p));
         }
-        if (error) {
-            throw new FriendlyError("Die Terminabfrage konnte nicht an alle Personen verschickt werden");
-        }
+        return result;
     }
 
-    public void sendDatePoll(Date date, Person person) throws FriendlyError {
+    public Result sendDatePoll(Date date, Person person) {
         if (Feedback.Status.DONTKNOW.equals(date.getStatusFor(person))) {
             MessageFormatter messageFormatter = new MessageFormatter()
                     .person(person).date(date);
-            sendMessageTo(messageFormatter.format(DATE_POLL_FORMAT), person);
-            /*switch (person.getReminder()) {
-                case WHATSAPP -> sendDatePollWhatsApp(date, person);
-                case EMAIL -> send(date, person);
-            }*/
+            return sendMessageTo(messageFormatter.format(Messages.DATE_POLL), person);
         }
+        return Result.error(person.getName() + " already gave feedback to " + date.getTitle());
     }
-
-    public void sendDatePollWhatsApp(Date date, Person sendTo) {
-        getWhatsapp().ifPresent(api -> {
-            String title = String.format("Am %s um %s:%s Uhr ist %s. Bist du dabei?",
-                    date.getStart().getDayOfWeek().getDisplayName(TextStyle.FULL, sendTo.getUserLocale()),
-                    date.getStart().getHour(),
-                    date.getStart().getMinute(),
-                    date.getTitle());
-            Message message = new PollCreationMessageBuilder()
-                    .title(title)
-                    .selectableOptions(List.of(
-                            new PollOptionBuilder().name("(" + date.getId() + "-1) Bin dabei").build(),
-                            new PollOptionBuilder().name("(" + date.getId() + "-2) Bin raus").build()
-                    ))
-                    .selectableOptionsCount(1)
-                    .build();
-            System.out.println("Poll send");
-            getChat(sendTo).ifPresent(chat -> {
-                api.sendMessage(chat, message);
-            });
-        });
-    }
-
-    private static final String DATE_POLL_FORMAT =
-            """
-                    Hey #PERSON_FIRSTNAME,
-                    am #DATE_START_DATE um #DATE_START_TIME ist #DATE_TITLE. Bist du dabei?
-                    Wenn ja klicke bitte hier:
-                    #DATE_LINK/vote/1/#PERSON_ID
-                    Wenn nicht klicke bitte hier:
-                    #DATE_LINK/vote/2/#PERSON_ID
-                    """;
 }

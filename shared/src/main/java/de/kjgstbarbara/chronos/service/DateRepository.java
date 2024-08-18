@@ -17,6 +17,14 @@ public interface DateRepository extends JpaRepository<Date, Long> {
 
     List<Date> findByStartBetweenAndGroupMembersIn(LocalDateTime start, LocalDateTime end, List<Person> personList);
 
+    default Stream<Date> findByStartBetweenAndTitleLikeAndGroupMembersIn(LocalDateTime start, LocalDateTime end, String searchTerm, Person... persons) {
+        return findByStartBetweenAndTitleLikeAndGroupMembersIn(start, end, "%" + searchTerm + "%", List.of(persons)).stream();
+    }
+
+    List<Date> findByStartBetweenAndTitleLikeAndGroupMembersIn(LocalDateTime start, LocalDateTime end, String searchTerm, List<Person> personList);
+
+    List<Date> findByLinkedTo(long linkedTo);
+
     List<Date> findByStartBetween(LocalDateTime after, LocalDateTime before);
     List<Date> findByPollScheduledFor(LocalDate localDate);
 }

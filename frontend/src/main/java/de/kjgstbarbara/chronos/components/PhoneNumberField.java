@@ -6,7 +6,9 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
+import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.data.Person;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -19,12 +21,12 @@ public class PhoneNumberField extends CustomField<Person.PhoneNumber> implements
 
     private final IntegerField subscriber;
 
-    public PhoneNumberField() {
+    public PhoneNumberField(@Autowired Translator translator) {
         HorizontalLayout horizontalLayout = new HorizontalLayout();
         horizontalLayout.setSpacing(true);
 
-        countryCode = new ComboBox<>("Vorwahl");
-        countryCode.setWidth("120px");
+        countryCode = new ComboBox<>(translator.translate("phone-number.country-code"));
+        countryCode.setWidth("90px");
         countryCode.setItems(Arrays.stream(Locale.getISOCountries()).map(PhoneNumberUtil.getInstance()::getCountryCodeForRegion).map(s -> "+" + s).toList());
         countryCode.setValue("+49");
 
@@ -32,7 +34,7 @@ public class PhoneNumberField extends CustomField<Person.PhoneNumber> implements
         areaCode.setWidth("120px");
         areaCode.setPlaceholder("Region");
 
-        subscriber = new IntegerField("Nummer");
+        subscriber = new IntegerField(translator.translate("phone-number.number"));
         subscriber.setPlaceholder("Nummer");
 
         horizontalLayout.add(this.countryCode, areaCode, subscriber);

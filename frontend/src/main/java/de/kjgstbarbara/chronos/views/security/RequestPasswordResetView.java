@@ -13,6 +13,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.components.PhoneNumberField;
 import de.kjgstbarbara.chronos.components.ReCaptcha;
 import de.kjgstbarbara.chronos.data.Person;
@@ -37,7 +38,7 @@ public class RequestPasswordResetView extends VerticalLayout {
             Der Link ist noch #PERSON_RESET_EXPIRES_IN Stunden gültig
             """;
 
-    public RequestPasswordResetView(PersonsService personsService) {
+    public RequestPasswordResetView(Translator translator, PersonsService personsService) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
@@ -53,7 +54,7 @@ public class RequestPasswordResetView extends VerticalLayout {
         inner.add(new NativeLabel("Bitte gib deine Telefonnummer an," +
                 " um dir einen Code zum Zurücksetzen deines Passworts zuschicken zu lassen" +
                 " und gib dein Geburtsdatum als Bestätigung deiner Identität ein"));
-        PhoneNumberField phoneNumberField = new PhoneNumberField();
+        PhoneNumberField phoneNumberField = new PhoneNumberField(translator);
         inner.add(phoneNumberField);
         ReCaptcha reCaptcha = new ReCaptcha();
         inner.add(reCaptcha);

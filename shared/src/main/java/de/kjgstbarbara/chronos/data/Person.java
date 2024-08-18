@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 
 @Entity
@@ -29,12 +31,14 @@ public class Person {
     private PhoneNumber phoneNumber;
     private String eMailAddress;
     private Locale userLocale = Locale.GERMANY;
-    // Die Uhrzeit am Tag an der die Person ihre Benachrichtigungen erhält. 19 entspricht also 19:00 Uhr
+    private ZoneId timezone = ZoneOffset.UTC;
+    // Die Uhrzeit am Tag, an der die Person ihre Benachrichtigungen erhält. 19 entspricht also 19:00 Uhr
     private Set<Integer> remindMeTime = Set.of(19);
     private boolean monthOverview = true;
     private Set<Integer> hourReminderIntervals = Set.of(1);
     private Set<Integer> dayReminderIntervals = Set.of(2);
-    private String resetToken;
+    private CalendarLayout calendarLayout = CalendarLayout.LIST_NEXT;
+    private String resetToken;//TODO own token class
     private LocalDateTime resetTokenExpires;
 
     public String toString() {
@@ -92,7 +96,7 @@ public class Person {
 
         private static String splitPhoneNumber(String phoneNumber, int index) {
             String[] parts = phoneNumber.split(" ");
-            if(parts.length <= index) {
+            if (parts.length <= index) {
                 return "0";
             } else {
                 return parts[index];
@@ -108,6 +112,29 @@ public class Person {
 
         Reminder(String text) {
             this.text = text;
+        }
+    }
+
+    public CalendarLayout getCalendarLayout() {
+        return this.calendarLayout == null ? CalendarLayout.LIST_NEXT : this.calendarLayout;
+    }
+
+    public ZoneId getTimezone() {
+        return this.timezone == null ? ZoneOffset.UTC : this.timezone;
+    }
+
+    @Getter
+    public enum CalendarLayout {
+        LIST_PER_MONTH("calendar.list-per-month"),
+        LIST_NEXT("calendar.list-next"),
+        MONTH("calendar.month"),
+        YEAR("calendar.year");
+
+
+        private final String readableName;
+
+        CalendarLayout(String readableName) {
+            this.readableName = readableName;
         }
     }
 }
