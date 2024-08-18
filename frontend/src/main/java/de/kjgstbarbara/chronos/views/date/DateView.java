@@ -4,6 +4,8 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.accordion.Accordion;
+import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -250,6 +252,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         footerLayout.add(cancel);
 
         Button save = new Button("Speichern");
+        save.addClickShortcut(Key.ENTER);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         save.addClickListener(e -> {
             try {
@@ -395,6 +398,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         Button delete = new Button("Löschen");
         delete.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR);
         delete.setEnabled(false);
+        delete.addClickShortcut(Key.ENTER);
         delete.addClickListener(event -> {
             if (EditMode.SINGLE.equals(deleteOptions.getValue())) {
                 deleteDate(this.date, true);
@@ -565,6 +569,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         dateInformation.add(committed, cancelled, noFeedback);
 
         dateInformation.add(createPersonalFeedback());
+        dateInformation.add(createPersonsInformation());
 
         return dateInformation;
     }
@@ -601,6 +606,37 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         return personalFeedback;
     }
 
+    private Component createPersonsInformation() {
+        Accordion informationAccordion = new Accordion();
+        informationAccordion.setWidthFull();
+        AccordionPanel personalInformationPanel = new AccordionPanel("Anmerkungen (" + date.getInformation().size() + ")");
+
+        for (Date.Information information : date.getInformation().stream().sorted().toList()) {
+            VerticalLayout informationLayout = new VerticalLayout();
+            informationLayout.setWidthFull();
+            informationLayout.setSpacing(false);
+            informationLayout.addClassName(LumoUtility.Background.CONTRAST_5);
+
+            informationLayout.add(new HorizontalLayout(
+                    createBadge(information.getInformationSender().getName()),
+                    createBadge(information.getInformationTime().format(DateTimeFormatter.ofPattern("EEE, dd MMM yy")))
+            ));
+            informationLayout.add(new NativeLabel(information.getInformationText()));
+            personalInformationPanel.add(informationLayout);
+        }
+
+        informationAccordion.add(personalInformationPanel);
+
+        return informationAccordion;
+    }
+
+    private Span createBadge(String value) {
+        Span badge = new Span(value);
+        badge.getElement().getThemeList().add("badge small contrast");
+        badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
+        return badge;
+    }
+
     private Component createFooter() {
         HorizontalLayout actions = new HorizontalLayout();
         actions.setWidthFull();
@@ -610,8 +646,9 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
 
         Feedback.Status status = date.getStatusFor(person);
         Button commit = new FeedbackButton(Feedback.Status.COMMITTED, true, !Feedback.Status.COMMITTED.equals(status));
+        Button info = createInfoButton();
         Button cancel = new FeedbackButton(Feedback.Status.CANCELLED, true, !Feedback.Status.CANCELLED.equals(status));
-        actions.add(commit, cancel);
+        actions.add(commit, info, cancel);
 
         commit.addClickListener(event -> {
             Feedback feedback = Feedback.create(person, Feedback.Status.COMMITTED);
@@ -629,6 +666,52 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         });
 
         return actions;
+    }
+
+    private Button createInfoButton() {
+        Button infoButton = new Button("Info", VaadinIcon.INFO_CIRCLE_O.create());
+        infoButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+
+        infoButton.addClickListener(event -> {
+            ClosableDialog submitInfoDialog = new ClosableDialog("Anmerkung schreiben");
+            submitInfoDialog.setMaxWidth("400px");
+
+            TextField infoText = new TextField("Anmerkung");
+            infoText.setWidthFull();
+            submitInfoDialog.add(infoText);
+
+            HorizontalLayout footer = new HorizontalLayout();
+            footer.setWidthFull();
+            footer.setAlignItems(Alignment.CENTER);
+            footer.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+            Button cancel = new Button("Abbrechen");
+            cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+            cancel.addClickListener(e -> submitInfoDialog.close());
+            footer.add(cancel);
+
+            Button submit = new Button("Abschicken");
+            submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            submit.addClickShortcut(Key.ENTER);
+            submit.addClickListener(e -> {
+                if (!infoText.getValue().isBlank()) {
+                    Date.Information information = new Date.Information();
+                    information.setInformationSender(this.person);
+                    information.setInformationTime(LocalDateTime.now(ZoneOffset.UTC));
+                    information.setInformationText(infoText.getValue());
+                    date.getInformation().add(information);
+                    dateRepository.save(date);
+                    UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", date.getId())));
+                    Notification.show("Anmerkung wurde gespeichert");
+                }
+                submitInfoDialog.close();
+            });
+            footer.add(submit);
+
+            submitInfoDialog.getFooter().add(footer);
+            submitInfoDialog.open();
+        });
+        return infoButton;
     }
 
     public enum EditMode {

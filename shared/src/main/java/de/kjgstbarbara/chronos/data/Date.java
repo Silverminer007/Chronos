@@ -11,7 +11,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 @Data
 @Entity
@@ -40,6 +39,8 @@ public class Date implements Comparable<Date> {
     private LocalDate pollScheduledFor;
     private boolean pollRunning = true;
     private LocalDate dateCancelled = null;
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<Information> information;
 
     public Date(Date date) {
         this.title = date.getTitle();
@@ -102,5 +103,22 @@ public class Date implements Comparable<Date> {
 
     public boolean isPollRunning() {
         return this.pollRunning && this.dateCancelled == null;
+    }
+
+    @Data
+    @Embeddable
+    public static class Information implements Comparable<Information> {
+        @ManyToOne
+        private Person informationSender;
+        private LocalDateTime informationTime;
+        private String informationText;
+
+        @Override
+        public int compareTo(Date.Information o) {
+            if(this.informationTime == null || o.informationTime == null) {
+                return 0;
+            }
+            return o.informationTime.compareTo(this.informationTime);
+        }
     }
 }
