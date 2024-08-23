@@ -22,7 +22,6 @@ import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.service.PersonsService;
 import de.kjgstbarbara.chronos.components.PhoneNumberField;
-import de.kjgstbarbara.chronos.components.ReCaptcha;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Route("register")
@@ -94,9 +93,6 @@ public class RegisterView extends VerticalLayout {
                 .withValidator((s, context) -> s.equals(password.getValue()) ? ValidationResult.ok() : ValidationResult.error("Die Passwörter stimmen nicht überein"))
                 .bind(p -> "", (p, value) -> p.setPassword(passwordEncoder.encode(value)));
         layout.add(reTypePassword);
-        ReCaptcha reCaptcha = new ReCaptcha();
-        layout.add(reCaptcha);
-        layout.setColspan(reCaptcha, 2);
 
         Button back = new Button("zurück");
         back.setWidth("30%");
@@ -110,17 +106,13 @@ public class RegisterView extends VerticalLayout {
         layout.add(createAccount);
 
         createAccount.addClickListener(event -> {
-            if (reCaptcha.isValid()) {
-                try {
-                    binder.writeBean(person);
-                    person.setUserLocale(UI.getCurrent().getLocale());
-                    personsService.getPersonsRepository().save(person);
-                    UI.getCurrent().navigate(LoginView.class);
-                } catch (ValidationException e) {
-                    Notification.show("Ein Fehler ist ausgetreten, der Account konnte nicht erstellt werdne").addThemeVariants(NotificationVariant.LUMO_ERROR);
-                }
-            } else {
-                Notification.show("Bitte löse zuerst das Captcha").addThemeVariants(NotificationVariant.LUMO_ERROR);
+            try {
+                binder.writeBean(person);
+                person.setUserLocale(UI.getCurrent().getLocale());
+                personsService.getPersonsRepository().save(person);
+                UI.getCurrent().navigate(LoginView.class);
+            } catch (ValidationException e) {
+                Notification.show("Ein Fehler ist ausgetreten, der Account konnte nicht erstellt werdne").addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         });
         binder.readBean(person);

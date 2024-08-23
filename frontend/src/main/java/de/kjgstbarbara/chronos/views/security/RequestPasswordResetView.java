@@ -15,7 +15,6 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.components.PhoneNumberField;
-import de.kjgstbarbara.chronos.components.ReCaptcha;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.service.PersonsRepository;
 import de.kjgstbarbara.chronos.service.PersonsService;
@@ -56,15 +55,10 @@ public class RequestPasswordResetView extends VerticalLayout {
                 " und gib dein Geburtsdatum als Bestätigung deiner Identität ein"));
         PhoneNumberField phoneNumberField = new PhoneNumberField(translator);
         inner.add(phoneNumberField);
-        ReCaptcha reCaptcha = new ReCaptcha();
-        inner.add(reCaptcha);
         Button confirm = new Button("Bestätigen");
         confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         confirm.addClickShortcut(Key.ENTER);
         confirm.addClickListener(event -> {
-            if (reCaptcha.isValid()) {
-                confirm.setAriaLabel("Bitte löse zuerst das Captcha");
-            }
             if (phoneNumberField.getValue() == null) {
                 phoneNumberField.setInvalid(true);
                 phoneNumberField.setErrorMessage("Bitte wähle eine Telefonnummer");
