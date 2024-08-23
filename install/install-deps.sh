@@ -1,5 +1,4 @@
 SIGNAL_VERSION=0.13.5
-JAVA_VERSION=21.0.4-tem
 MYSQL_VERSION=0.8.32-1
 
 if [ "$(whoami)" != "root" ]
@@ -12,10 +11,6 @@ fi
 apt install curl
 apt install zip
 
-# Install Java
-curl -s "https://get.sdkman.io" | bash
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-sdk install java $JAVA_VERSION
 # Install MySQL
 curl -OL https://dev.mysql.com/get/mysql-apt-config_"$MYSQL_VERSION"_all.deb
 apt install ./mysql-apt-config_"$MYSQL_VERSION"_all.deb

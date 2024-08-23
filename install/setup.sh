@@ -1,4 +1,11 @@
 # Run per User you want chronos to run on
+JAVA_VERSION=21.0.4-tem
+
+if [ "$(whoami)" == "root" ]
+then
+  echo "Please don't run this script as root"
+  exit
+fi
 
 # Create Directories
 mkdir ~/.chronos
@@ -7,6 +14,11 @@ mkdir ~/.chronos/logs/cron
 
 # Setup Systemd to run User Units
 loginctl enable-linger "$(whoami)"
+
+# Install Java
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install java $JAVA_VERSION
 
 # Set Chronos URL
 echo "Please enter the Public facing URL Chronos shall be reachable with (including http(s) and port if necessary):"
@@ -27,6 +39,8 @@ cp chronos.service chronos-temp.service
 } >> chronos-temp.service
 
 # Setup Chronos Service
+mkdir ~/.config
+mkdir ~/.config/systemd
 mkdir ~/.config/systemd/user
 cp chronos-temp.service ~/.config/systemd/user/chronos.service
 rm chronos-temp.service
