@@ -1,4 +1,4 @@
-package de.kjgstbarbara.chronos.views.date;
+package de.kjgstbarbara.chronos.views;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -14,7 +14,6 @@ import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -42,8 +41,6 @@ import de.kjgstbarbara.chronos.data.*;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
 import de.kjgstbarbara.chronos.messaging.Messages;
 import de.kjgstbarbara.chronos.service.*;
-import de.kjgstbarbara.chronos.views.CalendarView;
-import de.kjgstbarbara.chronos.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,7 +53,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
@@ -81,6 +77,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         if (person == null) {
             authenticationContext.logout();
         }
+        this.setMaxWidth("600px");
     }
 
     @Override
@@ -609,7 +606,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     private Component createPersonsInformation() {
         Accordion informationAccordion = new Accordion();
         informationAccordion.setWidthFull();
-        AccordionPanel personalInformationPanel = new AccordionPanel("Anmerkungen (" + date.getInformation().size() + ")");
+        AccordionPanel personalInformationPanel = new AccordionPanel("Informationen (" + date.getInformation().size() + ")");
 
         for (Date.Information information : date.getInformation().stream().sorted().toList()) {
             VerticalLayout informationLayout = new VerticalLayout();
@@ -642,7 +639,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         actions.setWidthFull();
         actions.setSpacing(true);
         actions.setPadding(true);
-        actions.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        actions.setJustifyContentMode(JustifyContentMode.CENTER);
 
         Feedback.Status status = date.getStatusFor(person);
         Button commit = new FeedbackButton(Feedback.Status.COMMITTED, true, !Feedback.Status.COMMITTED.equals(status));
@@ -677,6 +674,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             submitInfoDialog.setMaxWidth("400px");
 
             TextField infoText = new TextField("Anmerkung");
+            infoText.focus();
             infoText.setWidthFull();
             submitInfoDialog.add(infoText);
 
