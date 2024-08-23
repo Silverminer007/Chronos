@@ -3,6 +3,8 @@ package de.kjgstbarbara.chronos.messaging;
 import de.kjgstbarbara.chronos.data.*;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,6 +17,7 @@ import java.util.Properties;
 @Setter
 @Accessors(fluent = true)
 public class MessageFormatter {
+    private static final Logger LOGGER = LogManager.getLogger(MessageFormatter.class);
     private Organisation organisation;
     private Date date;
     private Person person;
@@ -26,11 +29,12 @@ public class MessageFormatter {
         Properties properties = new Properties();
         try {
             properties.load(new FileInputStream("chronos.properties"));
+            if (baseURL.isBlank()) {
+                baseURL = properties.getProperty("chronos.base-url");
+            }
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        if (baseURL.isBlank()) {
-            baseURL = properties.getProperty("chronos.base-url");
+            LOGGER.warn("chronos.properties was not found in Execution Directory, defaulting properties");
+            baseURL = "";
         }
         String output = input;
         if (date != null) {

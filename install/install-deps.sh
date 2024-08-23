@@ -1,12 +1,13 @@
-# Versions
-SIGNAL_VERSION=0.13.4
-JAVA_VERSION=21.0.2-tem
+SIGNAL_VERSION=0.13.5
+JAVA_VERSION=21.0.4-tem
 MYSQL_VERSION=0.8.32-1
 
-# Create Directories
-mkdir /opt/chronos
-mkdir /opt/chronos/logs
-mkdir /opt/chronos/logs/cron
+if [ "$(whoami)" != "root" ]
+then
+  echo "Please run this script as root"
+  exit
+fi
+
 
 apt install curl
 apt install zip
@@ -41,22 +42,3 @@ echo "spring.datasource.password = ""$PASSWORD" | tee /etc/config/chronos.proper
 mysql -u root --execute="CREATE DATABASE chronos;"
 mysql -u root --execute="CREATE USER 'chronos'@'localhost' IDENTIFIED BY '""$PASSWORD""';"
 mysql -u root --execute="GRANT ALL ON *.* TO 'chronos'@'localhost';"
-
-# Set Chronos URL
-echo "Please enter the URL Chronos shall be reachable with (including http(s) and port if necessary:"
-read -r url
-echo chronos.base-url="$url" | tee /opt/chronos/chronos.properties
-
-# Setup Chronos Service
-cp chronos.service /etc/systemd/system/
-systemctl daemon-reload
-
-# Setup Chronos Cronjob
-line="02 * * * * /root/.sdkman/candidates/java/$JAVA_VERSION/bin/java -jar /opt/chronos/chronos-cron.jar &>/opt/chronos/cron-logs"
-(crontab -u "$(whoami)" -l; echo "$line" ) | crontab -u "$(whoami)" -
-
-# Install chronos
-cp ./update.sh /opt/chronos/
-cd /opt/chronos || exit
-chmod +x ./update.sh
-./update.sh

@@ -1,6 +1,6 @@
 package de.kjgstbarbara.chronos.data;
 
-import de.kjgstbarbara.chronos.SecurityUtils;
+import de.kjgstbarbara.chronos.Utility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.slf4j.Logger;
@@ -63,7 +63,7 @@ public class Person {
 
     public boolean createResetPassword() {
         try {
-            this.setResetToken(SecurityUtils.generatePassword(200));
+            this.setResetToken(Utility.generatePassword(200));
             this.setResetTokenExpires(LocalDateTime.now().plusHours(8));
             return true;
         } catch (NoSuchAlgorithmException e) {

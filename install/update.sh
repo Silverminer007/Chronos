@@ -1,5 +1,5 @@
 REPO="Silverminer007/Chronos"
-VERSION=latest
+VERSION=$1
 GITHUB="https://api.github.com"
 
 alias errcho='>&2 echo'
@@ -30,13 +30,13 @@ function downloadAssets {
       -O "$FILE"
 }
 
-cd /opt/chronos || (echo "Updating Chronos failed" & exit)
+cd ~/.chronos || (echo "Updating Chronos failed" & exit)
 echo Please enter your GitHub PAT
 read -r TOKEN
 echo "Update Frontend START"
-systemctl stop chronos
+systemctl --user stop chronos
 downloadAssets chronos-frontend.jar
-systemctl stop chronos
+systemctl --user stop chronos
 echo "Update Frontend END"
 echo "Update Cronjob START"
 downloadAssets chronos-cron.jar

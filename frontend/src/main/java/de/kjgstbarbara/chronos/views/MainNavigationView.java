@@ -2,7 +2,6 @@ package de.kjgstbarbara.chronos.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.IconFactory;
@@ -12,19 +11,15 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.Lumo;
-import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.data.Person;
-import de.kjgstbarbara.chronos.service.PersonsRepository;
 import de.kjgstbarbara.chronos.service.PersonsService;
 import de.kjgstbarbara.chronos.views.profile.ProfileView;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,7 +94,9 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        this.setTheme(this.person.isDarkMode());
+        if(this.person != null) {
+            this.setTheme(this.person.isDarkMode());
+        }
     }
 
     private void setTheme(boolean dark) {
