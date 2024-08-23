@@ -116,7 +116,7 @@ public class Person {
     }
 
     public CalendarLayout getCalendarLayout() {
-        return this.calendarLayout == null ? CalendarLayout.LIST_NEXT : this.calendarLayout;
+        return this.calendarLayout == null ? CalendarLayout.LIST_PER_MONTH : this.calendarLayout;
     }
 
     public ZoneId getTimezone() {

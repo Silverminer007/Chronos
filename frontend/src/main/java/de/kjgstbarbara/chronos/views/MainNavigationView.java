@@ -43,6 +43,18 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         }
     }
 
+    @Override
+    public void setContent(Component content) {
+        HorizontalLayout wrapper = new HorizontalLayout();
+        wrapper.setSizeFull();
+        wrapper.setPadding(false);
+        wrapper.setSpacing(false);
+        wrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        wrapper.setAlignItems(FlexComponent.Alignment.CENTER);
+        wrapper.add(content);
+        super.setContent(wrapper);
+    }
+
     private HorizontalLayout getNavigation() {
         HorizontalLayout navigation = new HorizontalLayout();
         navigation.addClassNames(LumoUtility.Width.FULL,

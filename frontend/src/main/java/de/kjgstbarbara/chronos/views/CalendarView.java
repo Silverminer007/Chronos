@@ -32,7 +32,6 @@ import de.kjgstbarbara.chronos.data.*;
 import de.kjgstbarbara.chronos.service.*;
 import de.kjgstbarbara.chronos.components.ClosableDialog;
 import de.kjgstbarbara.chronos.components.NonNullValidator;
-import de.kjgstbarbara.chronos.views.date.DateView;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -289,7 +288,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     private List<Date> findSubListOfDates() {
         if (Person.CalendarLayout.LIST_PER_MONTH.equals(this.person.getCalendarLayout())) {
-            return dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(ZoneOffset.UTC).withDayOfMonth(1).withHour(0).withMinute(0), LocalDateTime.now(ZoneOffset.UTC).plusMonths(1).withDayOfMonth(1).minusDays(1).withHour(0).withMinute(0), this.person).sorted().toList();
+            return dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(ZoneOffset.UTC).plusMonths(this.page).withDayOfMonth(1).withHour(0).withMinute(0), LocalDateTime.now(ZoneOffset.UTC).plusMonths(1 + this.page).withDayOfMonth(1).minusDays(1).withHour(0).withMinute(0), this.person).sorted().toList();
         }
         if (this.page < 0) {
             List<Date> datesNonCropped = queryDates(false);
@@ -382,9 +381,9 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                         }
                     }
                     case YEAR ->
-                            LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy").withLocale(this.person.getUserLocale()));
+                            LocalDate.now(ZoneOffset.UTC).plusYears(this.page).format(DateTimeFormatter.ofPattern("yyyy").withLocale(this.person.getUserLocale()));
                     default ->
-                            LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(this.person.getUserLocale()));
+                            LocalDate.now(ZoneOffset.UTC).plusMonths(this.page).format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(this.person.getUserLocale()));
                 }
         );
     }
