@@ -34,7 +34,7 @@ import de.kjgstbarbara.chronos.components.ClosableDialog;
 import de.kjgstbarbara.chronos.components.NonNullValidator;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.vaadin.stefan.fullcalendar.*;
 import org.vaadin.stefan.fullcalendar.dataprovider.CallbackEntryProvider;
 import org.vaadin.stefan.fullcalendar.dataprovider.EntryProvider;
@@ -73,15 +73,14 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         this.dateRepository = datesService.getDateRepository();
         this.groupRepository = groupService.getGroupRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
-        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
+        this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
+                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
         this.fullCalendar = setupCalendar();
         this.dateListScroller = new Scroller(this.setupDateList());
         if (person == null) {
-            authenticationContext.logout();
+            UI.getCurrent().navigate(RegisterView.class);
         } else {
-
             this.setPadding(false);
             this.setSpacing(false);
             this.setSizeFull();
@@ -357,6 +356,10 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+        if (person == null) {
+            beforeEnterEvent.rerouteTo(RegisterView.class);
+            return;
+        }
         Date goToDate = beforeEnterEvent.getRouteParameters().get("date").map(Long::parseLong).flatMap(dateRepository::findById).orElse(null);
         this.page = goToDate == null ?
                 beforeEnterEvent.getRouteParameters().get("page").map(Integer::parseInt).orElse(0)

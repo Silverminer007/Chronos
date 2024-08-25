@@ -19,10 +19,11 @@ import de.kjgstbarbara.chronos.service.OrganisationService;
 import de.kjgstbarbara.chronos.service.PersonsRepository;
 import de.kjgstbarbara.chronos.service.PersonsService;
 import de.kjgstbarbara.chronos.views.MainNavigationView;
+import de.kjgstbarbara.chronos.views.RegisterView;
 import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 @Route(value = "organisation/manage/:organisationID/:person/:action", layout = MainNavigationView.class)
 @PermitAll
@@ -36,11 +37,11 @@ public class EditJoinOrganisationRequestsView extends VerticalLayout implements 
     public EditJoinOrganisationRequestsView(PersonsService personsService, OrganisationService organisationService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.organisationRepository = organisationService.getOrganisationRepository();
-        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
+        this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
+                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
         if (person == null) {
-            authenticationContext.logout();
+            UI.getCurrent().navigate(RegisterView.class);
         }
     }
 

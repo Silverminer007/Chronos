@@ -30,7 +30,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -38,7 +37,6 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.FrontendUtils;
 import de.kjgstbarbara.chronos.Utility;
-import de.kjgstbarbara.chronos.data.Date;
 import de.kjgstbarbara.chronos.data.Feedback;
 import de.kjgstbarbara.chronos.data.Organisation;
 import de.kjgstbarbara.chronos.data.Person;
@@ -54,7 +52,7 @@ import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.vaadin.olli.ClipboardHelper;
 
 import java.io.ByteArrayInputStream;
@@ -87,11 +85,11 @@ public class OrganisationView extends VerticalLayout {
         this.groupRepository = groupService.getGroupRepository();
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
-        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
+        this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
+                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
         if (person == null) {
-            authenticationContext.logout();
+            UI.getCurrent().navigate(RegisterView.class);
         }
         this.setHeightFull();
         this.setPadding(false);

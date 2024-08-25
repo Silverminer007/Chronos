@@ -195,6 +195,11 @@
             <artifactId>biweekly</artifactId>
             <version>0.6.8</version>
         </dependency>
+        <dependency>
+            <groupId>com.okta.spring</groupId>
+            <artifactId>okta-spring-boot-starter</artifactId>
+            <version>3.0.7</version>
+        </dependency>
     </dependencies>
 
     <build>

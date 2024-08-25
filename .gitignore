@@ -43,3 +43,5 @@ logs
 frontend/frontend/generated/
 frontend/pnpmfile.js
 frontend/vite.generated.ts
+
+application.properties

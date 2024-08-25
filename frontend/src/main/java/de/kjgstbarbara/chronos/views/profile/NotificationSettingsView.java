@@ -1,5 +1,6 @@
 package de.kjgstbarbara.chronos.views.profile;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -20,10 +21,11 @@ import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.service.PersonsRepository;
 import de.kjgstbarbara.chronos.service.PersonsService;
 import de.kjgstbarbara.chronos.views.MainNavigationView;
+import de.kjgstbarbara.chronos.views.RegisterView;
 import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
 
 @Route(value = "notifications", layout = MainNavigationView.class)
@@ -34,11 +36,11 @@ public class NotificationSettingsView extends VerticalLayout {
 
     public NotificationSettingsView(PersonsService personsService, AuthenticationContext authenticationContext) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
-        Person person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
+        Person person = authenticationContext.getAuthenticatedUser(OidcUser.class)
+                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
         if (person == null) {
-            authenticationContext.logout();
+            UI.getCurrent().navigate(RegisterView.class);
         } else {
             setSizeFull();
 

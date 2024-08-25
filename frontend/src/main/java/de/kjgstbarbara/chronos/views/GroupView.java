@@ -2,6 +2,7 @@ package de.kjgstbarbara.chronos.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.avatar.AvatarGroupVariant;
@@ -38,7 +39,7 @@ import de.kjgstbarbara.chronos.service.*;
 import de.kjgstbarbara.chronos.components.ClosableDialog;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,11 +66,11 @@ public class GroupView extends VerticalLayout {
         this.groupRepository = groupService.getGroupRepository();
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
-        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
+        this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
+                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
         if (person == null) {
-            authenticationContext.logout();
+            UI.getCurrent().navigate(RegisterView.class);
         }
 
         this.setHeightFull();

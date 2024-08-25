@@ -44,7 +44,7 @@ import de.kjgstbarbara.chronos.service.*;
 import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.vaadin.olli.FileDownloadWrapper;
 
 import java.io.ByteArrayInputStream;
@@ -71,17 +71,21 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     public DateView(PersonsService personsService, FeedbackService feedbackService, DatesService datesService, AuthenticationContext authenticationContext) {
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
-        person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
+        this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
+                .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
         if (person == null) {
-            authenticationContext.logout();
+            UI.getCurrent().navigate(RegisterView.class);
         }
         this.setMaxWidth("600px");
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+        if (person == null) {
+            beforeEnterEvent.rerouteTo(RegisterView.class);
+            return;
+        }
         this.date = beforeEnterEvent.getRouteParameters().get("date").map(Long::valueOf).flatMap(dateRepository::findById).orElse(null);
         if (date == null) {
             beforeEnterEvent.rerouteTo("");
