@@ -1,16 +1,14 @@
-package de.kjgstbarbara.chronos.views;
+package de.kjgstbarbara.chronos.views.groups;
 
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.avatar.AvatarGroupVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
@@ -20,6 +18,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -29,31 +28,20 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.spring.security.AuthenticationContext;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.FrontendUtils;
-import de.kjgstbarbara.chronos.Utility;
-import de.kjgstbarbara.chronos.data.Feedback;
+import de.kjgstbarbara.chronos.components.ClosableDialog;
 import de.kjgstbarbara.chronos.data.Organisation;
 import de.kjgstbarbara.chronos.data.Person;
-import de.kjgstbarbara.chronos.messaging.MessageFormatter;
 import de.kjgstbarbara.chronos.messaging.EMailSender;
+import de.kjgstbarbara.chronos.messaging.MessageFormatter;
 import de.kjgstbarbara.chronos.messaging.SignalSender;
-import de.kjgstbarbara.chronos.service.*;
-import de.kjgstbarbara.chronos.components.ClosableDialog;
+import de.kjgstbarbara.chronos.service.OrganisationRepository;
 import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.Whatsapp;
 import it.auties.whatsapp.model.mobile.PhoneNumber;
-import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.vaadin.olli.ClipboardHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -61,123 +49,16 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
-@Route(value = "organisations", layout = MainNavigationView.class)
-@PageTitle("Organisationen")
-@PermitAll
-public class OrganisationView extends VerticalLayout {
-    private static final Logger LOGGER = LogManager.getLogger(OrganisationView.class);
-    private final PersonsRepository personsRepository;
-    private final OrganisationRepository organisationRepository;
-    private final GroupRepository groupRepository;
-    private final DateRepository dateRepository;
-    private final FeedbackRepository feedbackRepository;
-
-    private final Grid<Organisation> grid = new Grid<>(Organisation.class, false);
-    private String search = null;
-
-    private final Person person;
-
-    public OrganisationView(PersonsService personsService, OrganisationService organisationService, GroupService groupService, DatesService datesService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
-        this.personsRepository = personsService.getPersonsRepository();
-        this.organisationRepository = organisationService.getOrganisationRepository();
-        this.groupRepository = groupService.getGroupRepository();
-        this.dateRepository = datesService.getDateRepository();
-        this.feedbackRepository = feedbackService.getFeedbackRepository();
-        this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
-                .orElse(null);
-        if (person == null) {
-            UI.getCurrent().navigate(RegisterView.class);
-        }
-        this.setHeightFull();
-        this.setPadding(false);
-        this.setSpacing(false);
-
-        this.add(createHeader());
-        this.add(this.createOrganisationAndGroupList());
-        this.add(this.createFooter());
-    }
-
-    private Component createOrganisationAndGroupList() {
-        grid.setHeightFull();
-        grid.addComponentColumn(organisation -> createOrganisationWidget(organisation, this.person));
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
-        grid.setSelectionMode(Grid.SelectionMode.NONE);
-        grid.setItems(this::updateGrid);
-        return grid;
-    }
-
-    private Stream<Organisation> updateGrid(Query<Organisation, Void> query) {
-        return organisationRepository.findByNameIgnoreCaseLikeAndMembersIn(
-                "%" + search + "%",
-                List.of(this.person),
-                PageRequest.of(query.getPage(),
-                        query.getPageSize())
-        ).stream();
-    }
-
-    private Component createHeader() {
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setAlignItems(Alignment.CENTER);
-        header.setJustifyContentMode(JustifyContentMode.BETWEEN);
-        header.setPadding(true);
-        header.setSpacing(true);
-
-        header.add(new H4("Gruppen"));
-
-        TextField searchTextField = new TextField();
-        searchTextField.addValueChangeListener(event -> {
-            this.search = event.getValue();
-        });
-        searchTextField.setVisible(false);
-        header.add(searchTextField);
-
-        Button searchButton = new Button(VaadinIcon.SEARCH.create());
-        searchButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        searchButton.addClickShortcut(Key.KEY_F, KeyModifier.CONTROL);
-        searchButton.addClickListener(event -> {
-            if (!searchTextField.isVisible()) {
-                searchTextField.setVisible(true);
-                searchTextField.focus();
-                this.search = searchTextField.getValue();
-            } else {
-                searchTextField.setVisible(false);
-                this.search = null;
-            }
-        });
-        header.add(searchButton);
-
-        return header;
-    }
-
-    private Component createFooter() {
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.setSpacing(true);
-        footer.setPadding(true);
-        footer.addClassNames(LumoUtility.Width.FULL,
-                LumoUtility.JustifyContent.BETWEEN,
-                LumoUtility.AlignSelf.STRETCH);
-        footer.setAlignItems(Alignment.CENTER);
-
-        Button joinButton = new Button("Beitreten");
-        joinButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_LARGE);
-        joinButton.addClickListener(event -> {});
-        footer.add(joinButton);
-
-        Button createButton = new Button("Neu", VaadinIcon.PLUS.create());
-        createButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_LARGE);
-        createButton.addClickListener(event -> createCreateDialog().open());
-        footer.add(createButton);
-
-        return footer;
-    }
-
+public class EditOrg extends VerticalLayout {
+    private static final Logger LOGGER = LogManager.getLogger();
+    private Person person;
+    private OrganisationRepository organisationRepository;
     private Dialog createCreateDialog() {
         ClosableDialog createNewGroupDialog = new ClosableDialog("Neue Organisation");
+        createNewGroupDialog.setMaxWidth("400px");
         TextField name = new TextField("Name der Organisation");
+        name.setWidthFull();
         name.focus();
         Button create = new Button("Erstellen");
         create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -192,164 +73,16 @@ public class OrganisationView extends VerticalLayout {
                 newOrg.getMembers().add(person);
                 newOrg.setAdmin(person);
                 organisationRepository.save(newOrg);
-                grid.setItems(this::updateGrid);
                 createNewGroupDialog.close();
             }
         });
         createNewGroupDialog.add(name);
         HorizontalLayout dialogFooter = new HorizontalLayout(create);
         dialogFooter.setWidthFull();
-        dialogFooter.setAlignItems(Alignment.END);
-        dialogFooter.setJustifyContentMode(JustifyContentMode.END);
+        dialogFooter.setAlignItems(FlexComponent.Alignment.END);
+        dialogFooter.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         createNewGroupDialog.getFooter().add(dialogFooter);
         return createNewGroupDialog;
-    }
-
-    private Component createOrganisationWidget(Organisation organisation, Person person) {
-        VerticalLayout organisationWidget = new VerticalLayout();
-
-        HorizontalLayout summary = new HorizontalLayout();
-        summary.setAlignItems(Alignment.CENTER);
-        summary.setWidthFull();
-
-        VerticalLayout collapsableArea = new VerticalLayout();
-        collapsableArea.setVisible(false);
-
-        H3 title = new H3();
-        title.setText(organisation.getName());
-        summary.add(title);
-
-        TextField editTitle = new TextField();
-        editTitle.setVisible(false);
-        summary.add(editTitle);
-
-        Button editButton = new Button(VaadinIcon.PENCIL.create());
-        editButton.setVisible(organisation.getAdmin().equals(person));
-        editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        summary.add(editButton);
-
-        Button saveEditButton = new Button(VaadinIcon.CHECK.create());
-        saveEditButton.setVisible(false);
-        saveEditButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        saveEditButton.addClickShortcut(Key.ENTER);
-        summary.add(saveEditButton);
-
-        editButton.addClickListener(event -> {
-            title.setVisible(false);
-            editTitle.setVisible(true);
-            editTitle.setValue(organisation.getName());
-            editButton.setVisible(false);
-            saveEditButton.setVisible(true);
-        });
-
-        saveEditButton.addClickListener(event -> {
-            if (saveEditButton.isVisible()) {
-                if (editTitle.getValue().isBlank()) {
-                    editTitle.setInvalid(true);
-                    editTitle.setErrorMessage("Bitte gib einen lesbaren Namen ein");
-                } else {
-                    editTitle.setInvalid(false);
-                    editTitle.setErrorMessage("");
-                    organisation.setName(editTitle.getValue());
-                    organisationRepository.save(organisation);
-                    title.setText(editTitle.getValue());
-                    title.setVisible(true);
-                    editTitle.setVisible(false);
-                    editButton.setVisible(true);
-                    saveEditButton.setVisible(false);
-                }
-            }
-        });
-
-        Button settingsButton = new Button(VaadinIcon.TOOLS.create());
-        settingsButton.setVisible(organisation.getAdmin().equals(person));
-        settingsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation, Person.Reminder.SIGNAL));
-        summary.add(settingsButton);
-
-        boolean admin = organisation.getAdmin().equals(person);
-
-        HorizontalLayout invite = new HorizontalLayout();
-        invite.setAlignItems(Alignment.END);
-        invite.setWidthFull();
-        invite.setVisible(admin);
-
-        TextField invitationLink = new TextField("Einladungslink");
-        invitationLink.setEnabled(false);// Causes "Ignoring update for disabled return channel", but can be ignored, as it's not intended that something should change here, when the user expands the widget
-        invitationLink.setValue("Temp");
-        invite.add(invitationLink);
-
-        Button copyInvitationLink = new Button(VaadinIcon.COPY.create());
-        ClipboardHelper clipboardHelper = new ClipboardHelper("Kopieren fehlgeschlagen", copyInvitationLink);
-        UI.getCurrent().getPage().fetchCurrentURL(url -> {
-            String joinURL = Utility.baseURL(url) + "/organisation/join/" +
-                    organisation.getId();
-            invitationLink.setValue(joinURL);
-            clipboardHelper.setContent(joinURL);
-        });
-        copyInvitationLink.addClickListener(event -> Notification.show("Einladung in Zwischenablage kopiert"));
-        invite.add(clipboardHelper);
-
-        collapsableArea.add(invite);
-
-        Component requestsAndMembers = createPeopleSection(organisation, person);
-        collapsableArea.add(requestsAndMembers);
-
-        HorizontalLayout buttons = new HorizontalLayout();
-
-        Button leave = new Button("Verlassen");
-        leave.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-        leave.setEnabled(!admin);
-        leave.addClickListener(event -> {
-            ConfirmDialog confirmLeave = new ConfirmDialog(
-                    "Bist du sicher, dass du diese Organisation verlassen möchtest?",
-                    "Du musst den Besitzer der Organisation bitten dich wieder hinzuzufügen, wenn du das Rückgängig machen möchtest",
-                    "Ja, verlassen",
-                    e -> {
-                        organisation.getMembers().remove(person);
-                        organisationRepository.save(organisation);
-                        grid.setItems(this::updateGrid);
-                    }
-            );
-            confirmLeave.setCancelable(true);
-            confirmLeave.setCancelText("Abbruch");
-            confirmLeave.open();
-        });
-        buttons.add(leave);
-
-        Button delete = new Button("Löschen");
-        delete.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-        delete.addClickListener(event -> {
-            ConfirmDialog confirmDeletion = new ConfirmDialog(
-                    "Bist du sicher, dass du diese Organisation löschen möchtest?",
-                    "Alle Gruppen und Termine in dieser Organisation werden auch gelöscht. Du kannst das nicht Rückgängig machen",
-                    "Ja, löschen", e -> {
-                groupRepository.findByOrganisation(organisation).forEach(g -> {
-                    dateRepository.findByGroup(g).forEach(date -> {
-                        for (Feedback f : date.getFeedbackList()) {
-                            feedbackRepository.delete(f);
-                        }
-                        dateRepository.delete(date);
-                    });
-                    groupRepository.delete(g);
-                });
-                organisationRepository.delete(organisation);
-
-                grid.setItems(this::updateGrid);
-            });
-            confirmDeletion.setCancelable(true);
-            confirmDeletion.setCancelText("Abbruch");
-            confirmDeletion.open();
-        });
-        delete.setVisible(admin);
-        buttons.add(delete);
-
-        collapsableArea.add(buttons);
-
-        title.addClickListener(event -> collapsableArea.setVisible(!collapsableArea.isVisible()));
-
-        organisationWidget.add(summary, collapsableArea);
-        return organisationWidget;
     }
 
 
@@ -359,7 +92,7 @@ public class OrganisationView extends VerticalLayout {
 
         HorizontalLayout requests = new HorizontalLayout();
         requests.setWidthFull();
-        requests.setAlignItems(Alignment.CENTER);
+        requests.setAlignItems(FlexComponent.Alignment.CENTER);
         H5 requestsLabel = new H5("Anfragen: ");
         requests.add(requestsLabel);
         if (!organisation.getMembershipRequests().isEmpty()) {
@@ -381,7 +114,7 @@ public class OrganisationView extends VerticalLayout {
 
         HorizontalLayout members = new HorizontalLayout();
         members.setWidthFull();
-        members.setAlignItems(Alignment.CENTER);
+        members.setAlignItems(FlexComponent.Alignment.CENTER);
         H5 membersLabel = new H5("Mitglieder: ");
         members.add(membersLabel);
         if (!organisation.getMembers().isEmpty()) {
@@ -421,7 +154,7 @@ public class OrganisationView extends VerticalLayout {
 
         requests.addComponentColumn(p -> {
             HorizontalLayout row = new HorizontalLayout();
-            row.setAlignItems(Alignment.CENTER);
+            row.setAlignItems(FlexComponent.Alignment.CENTER);
 
             Avatar avatar = FrontendUtils.getAvatar(p);
             row.add(avatar);
@@ -475,7 +208,7 @@ public class OrganisationView extends VerticalLayout {
 
         members.addComponentColumn(p -> {
             HorizontalLayout row = new HorizontalLayout();
-            row.setAlignItems(Alignment.CENTER);
+            row.setAlignItems(FlexComponent.Alignment.CENTER);
 
             Avatar avatar = FrontendUtils.getAvatar(p);
             row.add(avatar);

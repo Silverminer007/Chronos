@@ -1,4 +1,4 @@
-package de.kjgstbarbara.chronos.views.profile;
+package de.kjgstbarbara.chronos.views.account;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
@@ -23,7 +23,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.chronos.FileHelper;
-import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.data.Group;
 import de.kjgstbarbara.chronos.data.Organisation;
 import de.kjgstbarbara.chronos.data.Person;
@@ -49,7 +48,8 @@ import java.util.List;
 @PermitAll
 public class ProfileView extends VerticalLayout {
 
-    public ProfileView(Translator translator, PersonsService personsService, OrganisationService organisationService, FeedbackService feedbackService, GroupService groupService, AuthenticationContext authenticationContext) {
+    public ProfileView(PersonsService personsService, OrganisationService organisationService,
+                       GroupService groupService, AuthenticationContext authenticationContext) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
         Person person = authenticationContext.getAuthenticatedUser(OidcUser.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
@@ -89,7 +89,7 @@ public class ProfileView extends VerticalLayout {
                     .bind(Person::getLastName, Person::setLastName);
             content.add(lastName);
 
-            PhoneNumberField phoneNumber = new PhoneNumberField(translator);
+            PhoneNumberField phoneNumber = new PhoneNumberField(person);
             binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
             content.add(phoneNumber);
 
@@ -129,8 +129,7 @@ public class ProfileView extends VerticalLayout {
                             "Ja, meinen Account löschen",
                             e -> {
                                 personsRepository.delete(person);
-                                feedbackService.getFeedbackRepository().deleteByPerson(person);
-                                organisationService.getOrganisationRepository().findByMembersIn(person).forEach(org ->
+                                organisationService.getOrganisationRepository().findByVisibleIn(person).forEach(org ->
                                         org.getMembers().remove(person));
                                 organisationService.getOrganisationRepository().findByMembershipRequestsIn(person).forEach(org ->
                                         org.getMembershipRequests().remove(person));

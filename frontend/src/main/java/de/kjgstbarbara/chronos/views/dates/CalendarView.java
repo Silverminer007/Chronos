@@ -1,8 +1,7 @@
-package de.kjgstbarbara.chronos.views;
+package de.kjgstbarbara.chronos.views.dates;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -26,12 +25,11 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.chronos.components.FeedbackButton;
-import de.kjgstbarbara.chronos.components.TimeZoneConverter;
+import de.kjgstbarbara.chronos.components.*;
 import de.kjgstbarbara.chronos.data.*;
 import de.kjgstbarbara.chronos.service.*;
-import de.kjgstbarbara.chronos.components.ClosableDialog;
-import de.kjgstbarbara.chronos.components.NonNullValidator;
+import de.kjgstbarbara.chronos.views.MainNavigationView;
+import de.kjgstbarbara.chronos.views.RegisterView;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -44,8 +42,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-@Route(value = "calendar/:page?/:date?", layout = MainNavigationView.class)
-@RouteAlias(value = ":page?/:date?", layout = MainNavigationView.class)
+@Route(value = "calendar/:page?", layout = MainNavigationView.class)
+@RouteAlias(value = ":page?", layout = MainNavigationView.class)
 @PageTitle("Meine Termine")
 @PermitAll
 public class CalendarView extends VerticalLayout implements BeforeEnterObserver {
@@ -54,7 +52,6 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
     private final OrganisationRepository organisationRepository;
     private final DateRepository dateRepository;
     private final GroupRepository groupRepository;
-    private final FeedbackRepository feedbackRepository;
 
     private final Person person;
 
@@ -67,12 +64,11 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     private String search = null;
 
-    public CalendarView(PersonsService personsService, OrganisationService organisationService, DatesService datesService, GroupService groupService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
+    public CalendarView(PersonsService personsService, OrganisationService organisationService, DatesService datesService, GroupService groupService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.organisationRepository = organisationService.getOrganisationRepository();
         this.dateRepository = datesService.getDateRepository();
         this.groupRepository = groupService.getGroupRepository();
-        this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
@@ -116,31 +112,11 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         header.add(this.shownIntervalLabel);
 
-        TextField searchTextField = new TextField();
-        searchTextField.addValueChangeListener(event -> {
-            this.search = event.getValue();
+        header.add(new Search(searchString -> {
+            this.search = searchString;
             this.selectCalendarLayout();
             this.setupDateList();
-        });
-        searchTextField.setVisible(false);
-        header.add(searchTextField);
-
-        Button searchButton = new Button(VaadinIcon.SEARCH.create());
-        searchButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        searchButton.addClickShortcut(Key.KEY_F, KeyModifier.CONTROL);
-        searchButton.addClickListener(event -> {
-            if (!searchTextField.isVisible()) {
-                searchTextField.setVisible(true);
-                searchTextField.focus();
-                this.search = searchTextField.getValue();
-            } else {
-                searchTextField.setVisible(false);
-                this.search = null;
-            }
-            this.selectCalendarLayout();
-            this.setupDateList();
-        });
-        header.add(searchButton);
+        }));
         return header;
     }
 
@@ -177,7 +153,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                 yield CalendarViewImpl.MULTI_MONTH;
         });
         CallbackEntryProvider<Entry> entryProvider = EntryProvider.fromCallbacks(
-                query -> dateRepository.findByStartBetweenAndGroupMembersIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new)
+                query -> dateRepository.findByStartBetweenAndGroupVisibleInAndGroupOrganisationVisibleIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new)
                 ,
                 entryId -> dateRepository.findById(Long.valueOf(entryId)).map(DateEntry::new).orElse(null)
         );
@@ -206,7 +182,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             dateEntry.setWidthFull();
             dateEntry.setAlignItems(Alignment.CENTER);
             dateEntry.setJustifyContentMode(JustifyContentMode.END);
-            dateEntry.addClassNames(LumoUtility.Background.TINT_5);
+            dateEntry.addClassNames(LumoUtility.Background.TINT_5, LumoUtility.BorderRadius.SMALL);
 
             HorizontalLayout dateInformation = new HorizontalLayout();
             dateInformation.setWidthFull();
@@ -232,16 +208,15 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             feedbackButtons.setJustifyContentMode(JustifyContentMode.END);
             feedbackButtons.setAlignItems(Alignment.CENTER);
 
-            Feedback.Status currentStatus = date.getStatusFor(this.person);
-            FeedbackButton commit = new FeedbackButton(Feedback.Status.COMMITTED, false, !Feedback.Status.COMMITTED.equals(currentStatus));
-            FeedbackButton cancel = new FeedbackButton(Feedback.Status.CANCELLED, false, !Feedback.Status.CANCELLED.equals(currentStatus));
+            Date.Feedback.Status currentStatus = date.getStatusFor(this.person);
+            FeedbackButton commit = new FeedbackButton(Date.Feedback.Status.COMMITTED, false, !Date.Feedback.Status.COMMITTED.equals(currentStatus));
+            FeedbackButton cancel = new FeedbackButton(Date.Feedback.Status.CANCELLED, false, !Date.Feedback.Status.CANCELLED.equals(currentStatus));
             commit.addClickListener(event -> {
                 Date d = dateRepository.findById(date.getId()).orElse(null);
                 if (d == null) {
                     return;
                 }
-                Feedback feedback = Feedback.create(person, Feedback.Status.COMMITTED);
-                feedbackRepository.save(feedback);
+                Date.Feedback feedback = new Date.Feedback(person, Date.Feedback.Status.COMMITTED);
                 d.addFeedback(feedback);
                 dateRepository.save(d);
                 commit.setEnabled(false);
@@ -252,8 +227,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                 if (d == null) {
                     return;
                 }
-                Feedback feedback = Feedback.create(person, Feedback.Status.CANCELLED);
-                feedbackRepository.save(feedback);
+                Date.Feedback feedback = new Date.Feedback(person, Date.Feedback.Status.CANCELLED);
                 d.addFeedback(feedback);
                 dateRepository.save(d);
                 commit.setEnabled(true);
@@ -267,7 +241,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                 } else if (!cancel.isEnabled()) {
                     feedbackButtons.add(cancel);
                 } else {
-                    feedbackButtons.add(new FeedbackButton(Feedback.Status.DONTKNOW, false, false));
+                    feedbackButtons.add(new FeedbackButton(Date.Feedback.Status.NONE, false, false));
                 }
             }
 
@@ -287,31 +261,9 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     private List<Date> findSubListOfDates() {
         if (Person.CalendarLayout.LIST_PER_MONTH.equals(this.person.getCalendarLayout())) {
-            return dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(ZoneOffset.UTC).plusMonths(this.page).withDayOfMonth(1).withHour(0).withMinute(0), LocalDateTime.now(ZoneOffset.UTC).plusMonths(1 + this.page).withDayOfMonth(1).minusDays(1).withHour(0).withMinute(0), this.person).sorted().toList();
+            return dateRepository.findByStartBetweenAndGroupVisibleInAndGroupOrganisationVisibleIn(LocalDateTime.now(ZoneOffset.UTC).plusMonths(this.page).withDayOfMonth(1).withHour(0).withMinute(0), LocalDateTime.now(ZoneOffset.UTC).plusMonths(1 + this.page).withDayOfMonth(1).minusDays(1).withHour(0).withMinute(0), this.person).sorted().toList();
         }
-        if (this.page < 0) {
-            List<Date> datesNonCropped = queryDates(false);
-            int absPage = Math.abs(page);
-            int size = datesNonCropped.size();
-            return datesNonCropped.subList(Math.max(0, size - 20 * absPage), Math.max(0, size - 20 * (absPage - 1)));
-        } else {
-            List<Date> datesNonCropped = queryDates(true);
-            int absPage = Math.abs(page);
-            int size = datesNonCropped.size();
-            return datesNonCropped.subList(Math.min(size, 20 * absPage), Math.min(size, 20 * (absPage + 1)));
-        }
-    }
-
-    private List<Date> queryDates(boolean future) {
-        if (!future) {
-            return this.search == null
-                    ? this.dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(ZoneOffset.UTC).minusYears(1000), LocalDateTime.now(ZoneOffset.UTC), this.person).sorted().toList()
-                    : this.dateRepository.findByStartBetweenAndTitleLikeAndGroupMembersIn(LocalDateTime.now(ZoneOffset.UTC).minusYears(1000), LocalDateTime.now(ZoneOffset.UTC), this.search, this.person).sorted().toList();
-        } else {
-            return this.search == null
-                    ? this.dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(ZoneOffset.UTC), LocalDateTime.now(ZoneOffset.UTC).plusYears(1000), this.person).sorted().toList()
-                    : this.dateRepository.findByStartBetweenAndTitleLikeAndGroupMembersIn(LocalDateTime.now(ZoneOffset.UTC), LocalDateTime.now(ZoneOffset.UTC).plusYears(1000), this.search, this.person).sorted().toList();
-        }
+        return dateRepository.calendarQuery(this.search, this.page, this.person);
     }
 
     private HorizontalLayout createFooter() {
@@ -360,10 +312,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             beforeEnterEvent.rerouteTo(RegisterView.class);
             return;
         }
-        Date goToDate = beforeEnterEvent.getRouteParameters().get("date").map(Long::parseLong).flatMap(dateRepository::findById).orElse(null);
-        this.page = goToDate == null ?
-                beforeEnterEvent.getRouteParameters().get("page").map(Integer::parseInt).orElse(0)
-                : calculatePage(goToDate);
+        this.page = beforeEnterEvent.getRouteParameters().get("page").map(Integer::parseInt).orElse(0);
         this.fullCalendar.getEntryProvider().refreshAll();
         LocalDate calDate = switch (this.person.getCalendarLayout()) {
             case LIST_PER_MONTH, MONTH -> LocalDate.now(ZoneOffset.UTC).plusMonths(this.page);
@@ -391,31 +340,6 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         );
     }
 
-    private int calculatePage(Date goToDate) {
-        return switch (this.person.getCalendarLayout()) {
-            case LIST_PER_MONTH, MONTH ->
-                    (int) LocalDateTime.now(ZoneOffset.UTC).until(goToDate.getStart(), ChronoUnit.MONTHS);
-            case YEAR -> (int) LocalDateTime.now(ZoneOffset.UTC).until(goToDate.getStart(), ChronoUnit.YEARS);
-            case LIST_NEXT -> {
-                if (goToDate.getStart().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
-                    List<Date> dateList = queryDates(true);
-                    if (!dateList.contains(goToDate)) {
-                        yield 0;
-                    }
-                    int index = dateList.indexOf(goToDate);
-                    yield (int) Math.floor((double) index / 20.0D);
-                } else {
-                    List<Date> dateList = queryDates(false);
-                    if (!dateList.contains(goToDate)) {
-                        yield 0;
-                    }
-                    int index = dateList.indexOf(goToDate);
-                    yield ((int) Math.floor((dateList.size() - index) / 20.0D) * -1) - 1;
-                }
-            }
-        };
-    }
-
     @Getter
     public static class DateEntry extends Entry {
         private final Date date;
@@ -433,6 +357,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         ClosableDialog dialog = new ClosableDialog();
         dialog.setTitle(new H3("Termin erstellen"));
         dialog.setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll());
+        dialog.setMaxWidth("800px");
 
         Binder<Date> binder = new Binder<>();
 
@@ -467,7 +392,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         selectOrganisation.setVisible(false);
         selectOrganisation.setRequired(true);
         selectOrganisation.setAllowCustomValue(true);
-        selectOrganisation.setItems(organisationRepository.findByMembersIn(this.person));
+        selectOrganisation.setItems(organisationRepository.findByVisibleIn(this.person));
         if (date.getGroup() != null) {
             selectOrganisation.setValue(date.getGroup().getOrganisation());
         }
@@ -577,7 +502,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                     }
                 }
                 UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", 0), new RouteParam("date", date.getId())));
-                if(selectRepetitionInterval.getValue() != null) {
+                if (selectRepetitionInterval.getValue() != null) {
                     Notification.show("Es wurden " + countDates + " Termine erstellt");
                 } else {
                     Notification.show("\"" + date.getTitle() + "\" wurde erstellt");

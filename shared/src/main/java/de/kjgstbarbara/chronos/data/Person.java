@@ -137,4 +137,19 @@ public class Person {
             this.readableName = readableName;
         }
     }
+
+    @Transient
+    private ResourceBundle translationBundle;
+
+    public String translate(String key) {
+        if(translationBundle == null) {
+            translationBundle = ResourceBundle.getBundle("lang.bundle", this.userLocale);
+        }
+        return translationBundle.getString(key);
+    }
+
+    public void setUserLocale(Locale locale)  {
+        this.userLocale = locale;
+        this.translationBundle = null;
+    }
 }

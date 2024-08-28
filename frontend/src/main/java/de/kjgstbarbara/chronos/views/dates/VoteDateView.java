@@ -1,4 +1,4 @@
-package de.kjgstbarbara.chronos.views.date;
+package de.kjgstbarbara.chronos.views.dates;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
@@ -14,12 +14,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.chronos.data.Date;
-import de.kjgstbarbara.chronos.data.Feedback;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
 import de.kjgstbarbara.chronos.service.DateRepository;
 import de.kjgstbarbara.chronos.service.DatesService;
-import de.kjgstbarbara.chronos.service.FeedbackService;
 import de.kjgstbarbara.chronos.service.PersonsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,8 +32,6 @@ public class VoteDateView extends VerticalLayout implements BeforeEnterObserver 
     private DatesService datesService;
     @Autowired
     private PersonsService personsService;
-    @Autowired
-    private FeedbackService feedbackService;
     @Autowired
     private AuthenticationContext authenticationContext;
 
@@ -63,8 +59,7 @@ public class VoteDateView extends VerticalLayout implements BeforeEnterObserver 
                         confirm.addClickShortcut(Key.ENTER);
                         confirm.addClickListener(event -> {
                             if (lastName.getValue().equals(person.getLastName())) {
-                                Feedback feedback = Feedback.create(person, answer == 1 ? Feedback.Status.COMMITTED : Feedback.Status.CANCELLED);
-                                feedbackService.getFeedbackRepository().save(feedback);
+                                Date.Feedback feedback = new Date.Feedback(person, answer == 1 ? Date.Feedback.Status.COMMITTED : Date.Feedback.Status.CANCELLED);
                                 date.addFeedback(feedback);
                                 dateRepository.save(date);
                                 if (!authenticationContext.isAuthenticated()) {

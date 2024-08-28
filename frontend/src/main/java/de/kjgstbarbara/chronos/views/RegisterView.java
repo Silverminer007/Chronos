@@ -18,23 +18,22 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import de.kjgstbarbara.chronos.Translator;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.service.PersonsRepository;
 import de.kjgstbarbara.chronos.service.PersonsService;
 import de.kjgstbarbara.chronos.components.PhoneNumberField;
+import jakarta.annotation.security.PermitAll;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 @Route("register")
 @PageTitle("Registrieren | Chronos")
-@AnonymousAllowed
+@PermitAll
 public class RegisterView extends VerticalLayout implements BeforeEnterObserver {
     private final PersonsRepository personsRepository;
     private final String username;
 
-    public RegisterView(Translator translator, PersonsService personsService, AuthenticationContext authenticationContext) {
+    public RegisterView(PersonsService personsService, AuthenticationContext authenticationContext) {
         this.username = authenticationContext.getAuthenticatedUser(OidcUser.class).map(oidcUser -> oidcUser.getUserInfo().getEmail()).orElseGet(
                 () -> {
                     authenticationContext.logout();
@@ -75,7 +74,7 @@ public class RegisterView extends VerticalLayout implements BeforeEnterObserver 
         lastName.setRequired(true);
         layout.add(lastName);
 
-        PhoneNumberField phoneNumberField = new PhoneNumberField(translator);
+        PhoneNumberField phoneNumberField = new PhoneNumberField(person);
         binder.forField(phoneNumberField).bind(Person::getPhoneNumber, Person::setPhoneNumber);
         layout.add(phoneNumberField);
 

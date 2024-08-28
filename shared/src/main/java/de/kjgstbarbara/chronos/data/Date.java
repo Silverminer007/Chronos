@@ -29,8 +29,8 @@ public class Date implements Comparable<Date> {
     private boolean publish = false;
     @ManyToOne
     private Group group;
-    @OneToMany(fetch = FetchType.EAGER)
-    private List<Feedback> feedbackList = new ArrayList<>();
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<Date.Feedback> feedbackList = new ArrayList<>();
     /* Wiederholungsinformationen */
     private long linkedTo = -1;
     private int repetitionRule;// Alle x Tage
@@ -76,11 +76,11 @@ public class Date implements Comparable<Date> {
     public Feedback.Status getStatusFor(Person person) {
         Collections.sort(feedbackList);
         for (Feedback f : feedbackList) {
-            if (f.getPerson().getId() == person.getId()) {
-                return f.getStatus();
+            if (f.getFeedbackSender().getId() == person.getId()) {
+                return f.getFeedbackStatus();
             }
         }
-        return Feedback.Status.DONTKNOW;
+        return Feedback.Status.NONE;
     }
 
     public List<Feedback> getFeedbackList() {
@@ -119,6 +119,40 @@ public class Date implements Comparable<Date> {
                 return 0;
             }
             return o.informationTime.compareTo(this.informationTime);
+        }
+    }
+
+    @Data
+    @Embeddable
+    public static class Feedback implements Comparable<Feedback> {
+        @ManyToOne
+        private Person feedbackSender;
+        private LocalDateTime feedbackTimestamp = LocalDateTime.now();
+        private Status feedbackStatus;
+
+        public Feedback() {
+
+        }
+
+        public Feedback(Person person, Status status) {
+            this.feedbackSender = person;
+            this.feedbackStatus = status;
+        }
+
+        @Override
+        public int compareTo(Feedback o) {
+            return this.getFeedbackTimestamp().compareTo(o.getFeedbackTimestamp()) * -1;
+        }
+
+        @Getter
+        public enum Status {
+            COMMITTED("Bin dabei"), CANCELLED("Bin raus"), NONE("Weiß nicht");
+
+            private final String readable;
+
+            Status(String readable) {
+                this.readable = readable;
+            }
         }
     }
 }

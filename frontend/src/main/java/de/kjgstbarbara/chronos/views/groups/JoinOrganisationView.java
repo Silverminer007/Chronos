@@ -1,4 +1,4 @@
-package de.kjgstbarbara.chronos.views.organisation;
+package de.kjgstbarbara.chronos.views.groups;
 
 
 import com.vaadin.flow.component.UI;

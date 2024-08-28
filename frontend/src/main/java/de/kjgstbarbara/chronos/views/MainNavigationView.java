@@ -18,7 +18,9 @@ import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.service.PersonsService;
-import de.kjgstbarbara.chronos.views.profile.ProfileView;
+import de.kjgstbarbara.chronos.views.dates.CalendarView;
+import de.kjgstbarbara.chronos.views.groups.OrganisationListView;
+import de.kjgstbarbara.chronos.views.account.ProfileView;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import java.util.ArrayList;
@@ -44,6 +46,8 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         }
     }
 
+    private Component wrappedContent;
+
     @Override
     public void setContent(Component content) {
         HorizontalLayout wrapper = new HorizontalLayout();
@@ -53,6 +57,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         wrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         wrapper.setAlignItems(FlexComponent.Alignment.CENTER);
         wrapper.add(content);
+        this.wrappedContent = content;
         super.setContent(wrapper);
     }
 
@@ -65,7 +70,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         navigation.setSpacing(false);
         navigation.add(
                 createLink(VaadinIcon.CALENDAR, "Termine", CalendarView.class),
-                createLink(VaadinIcon.GROUP, "Gruppen", OrganisationView.class),
+                createLink(VaadinIcon.GROUP, "Gruppen", OrganisationListView.class),
                 createLink(VaadinIcon.COG, "Account", ProfileView.class)
         );
 
@@ -97,7 +102,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
     protected void afterNavigation() {
         super.afterNavigation();
         for(Link link : links) {
-            if (getContent() != null && getContent().getClass().equals(link.targetView)) {
+            if (this.wrappedContent != null && this.wrappedContent.getClass().equals(link.targetView)) {
                 link.icon.setColor(Colors.PRIMARY);
             } else {
                 link.icon.setColor(Colors.WHITE);

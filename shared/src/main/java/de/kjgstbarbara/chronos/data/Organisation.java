@@ -34,6 +34,8 @@ public class Organisation {
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Person> members = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
+    private List<Person> visible = new ArrayList<>();
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Person> membershipRequests = new ArrayList<>();
 
     @Embedded
@@ -80,7 +82,7 @@ public class Organisation {
                 whatsapp.sendMessage(chat, message).join();
                 return Result.success();
             }).orElse(Result.error(person.getName() + " does not use WhatsApp, falling back to E-Mail"))).orElse(Result.error("WhatsApp is not available for " + this.getName() + ", falling back to E-Mail"));
-            if(result.isError()) {
+            if (result.isError()) {
                 return result.and(sendMessageTo(message, person, Person.Reminder.EMAIL));
             }
             LOGGER.info("Sending successful");
@@ -109,11 +111,21 @@ public class Organisation {
     }
 
     public Result sendDatePoll(Date date, Person person) {
-        if (Feedback.Status.DONTKNOW.equals(date.getStatusFor(person))) {
+        if (Date.Feedback.Status.NONE.equals(date.getStatusFor(person))) {
             MessageFormatter messageFormatter = new MessageFormatter()
                     .person(person).date(date);
             return sendMessageTo(messageFormatter.format(Messages.DATE_POLL), person);
         }
         return Result.error(person.getName() + " already gave feedback to " + date.getTitle());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Organisation org && this.id == org.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) this.id;
     }
 }

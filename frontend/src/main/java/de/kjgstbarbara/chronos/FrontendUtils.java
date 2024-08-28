@@ -4,7 +4,6 @@ import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.server.StreamResource;
 import de.kjgstbarbara.chronos.data.Date;
-import de.kjgstbarbara.chronos.data.Feedback;
 import de.kjgstbarbara.chronos.data.Person;
 
 import java.util.List;
@@ -32,7 +31,7 @@ public class FrontendUtils {
         return avatarGroupItem;
     }
 
-    public static List<AvatarGroup.AvatarGroupItem> getAvatars(Date date, Feedback.Status status) {
+    public static List<AvatarGroup.AvatarGroupItem> getAvatars(Date date, Date.Feedback.Status status) {
         return date.getGroup().getMembers().stream().filter(p -> date.getStatusFor(p).equals(status)).map(FrontendUtils::getAvatarGroupItem).toList();
     }
 }

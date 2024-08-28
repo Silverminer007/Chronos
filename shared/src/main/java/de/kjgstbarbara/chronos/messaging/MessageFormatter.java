@@ -22,7 +22,7 @@ public class MessageFormatter {
     private Date date;
     private Person person;
     private Group group;
-    private Feedback.Status feedback;
+    private Date.Feedback.Status feedback;
     private String baseURL = "";
 
     public String format(String input) {

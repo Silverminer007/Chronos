@@ -1,4 +1,4 @@
-package de.kjgstbarbara.chronos.views;
+package de.kjgstbarbara.chronos.views.dates;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -41,6 +41,8 @@ import de.kjgstbarbara.chronos.data.*;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
 import de.kjgstbarbara.chronos.messaging.Messages;
 import de.kjgstbarbara.chronos.service.*;
+import de.kjgstbarbara.chronos.views.MainNavigationView;
+import de.kjgstbarbara.chronos.views.RegisterView;
 import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,15 +64,13 @@ import java.util.Locale;
 public class DateView extends VerticalLayout implements BeforeEnterObserver {
     private static final Logger LOGGER = LogManager.getLogger(DateView.class);
     private final DateRepository dateRepository;
-    private final FeedbackRepository feedbackRepository;
 
     private final Person person;
 
     private Date date;
 
-    public DateView(PersonsService personsService, FeedbackService feedbackService, DatesService datesService, AuthenticationContext authenticationContext) {
+    public DateView(PersonsService personsService, DatesService datesService, AuthenticationContext authenticationContext) {
         this.dateRepository = datesService.getDateRepository();
-        this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.person = authenticationContext.getAuthenticatedUser(OidcUser.class)
                 .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUserInfo().getEmail()))
                 .orElse(null);
@@ -87,7 +87,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             return;
         }
         this.date = beforeEnterEvent.getRouteParameters().get("date").map(Long::valueOf).flatMap(dateRepository::findById).orElse(null);
-        if (date == null) {
+        if (date == null || !date.getGroup().getMembers().contains(person)) {
             beforeEnterEvent.rerouteTo("");
             return;
         }
@@ -96,7 +96,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         this.setSpacing(false);
         this.setSizeFull();
 
-        this.add(createHeader());// TODO Edit and delete
+        this.add(createHeader());
 
         Scroller dateInformationScroller = new Scroller(createDateInformation());
         dateInformationScroller.setSizeFull();
@@ -302,7 +302,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     private void back() {
-        UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", 0), new RouteParam("date", this.date.getId())));
+        UI.getCurrent().getPage().getHistory().back();
     }
 
     private Component createDownloadIcsButton() {
@@ -447,9 +447,6 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     private void deleteDate(Date date, boolean reLink) {
-        List<Feedback> feedbackList = date.getFeedbackList();
-        date.setFeedbackList(null);
-        dateRepository.save(date);
         if (reLink && date.getLinkedTo() == date.getId()) {
             List<Date> linkedDates = dateRepository.findByLinkedTo(date.getId()).stream().sorted().toList();
             if (!linkedDates.isEmpty()) {
@@ -461,9 +458,6 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             }
         }
         dateRepository.delete(date);
-        for (Feedback feedback : feedbackList) {
-            feedbackRepository.delete(feedback);
-        }
     }
 
     private void remindAll(ClickEvent<MenuItem> event) {
@@ -564,9 +558,9 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
 
         dateInformation.add(new H6(date.getGroup().getOrganisation().getName() + " - " + date.getGroup().getName()));
 
-        FeedbackAvatars committed = new FeedbackAvatars(Feedback.Status.COMMITTED, date);
-        FeedbackAvatars cancelled = new FeedbackAvatars(Feedback.Status.CANCELLED, date);
-        FeedbackAvatars noFeedback = new FeedbackAvatars(Feedback.Status.DONTKNOW, date);
+        FeedbackAvatars committed = new FeedbackAvatars(Date.Feedback.Status.COMMITTED, date);
+        FeedbackAvatars cancelled = new FeedbackAvatars(Date.Feedback.Status.CANCELLED, date);
+        FeedbackAvatars noFeedback = new FeedbackAvatars(Date.Feedback.Status.NONE, date);
         dateInformation.add(committed, cancelled, noFeedback);
 
         dateInformation.add(createPersonalFeedback());
@@ -576,16 +570,16 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     private Component createPersonalFeedback() {
-        Feedback.Status status = date.getStatusFor(person);
+        Date.Feedback.Status status = date.getStatusFor(person);
         Icon icon = switch (status) {
             case COMMITTED -> VaadinIcon.THUMBS_UP.create();
             case CANCELLED -> VaadinIcon.THUMBS_DOWN.create();
-            case DONTKNOW -> VaadinIcon.QUESTION_CIRCLE.create();
+            case NONE -> VaadinIcon.QUESTION_CIRCLE.create();
         };
         icon.setColor(switch (status) {
             case COMMITTED -> "#00ff00";
             case CANCELLED -> "#ff0000";
-            case DONTKNOW -> "#00ffff";
+            case NONE -> "#00ffff";
         });
         icon.setSize("20px");
         HorizontalLayout personalFeedback = new HorizontalLayout(createPersonalFeedbackLabel(status), icon);
@@ -593,16 +587,16 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         return personalFeedback;
     }
 
-    private NativeLabel createPersonalFeedbackLabel(Feedback.Status status) {
+    private NativeLabel createPersonalFeedbackLabel(Date.Feedback.Status status) {
         NativeLabel personalFeedback = new NativeLabel(switch (status) {
             case COMMITTED -> "Du hast zu diesem Termin zugesagt";
             case CANCELLED -> "Du hast zu diesen Termin abgesagt";
-            case DONTKNOW -> "Du hast keine Rückmeldung zu diesem Termin gegeben";
+            case NONE -> "Du hast keine Rückmeldung zu diesem Termin gegeben";
         });
         personalFeedback.addClassName(switch (status) {
             case COMMITTED -> LumoUtility.TextColor.SUCCESS;
             case CANCELLED -> LumoUtility.TextColor.ERROR;
-            case DONTKNOW -> LumoUtility.TextColor.TERTIARY;// TODO Own Color classes
+            case NONE -> LumoUtility.TextColor.TERTIARY;// TODO Own Color classes
         });
         return personalFeedback;
     }
@@ -645,22 +639,20 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         actions.setPadding(true);
         actions.setJustifyContentMode(JustifyContentMode.CENTER);
 
-        Feedback.Status status = date.getStatusFor(person);
-        Button commit = new FeedbackButton(Feedback.Status.COMMITTED, true, !Feedback.Status.COMMITTED.equals(status));
+        Date.Feedback.Status status = date.getStatusFor(person);
+        Button commit = new FeedbackButton(Date.Feedback.Status.COMMITTED, true, !Date.Feedback.Status.COMMITTED.equals(status));
         Button info = createInfoButton();
-        Button cancel = new FeedbackButton(Feedback.Status.CANCELLED, true, !Feedback.Status.CANCELLED.equals(status));
+        Button cancel = new FeedbackButton(Date.Feedback.Status.CANCELLED, true, !Date.Feedback.Status.CANCELLED.equals(status));
         actions.add(commit, info, cancel);
 
         commit.addClickListener(event -> {
-            Feedback feedback = Feedback.create(person, Feedback.Status.COMMITTED);
-            feedbackRepository.save(feedback);
+            Date.Feedback feedback = new Date.Feedback(person, Date.Feedback.Status.COMMITTED);
             date.addFeedback(feedback);
             dateRepository.save(date);
             UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", this.date.getId())));
         });
         cancel.addClickListener(event -> {
-            Feedback feedback = Feedback.create(person, Feedback.Status.CANCELLED);
-            feedbackRepository.save(feedback);
+            Date.Feedback feedback = new Date.Feedback(person, Date.Feedback.Status.CANCELLED);
             date.addFeedback(feedback);
             dateRepository.save(date);
             UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", this.date.getId())));

@@ -1,7 +1,6 @@
 package de.kjgstbarbara.chronos;
 
 import de.kjgstbarbara.chronos.data.Date;
-import de.kjgstbarbara.chronos.data.Feedback;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
 import de.kjgstbarbara.chronos.messaging.Messages;
@@ -46,22 +45,22 @@ public class ScheduledRunner implements CommandLineRunner {
                         StringBuilder cancelled = new StringBuilder("Nicht dabei sind:\n");
                         StringBuilder noAnswer = new StringBuilder("Bisher nicht gemeldet haben sich:\n");
                         for (Person p : d.getGroup().getMembers()) {
-                            Feedback.Status status = d.getStatusFor(p);
-                            if (status.equals(Feedback.Status.COMMITTED)) {
+                            Date.Feedback.Status status = d.getStatusFor(p);
+                            if (status.equals(Date.Feedback.Status.COMMITTED)) {
                                 summary.append("- ").append(p.getName()).append("\n");
-                            } else if (status.equals(Feedback.Status.CANCELLED)) {
+                            } else if (status.equals(Date.Feedback.Status.CANCELLED)) {
                                 cancelled.append("- ").append(p.getName()).append("\n");
                             } else {
                                 noAnswer.append("- ").append(p.getName()).append("\n");
                             }
                         }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.COMMITTED::equals)) {
+                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Date.Feedback.Status.COMMITTED::equals)) {
                             summary.append("--> Niemand\n");
                         }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
+                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Date.Feedback.Status.CANCELLED::equals)) {
                             cancelled.append("--> Niemand\n");
                         }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.DONTKNOW::equals)) {
+                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Date.Feedback.Status.NONE::equals)) {
                             noAnswer.append("--> Niemand\n");
                         }
                         summary.append("\n").append(cancelled).append("\n").append(noAnswer);
@@ -70,8 +69,8 @@ public class ScheduledRunner implements CommandLineRunner {
                 }
 
                 for (Person p : d.getGroup().getMembers()) {
-                    Feedback.Status feedback = d.getStatusFor(p);
-                    if (!feedback.equals(Feedback.Status.CANCELLED)) {
+                    Date.Feedback.Status feedback = d.getStatusFor(p);
+                    if (!feedback.equals(Date.Feedback.Status.CANCELLED)) {
                         if ((p.getRemindMeTime().contains(now.getHour()) && p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                                 || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
                             result.and(d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(Messages.DATE_REMINDER), p));

@@ -1,4 +1,4 @@
-package de.kjgstbarbara.chronos.views.profile;
+package de.kjgstbarbara.chronos.views.account;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;

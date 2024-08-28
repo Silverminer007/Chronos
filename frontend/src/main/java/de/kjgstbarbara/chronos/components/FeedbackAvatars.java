@@ -18,7 +18,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.FrontendUtils;
 import de.kjgstbarbara.chronos.data.Date;
-import de.kjgstbarbara.chronos.data.Feedback;
 import de.kjgstbarbara.chronos.data.Person;
 
 import java.time.format.DateTimeFormatter;
@@ -29,9 +28,9 @@ import java.util.function.Supplier;
 public class FeedbackAvatars extends HorizontalLayout {
     private final AvatarGroup avatarIcons = new AvatarGroup();
     private final NativeLabel noAvatars = new NativeLabel("Niemand");
-    private final Feedback.Status status;
+    private final Date.Feedback.Status status;
 
-    public FeedbackAvatars(Feedback.Status status, Date date) {
+    public FeedbackAvatars(Date.Feedback.Status status, Date date) {
         this.status = status;
 
         this.setJustifyContentMode(JustifyContentMode.START);
@@ -41,7 +40,7 @@ public class FeedbackAvatars extends HorizontalLayout {
         this.add(new NativeLabel(switch (status) {
             case COMMITTED -> "Zusagen:";
             case CANCELLED -> "Absagen:";
-            case DONTKNOW -> "Ausstehend:";
+            case NONE -> "Ausstehend:";
         }));
 
         this.avatarIcons.setMaxItemsVisible(7);
@@ -85,7 +84,7 @@ public class FeedbackAvatars extends HorizontalLayout {
         int declinedAmount = 0;
         int noFeedbackAmount = 0;
         for (Person p : date.getGroup().getMembers()) {
-            Feedback.Status status = date.getStatusFor(p);
+            Date.Feedback.Status status = date.getStatusFor(p);
             Supplier<HorizontalLayout> personEntry = () -> {
                 HorizontalLayout horizontalLayout = new HorizontalLayout();
                 Avatar avatar = FrontendUtils.getAvatar(p);
@@ -95,12 +94,12 @@ public class FeedbackAvatars extends HorizontalLayout {
                 horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
                 return horizontalLayout;
             };
-            if (Feedback.Status.COMMITTED.equals(status)) {
+            if (Date.Feedback.Status.COMMITTED.equals(status)) {
                 confirmedUsers.add(personEntry.get());
                 confirmedUsers.add(new Paragraph());
                 confirmedUsers.setEnabled(true);
                 confirmedAmount++;
-            } else if (Feedback.Status.CANCELLED.equals(status)) {
+            } else if (Date.Feedback.Status.CANCELLED.equals(status)) {
                 declinedUsers.add(personEntry.get());
                 declinedUsers.add(new Paragraph());
                 declinedUsers.setEnabled(true);
@@ -127,24 +126,24 @@ public class FeedbackAvatars extends HorizontalLayout {
 
     private VerticalLayout createHistory(Date date) {
         VerticalLayout history = new VerticalLayout();
-        List<Feedback> sortedFeedback = date.getFeedbackList().stream().sorted(Comparator.comparing(Feedback::getTimeStamp).reversed()).toList();
-        for (Feedback feedback : sortedFeedback) {
-            history.add(createBadge(feedback.getTimeStamp().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")) + " Uhr"));
+        List<Date.Feedback> sortedFeedback = date.getFeedbackList().stream().sorted(Comparator.comparing(Date.Feedback::getFeedbackTimestamp).reversed()).toList();
+        for (Date.Feedback feedback : sortedFeedback) {
+            history.add(createBadge(feedback.getFeedbackTimestamp().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")) + " Uhr"));
 
             HorizontalLayout action = new HorizontalLayout();
             action.setAlignItems(Alignment.CENTER);
 
             AvatarItem avatarItem = new AvatarItem();
-            Avatar avatar = FrontendUtils.getAvatar(feedback.getPerson());
+            Avatar avatar = FrontendUtils.getAvatar(feedback.getFeedbackSender());
             avatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
             avatarItem.setAvatar(avatar);
-            avatarItem.setHeading(feedback.getPerson().getName());
+            avatarItem.setHeading(feedback.getFeedbackSender().getName());
             action.add(avatarItem);
 
-            action.add(createBadge(feedback.getStatus().getReadable()));
+            action.add(createBadge(feedback.getFeedbackStatus().getReadable()));
 
             Icon statusIcon;
-            if(Feedback.Status.COMMITTED.equals(feedback.getStatus())) {
+            if(Date.Feedback.Status.COMMITTED.equals(feedback.getFeedbackStatus())) {
                 statusIcon = VaadinIcon.THUMBS_UP.create();
                 statusIcon.setColor("#00ff00");
             } else {

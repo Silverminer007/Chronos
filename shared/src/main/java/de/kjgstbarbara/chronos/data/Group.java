@@ -22,9 +22,11 @@ public class Group {
     @ManyToOne
     private Organisation organisation;
     @ManyToMany(fetch = FetchType.EAGER)
-    private final List<Person> members = new ArrayList<>();
+    private List<Person> members = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
-    private final List<Person> admins = new ArrayList<>();
+    private List<Person> visible = new ArrayList<>();
+    @ManyToMany(fetch = FetchType.EAGER)
+    private List<Person> admins = new ArrayList<>();
 
     public String toString() {
         return name;
