@@ -459,13 +459,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         binder.readBean(date);
 
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.setWidthFull();
-        footer.setJustifyContentMode(JustifyContentMode.END);
-        Button save = new Button("Speichern", VaadinIcon.SAFE.create());
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        save.addClickShortcut(Key.ENTER);
-        save.addClickListener(event -> {
+        dialog.getFooter().add(new DialogFooter(dialog::close, () -> {
             try {
                 binder.writeBean(date);
                 if (selectOrganisation.isVisible()) {
@@ -510,9 +504,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                 dialog.close();
             } catch (ValidationException ignored) {
             }
-        });
-        footer.add(save);
-        dialog.getFooter().add(footer);
+        }, "Erstellen"));
         return dialog;
     }
 

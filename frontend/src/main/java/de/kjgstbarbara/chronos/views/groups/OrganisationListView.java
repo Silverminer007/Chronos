@@ -1,7 +1,6 @@
 package de.kjgstbarbara.chronos.views.groups;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -203,20 +202,7 @@ public class OrganisationListView extends VerticalLayout {
 
         addGroup.add(nameField);
 
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.setWidthFull();
-        footer.setAlignItems(Alignment.CENTER);
-        footer.setJustifyContentMode(JustifyContentMode.BETWEEN);
-
-        Button cancel = new Button("Abbrechen");
-        cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        cancel.addClickListener(e -> addGroup.close());
-        footer.add(cancel);
-
-        Button create = new Button("Erstellen");
-        create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        create.addClickShortcut(Key.ENTER);
-        create.addClickListener(e -> {
+        addGroup.getFooter().add(new DialogFooter(addGroup::close, () -> {
             Group group = new Group();
             group.setOrganisation(organisation);
             group.setColor(colorButton.getValue());
@@ -227,10 +213,7 @@ public class OrganisationListView extends VerticalLayout {
             this.groupRepository.save(group);
             addGroup.close();
             this.createOrganisationAndGroupList();
-        });
-        footer.add(create);
-
-        addGroup.getFooter().add(footer);
+        }, "Erstellen"));
         addGroup.open();
     }
 

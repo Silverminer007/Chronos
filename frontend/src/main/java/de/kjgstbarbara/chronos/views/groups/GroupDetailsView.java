@@ -1,7 +1,6 @@
 package de.kjgstbarbara.chronos.views.groups;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
@@ -23,6 +22,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.FrontendUtils;
 import de.kjgstbarbara.chronos.components.ClosableDialog;
 import de.kjgstbarbara.chronos.components.ColorButton;
+import de.kjgstbarbara.chronos.components.DialogFooter;
 import de.kjgstbarbara.chronos.components.Search;
 import de.kjgstbarbara.chronos.data.Group;
 import de.kjgstbarbara.chronos.data.Person;
@@ -119,28 +119,12 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         nameField.setValue(this.group.getName());
         changeNameDialog.add(nameField);
 
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.setWidthFull();
-        footer.setAlignItems(Alignment.CENTER);
-        footer.setJustifyContentMode(JustifyContentMode.END);
-
-        Button cancel = new Button("Abbrechen");
-        cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        cancel.addClickListener(e -> changeNameDialog.close());
-        footer.add(cancel);
-
-        Button save = new Button("Speichern");
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        save.addClickShortcut(Key.ENTER);
-        save.addClickListener(e -> {
+        changeNameDialog.getFooter().add(new DialogFooter(changeNameDialog::close, () -> {
             this.group.setName(nameField.getValue());
             this.group = this.groupRepository.save(this.group);
             this.createHeader();
             changeNameDialog.close();
-        });
-        footer.add(save);
-
-        changeNameDialog.getFooter().add(footer);
+        }, "Speichern"));
         changeNameDialog.open();
     }
 
@@ -221,29 +205,13 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
 
             addMembersDialog.add(newMembersGrid);
 
-            HorizontalLayout footer = new HorizontalLayout();
-            footer.setWidthFull();
-            footer.setJustifyContentMode(JustifyContentMode.BETWEEN);
-            footer.setAlignItems(Alignment.CENTER);
-
-            Button cancel = new Button("Abbrechen");
-            cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-            cancel.addClickListener(e -> addMembersDialog.close());
-            footer.add(cancel);
-
-            Button save = new Button("Hinzufügen");
-            save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            save.addClickShortcut(Key.ENTER);
-            save.addClickListener(e -> {
+            addMembersDialog.getFooter().add(new DialogFooter(addMembersDialog::close, () -> {
                 this.group.getMembers().addAll(newMembersGrid.getSelectedItems());
                 this.group = this.groupRepository.save(this.group);
                 addMembersDialog.close();
                 this.createMemberList();
                 Notification.show(newMembersGrid.getSelectedItems().size() + " Mitglied(er) hinzugefügt");
-            });
-            footer.add(save);
-
-            addMembersDialog.getFooter().add(footer);
+            }, "Hinzufügen"));
         }
         addMembersDialog.open();
     }
@@ -310,20 +278,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
 
         changeRoleDialog.add(role);
 
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.setWidthFull();
-        footer.setAlignItems(Alignment.CENTER);
-        footer.setJustifyContentMode(JustifyContentMode.BETWEEN);
-
-        Button cancel = new Button("Abbrechen");
-        cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        cancel.addClickListener(e -> changeRoleDialog.close());
-        footer.add(cancel);
-
-        Button save = new Button("Speichern");
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        save.addClickShortcut(Key.ENTER);
-        save.addClickListener(e -> {
+        changeRoleDialog.getFooter().add(new DialogFooter(changeRoleDialog::close, () -> {
             if (role.getValue().equals("Admin")) {
                 this.group.getAdmins().add(memberPerson);
             } else {
@@ -334,10 +289,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
             this.createMemberList();
             this.createFooter();
             changeRoleDialog.close();
-        });
-        footer.add(save);
-
-        changeRoleDialog.getFooter().add(footer);
+        }, "Speichern"));
         changeRoleDialog.open();
     }
 

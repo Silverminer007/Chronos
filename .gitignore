@@ -8,6 +8,8 @@ target/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/dataSources.local.xml
+.idea/dataSources/
 *.iws
 *.iml
 *.ipr
@@ -45,3 +47,4 @@ frontend/pnpmfile.js
 frontend/vite.generated.ts
 
 application.properties
+/.idea/dataSources/578935bd-dc03-482a-8776-5af9b71b87c2.xml

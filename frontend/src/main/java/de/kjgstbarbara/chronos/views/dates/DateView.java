@@ -33,10 +33,7 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.chronos.IcsHelper;
 import de.kjgstbarbara.chronos.Result;
-import de.kjgstbarbara.chronos.components.ClosableDialog;
-import de.kjgstbarbara.chronos.components.FeedbackAvatars;
-import de.kjgstbarbara.chronos.components.FeedbackButton;
-import de.kjgstbarbara.chronos.components.TimeZoneConverter;
+import de.kjgstbarbara.chronos.components.*;
 import de.kjgstbarbara.chronos.data.*;
 import de.kjgstbarbara.chronos.messaging.MessageFormatter;
 import de.kjgstbarbara.chronos.messaging.Messages;
@@ -674,20 +671,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             infoText.setWidthFull();
             submitInfoDialog.add(infoText);
 
-            HorizontalLayout footer = new HorizontalLayout();
-            footer.setWidthFull();
-            footer.setAlignItems(Alignment.CENTER);
-            footer.setJustifyContentMode(JustifyContentMode.BETWEEN);
-
-            Button cancel = new Button("Abbrechen");
-            cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-            cancel.addClickListener(e -> submitInfoDialog.close());
-            footer.add(cancel);
-
-            Button submit = new Button("Abschicken");
-            submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            submit.addClickShortcut(Key.ENTER);
-            submit.addClickListener(e -> {
+            submitInfoDialog.getFooter().add(new DialogFooter(submitInfoDialog::close, () -> {
                 if (!infoText.getValue().isBlank()) {
                     Date.Information information = new Date.Information();
                     information.setInformationSender(this.person);
@@ -699,10 +683,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
                     Notification.show("Anmerkung wurde gespeichert");
                 }
                 submitInfoDialog.close();
-            });
-            footer.add(submit);
-
-            submitInfoDialog.getFooter().add(footer);
+            }, "Abschicken"));
             submitInfoDialog.open();
         });
         return infoButton;
