@@ -709,6 +709,6 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     public enum EditMode {
-        SINGLE, FUTURE, ALL;
+        SINGLE, FUTURE, ALL
     }
 }

@@ -64,7 +64,7 @@ public class JoinOrganisationView extends VerticalLayout implements BeforeEnterO
                         ), organisation.getAdmin());
                         if(result.isError()) {
                             LOGGER.error(result.getErrorMessage());
-                            Notification.show("Der Organisationsadmin konnte nicht informiert werden, dass du eine Beitrittsanfrage gestellt hast. Bitte informiere den Entwickler des Programms");
+                            Notification.show("Der Organisations admin konnte nicht informiert werden, dass du eine Beitrittsanfrage gestellt hast. Bitte informiere den Entwickler des Programms");
                         }
                 } else {
                     this.add("Du gehörst schon zu dieser Organisation: " + organisation.getName());
@@ -77,9 +77,7 @@ public class JoinOrganisationView extends VerticalLayout implements BeforeEnterO
         }
 
         Button startPage = new Button("Zur Startseite");
-        startPage.addClickListener(event -> {
-            UI.getCurrent().navigate("");
-        });
+        startPage.addClickListener(event -> UI.getCurrent().navigate(""));
         startPage.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         startPage.setIcon(VaadinIcon.HOME.create());
         this.add(startPage);

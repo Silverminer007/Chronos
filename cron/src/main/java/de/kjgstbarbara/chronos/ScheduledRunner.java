@@ -25,7 +25,7 @@ public class ScheduledRunner implements CommandLineRunner {
     private DatesService datesService;
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
         LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: START", now.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));

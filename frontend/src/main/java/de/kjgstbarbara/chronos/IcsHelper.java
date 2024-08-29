@@ -7,10 +7,7 @@ import biweekly.property.Color;
 import biweekly.property.Summary;
 import de.kjgstbarbara.chronos.data.Date;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 
 public class IcsHelper {
     public static String writeDateToIcs(Date... dates) {

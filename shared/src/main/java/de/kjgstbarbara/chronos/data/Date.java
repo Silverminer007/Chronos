@@ -25,7 +25,6 @@ public class Date implements Comparable<Date> {
     private LocalDateTime end;
     private String venue;
     private String notes;
-    private String attachment;
     private boolean publish = false;
     @ManyToOne
     private Group group;
@@ -46,7 +45,6 @@ public class Date implements Comparable<Date> {
         this.title = date.getTitle();
         this.start = date.getStart();
         this.end = date.getEnd();
-        this.attachment = date.getAttachment();
         this.publish = date.isPublish();
         this.group = date.getGroup();
         this.notes = date.getNotes();
@@ -124,15 +122,12 @@ public class Date implements Comparable<Date> {
 
     @Data
     @Embeddable
+    @NoArgsConstructor
     public static class Feedback implements Comparable<Feedback> {
         @ManyToOne
         private Person feedbackSender;
         private LocalDateTime feedbackTimestamp = LocalDateTime.now();
         private Status feedbackStatus;
-
-        public Feedback() {
-
-        }
 
         public Feedback(Person person, Status status) {
             this.feedbackSender = person;

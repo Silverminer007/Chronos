@@ -14,3 +14,7 @@
 - hide groups and organisations
 - Embed Feedback in Dates in Database
 - Prepared translations
+
+## v1.0.0-beta5
+
+- Edit Groups View

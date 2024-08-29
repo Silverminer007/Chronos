@@ -124,7 +124,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         }
     }
 
-    private class MembersTab extends VerticalLayout {
+    private static class MembersTab extends VerticalLayout {
         public MembersTab() {
             this.setSizeFull();
             this.setJustifyContentMode(JustifyContentMode.START);
@@ -134,7 +134,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         }
     }
 
-    private class GroupsTab extends VerticalLayout {
+    private static class GroupsTab extends VerticalLayout {
         public GroupsTab() {
 
         }

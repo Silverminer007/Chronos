@@ -23,8 +23,6 @@ import de.kjgstbarbara.chronos.service.*;
 import de.kjgstbarbara.chronos.views.MainNavigationView;
 import de.kjgstbarbara.chronos.views.RegisterView;
 import jakarta.annotation.security.PermitAll;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import java.util.*;
@@ -35,7 +33,6 @@ import java.util.stream.Stream;
 @PageTitle("Organisationen")
 @PermitAll
 public class OrganisationListView extends VerticalLayout {
-    private static final Logger LOGGER = LogManager.getLogger(OrganisationListView.class);
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
     private final GroupRepository groupRepository;

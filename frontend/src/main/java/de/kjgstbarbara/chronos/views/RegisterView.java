@@ -97,7 +97,7 @@ public class RegisterView extends VerticalLayout implements BeforeEnterObserver 
                 personsService.getPersonsRepository().save(person);
                 UI.getCurrent().navigate("");
             } catch (ValidationException e) {
-                Notification.show("Ein Fehler ist ausgetreten, der Account konnte nicht erstellt werdne").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Ein Fehler ist ausgetreten, der Account konnte nicht erstellt werden").addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         });
         binder.readBean(person);
