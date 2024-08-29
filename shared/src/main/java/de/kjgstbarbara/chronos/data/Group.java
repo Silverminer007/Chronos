@@ -3,9 +3,7 @@ package de.kjgstbarbara.chronos.data;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -22,11 +20,11 @@ public class Group {
     @ManyToOne
     private Organisation organisation;
     @ManyToMany(fetch = FetchType.EAGER)
-    private List<Person> members = new ArrayList<>();
+    private Set<Person> members = new HashSet<>();
     @ManyToMany(fetch = FetchType.EAGER)
-    private List<Person> visible = new ArrayList<>();
+    private Set<Person> visible = new HashSet<>();
     @ManyToMany(fetch = FetchType.EAGER)
-    private List<Person> admins = new ArrayList<>();
+    private Set<Person> admins = new HashSet<>();
 
     public String toString() {
         return name;

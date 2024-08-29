@@ -1,6 +1,7 @@
 package de.kjgstbarbara.chronos.views.groups;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -113,21 +115,30 @@ public class OrganisationListView extends VerticalLayout {
         organisationLayout.setAlignItems(Alignment.START);
 
         List<Organisation> organisationList = this.findOrganisations().toList();
-        if(organisationList.isEmpty()) {
+        if (organisationList.isEmpty()) {
             organisationLayout.add(createNoItemsFoundLabel());
         }
         organisationList.forEach(organisation -> {
+            HorizontalLayout organisationHeader = new HorizontalLayout();
+            organisationHeader.setWidthFull();
+            organisationHeader.setAlignItems(Alignment.CENTER);
+            organisationHeader.setJustifyContentMode(JustifyContentMode.START);
+            organisationHeader.addClassNames(LumoUtility.BorderRadius.MEDIUM, LumoUtility.Background.PRIMARY_50);
+
             HorizontalLayout organisationInformation = new HorizontalLayout();
-            organisationInformation.setAlignItems(Alignment.CENTER);
+            organisationInformation.setAlignItems(Alignment.BASELINE);
             organisationInformation.setJustifyContentMode(JustifyContentMode.START);
+            organisationInformation.setWidthFull();
+
+            organisationInformation.add(new NativeLabel());
 
             organisationInformation.add(VaadinIcon.OFFICE.create());
 
             H4 organisationName = new H4(organisation.getName());
             organisationInformation.add(organisationName);
 
-            if(organisation.getAdmin().equals(this.person)) {
-                organisationInformation.add(createBadge("Admin"));
+            if (organisation.getAdmin().equals(this.person)) {
+                organisationInformation.add(createAdminBadge());
             }
 
             Button visibleButton = new Button(organisation.getVisible().contains(this.person) ? VaadinIcon.EYE.create() : VaadinIcon.EYE_SLASH.create());
@@ -146,7 +157,14 @@ public class OrganisationListView extends VerticalLayout {
             });
             organisationInformation.add(visibleButton);
 
-            organisationLayout.add(organisationInformation);
+            organisationHeader.add(organisationInformation);
+
+            Button add = new Button(VaadinIcon.PLUS.create());
+            add.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_TERTIARY);
+            add.addClickListener(event -> this.addGroup(organisation));
+            organisationHeader.add(add);
+
+            organisationLayout.add(organisationHeader);
 
             List<Group> groups = groupRepository.findByOrganisation(organisation);
             for (Group group : groups) {
@@ -166,6 +184,57 @@ public class OrganisationListView extends VerticalLayout {
 
         this.replace(this.organisations, organisationLayout);
         this.organisations = organisationLayout;
+    }
+
+    private void addGroup(Organisation organisation) {
+        ClosableDialog addGroup = new ClosableDialog("Gruppe erstellen");
+
+        addGroup.add(new H6("Gehört zu: " + organisation.getName()));
+
+        HorizontalLayout groupInformation = new HorizontalLayout();
+        groupInformation.setWidthFull();
+        groupInformation.setAlignItems(Alignment.BASELINE);
+        groupInformation.setJustifyContentMode(JustifyContentMode.START);
+
+        ColorButton colorButton = new ColorButton();
+        colorButton.setValue(Group.generateColor());
+        groupInformation.add(colorButton);
+
+        TextField nameField = new TextField("Name");
+        nameField.focus();
+        groupInformation.add(nameField);
+
+        addGroup.add(nameField);
+
+        HorizontalLayout footer = new HorizontalLayout();
+        footer.setWidthFull();
+        footer.setAlignItems(Alignment.CENTER);
+        footer.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+        Button cancel = new Button("Abbrechen");
+        cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        cancel.addClickListener(e -> addGroup.close());
+        footer.add(cancel);
+
+        Button create = new Button("Erstellen");
+        create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        create.addClickShortcut(Key.ENTER);
+        create.addClickListener(e -> {
+            Group group = new Group();
+            group.setOrganisation(organisation);
+            group.setColor(colorButton.getValue());
+            group.setName(nameField.getValue());
+            group.getMembers().add(this.person);
+            group.getAdmins().add(this.person);
+            group.getVisible().add(this.person);
+            this.groupRepository.save(group);
+            addGroup.close();
+            this.createOrganisationAndGroupList();
+        });
+        footer.add(create);
+
+        addGroup.getFooter().add(footer);
+        addGroup.open();
     }
 
     private Component createGroupLayout(Group group) {
@@ -195,9 +264,12 @@ public class OrganisationListView extends VerticalLayout {
                 ? LumoUtility.TextColor.PRIMARY_CONTRAST : LumoUtility.TextColor.DISABLED);
         groupInformation.add(groupName);
 
-        if(group.getAdmins().contains(this.person)) {
-            groupInformation.add(createBadge("Admin"));
+        if (group.getAdmins().contains(this.person)) {
+            groupInformation.add(createAdminBadge());
         }
+
+        groupInformation.addClickListener(event ->
+                UI.getCurrent().navigate(GroupDetailsView.class, new RouteParameters(new RouteParam("group", group.getId()))));
 
         groupLayout.add(groupInformation);
 
@@ -224,8 +296,8 @@ public class OrganisationListView extends VerticalLayout {
         return groupLayout;
     }
 
-    private Span createBadge(String value) {
-        Span badge = new Span(value);
+    private Span createAdminBadge() {
+        Span badge = new Span("Admin");
         badge.getElement().getThemeList().add("badge small contrast");
         badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
         return badge;

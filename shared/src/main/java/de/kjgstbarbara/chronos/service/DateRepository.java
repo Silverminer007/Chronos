@@ -42,4 +42,7 @@ public interface DateRepository extends JpaRepository<Date, Long> {
     List<Date> findByStartBetween(LocalDateTime after, LocalDateTime before);
 
     List<Date> findByPollScheduledFor(LocalDate localDate);
+
+    long countByGroup(Group group);
+    void deleteByGroup(Group group);
 }

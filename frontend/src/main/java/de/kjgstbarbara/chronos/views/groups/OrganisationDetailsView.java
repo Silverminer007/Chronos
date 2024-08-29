@@ -18,12 +18,13 @@ import de.kjgstbarbara.chronos.data.Organisation;
 import de.kjgstbarbara.chronos.data.Person;
 import de.kjgstbarbara.chronos.service.OrganisationRepository;
 import de.kjgstbarbara.chronos.service.PersonsService;
+import de.kjgstbarbara.chronos.views.MainNavigationView;
 import de.kjgstbarbara.chronos.views.RegisterView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 @PermitAll
-@Route("organisation/details/:org/:tab?")
+@Route(value = "organisations/details/:org/:tab?", layout = MainNavigationView.class)
 public class OrganisationDetailsView extends VerticalLayout implements BeforeEnterObserver {
     private final OrganisationRepository organisationRepository;
     private final Person loggedInUser;
