@@ -48,3 +48,5 @@ frontend/vite.generated.ts
 
 application.properties
 .env
+/chronos-frontend.log
+/chronos-cron.log
