@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="chronos@localhost" uuid="578935bd-dc03-482a-8776-5af9b71b87c2">
-      <driver-ref>mysql.8</driver-ref>
+    <data-source source="LOCAL" name="chronos@localhost" uuid="8e76110c-dd19-40c4-80d1-49b1a6d7e3d5">
+      <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://localhost:3306/chronos</jdbc-url>
+      <imported>true</imported>
+      <remarks>$PROJECT_DIR$/frontend/src/main/resources/application.properties</remarks>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://db:5432/chronos</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
