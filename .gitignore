@@ -1,4 +1,4 @@
-/target/
+/*/target/
 .idea/
 .vscode/
 .settings
@@ -11,7 +11,7 @@
 
 # The following files are generated/updated by vaadin-maven-plugin
 node_modules/
-frontend/generated/
+frontend/frontend/generated/
 pnpmfile.js
 vite.generated.ts
 
