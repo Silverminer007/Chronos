@@ -4,13 +4,10 @@ import de.kjgstbarbara.data.*;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
-import java.util.Properties;
 
 @Setter
 @Accessors(fluent = true)
@@ -23,14 +20,8 @@ public class MessageFormatter {
     private String baseURL = "";
 
     public String format(String input) {
-        Properties properties = new Properties();
-        try {
-            properties.load(new FileInputStream("chronos.properties"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         if (baseURL.isBlank()) {
-            baseURL = properties.getProperty("chronos.base-url");
+            baseURL = System.getenv("HOST_DOMAIN");
         }
         String output = input;
         if (date != null) {
