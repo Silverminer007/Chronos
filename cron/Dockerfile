@@ -6,6 +6,6 @@ RUN ["echo", "01", "*", "*", "*", "*", "java", "-jar", "chronos-cron.jar", ">", 
 
 RUN ["touch", "/var/log/cron.log"]
 
-COPY target/*.jar chronos-cron.jar
+COPY ./target/*.jar ./chronos-cron.jar
 
 ENTRYPOINT ["cron", "&&", "tail", "-f", "chronos-cron.log"]
