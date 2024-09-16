@@ -36,45 +36,45 @@ jobs:
         run: docker build cron -t chronos-cron:latest
 
       - name: Extract metadata (tags, labels) for Docker
-        id: meta
+        id: meta-frontend
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/chronos-frontend
       - name: Build and push Docker image
-        id: push
+        id: push-frontend
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: frontend
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/chronos-frontend
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.push-frontend.outputs.digest }}
           push-to-registry: true
 
 
 
       - name: Extract metadata (tags, labels) for Docker
-        id: meta
+        id: meta-cron
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/chronos-cron
       - name: Build and push Docker image
-        id: push
+        id: push-cron
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: cron
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-cron.outputs.tags }}
+          labels: ${{ steps.meta-cron.outputs.labels }}
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/chronos-cron
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.push-cron.outputs.digest }}
           push-to-registry: true
 
 
