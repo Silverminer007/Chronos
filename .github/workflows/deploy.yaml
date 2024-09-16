@@ -2,6 +2,9 @@ run-name: Deploy by @${{ github.actor }}
 
 on:
   push:
+  release:
+    types:
+      - published
 
 permissions:
   packages: write
@@ -59,8 +62,6 @@ jobs:
           subject-digest: ${{ steps.push-frontend.outputs.digest }}
           push-to-registry: true
 
-
-
       - name: Extract metadata (tags, labels) for Docker (Cron)
         id: meta-cron
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
@@ -81,6 +82,3 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/cron
           subject-digest: ${{ steps.push-cron.outputs.digest }}
           push-to-registry: true
-
-
-
