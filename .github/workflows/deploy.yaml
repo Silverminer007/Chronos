@@ -3,6 +3,9 @@ run-name: Deploy by @${{ github.actor }}
 on:
   push:
 
+permissions:
+  packages: write
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.actor }}
