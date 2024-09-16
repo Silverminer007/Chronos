@@ -1,0 +1,86 @@
+run-name: Deploy by @${{ github.actor }}
+
+on:
+  push:
+
+permissions:
+  packages: write
+  contents: read
+  attestations: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.actor }}
+
+jobs:
+  build:
+    name: Build sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 21 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Test
+        run: mvn --batch-mode --update-snapshots verify
+      - name: Build with maven
+        run: mvn clean package -Pproduction
+
+      - name: Extract metadata (tags, labels) for Docker (Frontend)
+        id: meta-frontend
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+      - name: Build and push Docker image (Frontend)
+        id: push-frontend
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+      - name: Generate artifact attestation (Frontend)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          subject-digest: ${{ steps.push-frontend.outputs.digest }}
+          push-to-registry: true
+
+
+
+      - name: Extract metadata (tags, labels) for Docker (Cron)
+        id: meta-cron
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/cron
+      - name: Build and push Docker image (Cron)
+        id: push-cron
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: ./cron
+          file: ./cron/Dockerfile
+          push: true
+          tags: ${{ steps.meta-cron.outputs.tags }}
+          labels: ${{ steps.meta-cron.outputs.labels }}
+      - name: Generate artifact attestation (Cron)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/cron
+          subject-digest: ${{ steps.push-cron.outputs.digest }}
+          push-to-registry: true
+
+
+
