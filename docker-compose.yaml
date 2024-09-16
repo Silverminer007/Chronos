@@ -1,0 +1,44 @@
+services:
+  frontend:
+    image: chronos-frontend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_PWD: ${DATABASE_PWD}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_DB: ${DATABASE_DB}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      HOST_DOMAIN: ${HOST_DOMAIN}
+    networks:
+      frontend:
+
+  cron:
+    image: chronos-cron
+    environment:
+      DATABASE_PWD: $DATABASE_PWD
+    networks:
+      backend:
+
+  db:
+    image: mariadb
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DATABASE_PWD}
+      MARIADB_DATABASE: ${DATABASE_DB}
+    volumes:
+      - chronos-database-mariadb:/var/lib/mysql
+    networks:
+      frontend:
+      backend:
+
+volumes:
+  chronos-database-mariadb:
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
