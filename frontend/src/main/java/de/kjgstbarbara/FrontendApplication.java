@@ -24,10 +24,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 @Push
 @Theme(value = "chronos", variant = Lumo.DARK)
-public class Application implements AppShellConfigurator {
+public class FrontendApplication implements AppShellConfigurator {
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+        SpringApplication.run(FrontendApplication.class, args);
     }
 
     @Override
