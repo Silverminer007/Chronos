@@ -5,8 +5,6 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/672d51f0-d845-42bd-936a-2e7ef19a2c65 -->
     <artifactId>chronos-frontend</artifactId>
-    <version>v0.3.0</version>
-    <packaging>jar</packaging>
 
     <properties>
         <java.version>21</java.version>
@@ -28,14 +26,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <repository>
-            <id>chronos-lib-mvn-repo</id>
-            <url>https://github.com/Silverminer007/chronos-lib/raw/mvn-repo/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
     </repositories>
 
 
@@ -54,9 +44,8 @@
     <dependencies>
         <dependency>
             <groupId>de.kjgstbarbara</groupId>
-            <!-- Replace artifactId with vaadin-core to use only free components -->
             <artifactId>chronos-lib</artifactId>
-            <version>0.0.2</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
