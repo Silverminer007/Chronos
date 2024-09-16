@@ -21,3 +21,4 @@ drivers/
 error-screenshots/
 webpack.generated.js
 /chronos.properties
+.env
