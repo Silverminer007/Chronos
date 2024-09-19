@@ -10,26 +10,33 @@ services:
       DATABASE_HOST: ${DATABASE_HOST}
       DATABASE_PORT: ${DATABASE_PORT}
       HOST_DOMAIN: ${HOST_DOMAIN}
+    depends_on:
+      - db
     networks:
       frontend:
 
   cron:
     image: chronos-cron
+    depends_on:
+      - db
     environment:
       DATABASE_PWD: $DATABASE_PWD
     networks:
       backend:
 
   db:
-    image: mariadb
+    image: mysql
     restart: always
     # set shared memory limit when using docker-compose
     shm_size: 128mb
     environment:
-      MARIADB_ROOT_PASSWORD: ${DATABASE_PWD}
-      MARIADB_DATABASE: ${DATABASE_DB}
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PWD}
+      MYSQL_DATABASE: chronos
     volumes:
       - chronos-database-mariadb:/var/lib/mysql
+      - type: bind
+        source: ./chronos-production2.sql
+        target: /docker-entrypoint-initdb.d/chronos-production.sql
     networks:
       frontend:
       backend:
