@@ -14,6 +14,8 @@ services:
       - db
     networks:
       frontend:
+    volumes:
+      - ./logs/:/logs/
 
   cron:
     image: chronos-cron
@@ -23,6 +25,8 @@ services:
       DATABASE_PWD: $DATABASE_PWD
     networks:
       backend:
+    volumes:
+      - ./logs/:/logs/
 
   db:
     image: mysql
