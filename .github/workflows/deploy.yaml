@@ -45,7 +45,7 @@ jobs:
         id: meta-frontend
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/chronos-frontend
       - name: Build and push Docker image (Frontend)
         id: push-frontend
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
@@ -58,7 +58,7 @@ jobs:
       - name: Generate artifact attestation (Frontend)
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/chronos-frontend
           subject-digest: ${{ steps.push-frontend.outputs.digest }}
           push-to-registry: true
 
@@ -66,7 +66,7 @@ jobs:
         id: meta-cron
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/cron
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/chronos-cron
       - name: Build and push Docker image (Cron)
         id: push-cron
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
@@ -79,6 +79,6 @@ jobs:
       - name: Generate artifact attestation (Cron)
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/cron
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/chronos-cron
           subject-digest: ${{ steps.push-cron.outputs.digest }}
           push-to-registry: true
