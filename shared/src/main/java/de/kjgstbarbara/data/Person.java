@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 
 @Entity
@@ -29,11 +31,13 @@ public class Person {
     private PhoneNumber phoneNumber;
     private String eMailAddress;
     private Locale userLocale = Locale.GERMANY;
+    private ZoneId timezone = ZoneOffset.UTC;
     // Die Uhrzeit am Tag an der die Person ihre Benachrichtigungen erhält. 19 entspricht also 19:00 Uhr
     private Set<Integer> remindMeTime = Set.of(19);
     private boolean monthOverview = true;
     private Set<Integer> hourReminderIntervals = Set.of(1);
     private Set<Integer> dayReminderIntervals = Set.of(2);
+    private CalendarLayout calendarLayout = CalendarLayout.LIST_NEXT;
     private String resetToken;
     private LocalDateTime resetTokenExpires;
 
@@ -108,6 +112,21 @@ public class Person {
 
         Reminder(String text) {
             this.text = text;
+        }
+    }
+
+    @Getter
+    public enum CalendarLayout {
+        LIST_PER_MONTH("calendar.list-per-month"),
+        LIST_NEXT("calendar.list-next"),
+        MONTH("calendar.month"),
+        YEAR("calendar.year");
+
+
+        private final String readableName;
+
+        CalendarLayout(String readableName) {
+            this.readableName = readableName;
         }
     }
 }
