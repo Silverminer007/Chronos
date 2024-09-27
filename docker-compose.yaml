@@ -1,6 +1,9 @@
 services:
   frontend:
-    image: chronos-frontend
+#    image: ghcr.io/silverminer007/chronos-frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "8080:8080"
     environment:
@@ -18,7 +21,10 @@ services:
       - ./logs/:/logs/
 
   cron:
-    image: chronos-cron
+#    image: ghcr.io/silverminer007/chronos-cron
+    build:
+      context: .
+      dockerfile: cron/Dockerfile
     depends_on:
       - db
     environment:
@@ -38,9 +44,9 @@ services:
       MYSQL_DATABASE: chronos
     volumes:
       - chronos-database-mariadb:/var/lib/mysql
-      - type: bind
-        source: ./chronos-production2.sql
-        target: /docker-entrypoint-initdb.d/chronos-production.sql
+#      - type: bind
+ #       source: ./chronos-production2.sql
+ #       target: /docker-entrypoint-initdb.d/chronos-production.sql
     networks:
       frontend:
       backend:
