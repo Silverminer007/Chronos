@@ -38,8 +38,6 @@ jobs:
           cache: maven
       - name: Test
         run: mvn --batch-mode --update-snapshots verify
-      - name: Build with maven
-        run: mvn clean package -Pproduction
 
       - name: Extract metadata (tags, labels) for Docker (Frontend)
         id: meta-frontend
@@ -50,7 +48,7 @@ jobs:
         id: push-frontend
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          context: ./frontend
+          context: .
           file: ./frontend/Dockerfile
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
@@ -71,7 +69,7 @@ jobs:
         id: push-cron
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          context: ./cron
+          context: .
           file: ./cron/Dockerfile
           push: true
           tags: ${{ steps.meta-cron.outputs.tags }}
