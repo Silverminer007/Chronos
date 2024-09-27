@@ -237,8 +237,8 @@ public class ProfileView extends VerticalLayout {
     }
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {
-        StreamResource profileImageStreamResource = FileHelper.getProfileImage(person.getUsername());
-        Image profileImage = profileImageStreamResource == null ? new Image("/images/no-profile-image.png", "Kein Profilbild") : new Image(profileImageStreamResource, "Profilbild");
+        StreamResource profileImageStreamResource = FileHelper.getProfileImage(person);
+        Image profileImage = new Image(profileImageStreamResource, "Profilbild");
         profileImage.setWidth("150px");
 
         MemoryBuffer memoryBuffer = new MemoryBuffer();
@@ -254,7 +254,7 @@ public class ProfileView extends VerticalLayout {
                 Graphics2D g2 = circleBuffer.createGraphics();
                 g2.setClip(new Ellipse2D.Float(0, 0, imageSize, imageSize));
                 g2.drawImage(image.getSubimage(0, 0, Math.min(image.getHeight(), image.getWidth()), Math.min(image.getHeight(), image.getWidth())), 0, 0, imageSize, imageSize, null);
-                FileHelper.saveProfileImage(circleBuffer, person.getUsername());
+                FileHelper.saveProfileImage(circleBuffer, person);
                 personsRepository.save(person);
                 event.getSource().getUI().ifPresent(ui -> ui.getPage().reload());
             } catch (IOException e) {

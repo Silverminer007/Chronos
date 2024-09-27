@@ -40,6 +40,8 @@ public class Person {
     private CalendarLayout calendarLayout = CalendarLayout.LIST_NEXT;
     private String resetToken;
     private LocalDateTime resetTokenExpires;
+    @Column(length = 60000)
+    private String profileImage;
 
     public String toString() {
         return firstName + " " + lastName;
