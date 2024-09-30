@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: ghcr.io/silverminer007/chronos-frontend:0.4.5
+    image: ghcr.io/silverminer007/chronos-frontend:0.4.6
     ports:
       - "8080:8080"
       - "5005:5005"
@@ -22,7 +22,7 @@ services:
       - ./logs/:/logs/
 
   cron:
-    image: ghcr.io/silverminer007/chronos-cron:0.4.5
+    image: ghcr.io/silverminer007/chronos-cron:0.4.6
     depends_on:
       db:
         condition: service_healthy
