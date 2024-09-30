@@ -40,4 +40,4 @@ jobs:
         run: mvn --batch-mode --update-snapshots verify
 
       - name: Create and push docker images
-        run: ./mvnw package jib:build
+        run: mvn package jib:build
