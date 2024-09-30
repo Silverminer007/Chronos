@@ -18,10 +18,10 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.components.PhoneNumberField;
 import de.kjgstbarbara.components.ReCaptcha;
+import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.service.PersonsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Route("register")

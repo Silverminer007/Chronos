@@ -12,14 +12,14 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.data.Game;
 import de.kjgstbarbara.data.GameEvaluation;
 import de.kjgstbarbara.data.Participant;
+import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.services.GameEvaluationService;
 import de.kjgstbarbara.services.GameGroupService;
 import de.kjgstbarbara.services.ParticipantService;
-import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,7 +113,7 @@ public class ParticipantView extends Composite<VerticalLayout> implements Before
             return;
         }
         this.participant = beforeEnterEvent.getRouteParameters().get("participant").map(Long::valueOf).flatMap(participantService::get).orElse(null);
-        if(participant == null) {
+        if (participant == null) {
             beforeEnterEvent.rerouteTo("gameevaluation/" + this.gameEvaluation.getId() + "/participants");
             return;
         }

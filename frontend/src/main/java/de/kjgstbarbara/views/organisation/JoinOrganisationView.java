@@ -6,12 +6,17 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageFormatter;
-import de.kjgstbarbara.service.*;
+import de.kjgstbarbara.service.OrganisationRepository;
+import de.kjgstbarbara.service.OrganisationService;
+import de.kjgstbarbara.service.PersonsRepository;
+import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
@@ -48,17 +53,17 @@ public class JoinOrganisationView extends VerticalLayout implements BeforeEnterO
                     organisation.getMembershipRequests().add(person);
                     organisationRepository.save(organisation);
                     this.add("Deine Beitrittsanfrage für " + organisation.getName() + " wurde verschickt");
-                        MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(person);
-                        organisation.sendMessageTo(messageFormatter.format(
-                                """
-                                        Hi #ORGANISATION_ADMIN_NAME,
-                                        #PERSON_NAME möchte gerne deiner Organisation #ORGANISATION_NAME beitreten. Wenn du diese Anfrage bearbeiten möchtest, klicke bitte auf diesen Link
-                                        
-                                        Anfrage annehmen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/yes
-                                        
-                                        Anfrage ablehnen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/no
-                                        """
-                        ), organisation.getAdmin());
+                    MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(person);
+                    organisation.sendMessageTo(messageFormatter.format(
+                            """
+                                    Hi #ORGANISATION_ADMIN_NAME,
+                                    #PERSON_NAME möchte gerne deiner Organisation #ORGANISATION_NAME beitreten. Wenn du diese Anfrage bearbeiten möchtest, klicke bitte auf diesen Link
+                                    
+                                    Anfrage annehmen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/yes
+                                    
+                                    Anfrage ablehnen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/no
+                                    """
+                    ), organisation.getAdmin());
                 } else {
                     this.add("Du gehörst schon zu dieser Organisation: " + organisation.getName());
                 }

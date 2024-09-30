@@ -11,7 +11,7 @@ import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.kjgstbarbara.components.PhoneNumberField;
 import de.kjgstbarbara.components.ReCaptcha;
@@ -26,16 +26,16 @@ import java.util.Optional;
 public class RequestPasswordResetView extends VerticalLayout {
     private static final String RESET_MESSAGE_TEMPLATE =
             """
-            Hey #PERSON_NAME,
-            du hast angefragt dein Passwort zurückzusetzen.
-            Wenn du das nicht getan hast klicke auf keinen Fall auf den Link unten,
-            sondern lösche diese Nachricht.
-            
-            Um dein Passwort zurückzusetzen, klicke auf diesen Link:
-            #PERSON_RESET_LINK
-            
-            Der Link ist noch #PERSON_RESET_EXPIRES_IN Stunden gültig
-            """;
+                    Hey #PERSON_NAME,
+                    du hast angefragt dein Passwort zurückzusetzen.
+                    Wenn du das nicht getan hast klicke auf keinen Fall auf den Link unten,
+                    sondern lösche diese Nachricht.
+                    
+                    Um dein Passwort zurückzusetzen, klicke auf diesen Link:
+                    #PERSON_RESET_LINK
+                    
+                    Der Link ist noch #PERSON_RESET_EXPIRES_IN Stunden gültig
+                    """;
 
     public RequestPasswordResetView(PersonsService personsService) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
@@ -74,7 +74,7 @@ public class RequestPasswordResetView extends VerticalLayout {
                 phoneNumberField.setInvalid(false);
                 UI.getCurrent().getPage().fetchCurrentURL(url -> {
                     Person person = optionalPerson.get();
-                    if(person.createResetPassword()) {
+                    if (person.createResetPassword()) {
                         personsRepository.save(person);
                         //senderUtils.sendMessageFormatted(RESET_MESSAGE_TEMPLATE, person, null);// TODO
                         event.getSource().getUI().ifPresent(ui -> ui.navigate(Success.class));

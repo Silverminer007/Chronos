@@ -100,7 +100,7 @@ public class ResetPasswordTokenizedView extends VerticalLayout implements Before
                 password.setErrorMessage("");
                 password.setInvalid(false);
             }
-            if(error) {
+            if (error) {
                 return;
             }
             person.setPassword(passwordEncoder.encode(password.getValue()));

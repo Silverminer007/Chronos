@@ -26,7 +26,7 @@ public class EMailSender {
     private String smtpPassword;
 
     public void sendMessage(String message, Person sendTo) {
-        if(senderEmailAddress == null || senderName == null || smtpServer == null || smtpPassword == null) {
+        if (senderEmailAddress == null || senderName == null || smtpServer == null || smtpPassword == null) {
             return;
         }
         Mailer mailer = MailerBuilder

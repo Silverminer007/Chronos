@@ -2,7 +2,10 @@ package de.kjgstbarbara.data;
 
 import com.google.common.collect.ImmutableList;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -113,7 +116,7 @@ public class Date implements Comparable<Date> {
 
         @Override
         public int compareTo(Date.Information o) {
-            if(this.informationTime == null || o.informationTime == null) {
+            if (this.informationTime == null || o.informationTime == null) {
                 return 0;
             }
             return o.informationTime.compareTo(this.informationTime);

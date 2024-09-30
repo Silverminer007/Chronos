@@ -30,16 +30,12 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.GameEvaluationUtils;
-import de.kjgstbarbara.data.Game;
-import de.kjgstbarbara.data.GameEvaluation;
-import de.kjgstbarbara.data.GameGroup;
-import de.kjgstbarbara.data.Participant;
+import de.kjgstbarbara.data.*;
+import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.services.GameEvaluationService;
 import de.kjgstbarbara.services.GameGroupService;
 import de.kjgstbarbara.services.GameService;
-import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,7 +120,7 @@ public class GameView extends Composite<VerticalLayout> implements BeforeEnterOb
         shuffleGroups.setWidth("min-content");
         shuffleGroups.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         shuffleGroups.addClickListener(event -> {
-            if(!this.game.getGameGroups().isEmpty()) {
+            if (!this.game.getGameGroups().isEmpty()) {
                 List<Participant> participantList = new ArrayList<>(this.gameEvaluation.getParticipants());
                 Collections.shuffle(participantList);
                 for (GameGroup g : this.game.getGameGroups()) {

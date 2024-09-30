@@ -28,7 +28,7 @@ public class SignalSender {
             streamGobbler.run();
 
             int exitCode = process.waitFor();
-            if(exitCode != 0) {
+            if (exitCode != 0) {
                 LOGGER.info("Die Nachricht konnte nicht via Signal an {} verschickt werden. Nachricht \n {}", sendTo.getName(), message);
             }
         } catch (IOException | InterruptedException e) {

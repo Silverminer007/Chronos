@@ -30,12 +30,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FrontendUtils;
+import de.kjgstbarbara.components.ClosableDialog;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.components.ClosableDialog;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -387,7 +387,7 @@ public class GroupView extends VerticalLayout {
 
         Button addPersonButton = new Button("Mitglied hinzufügen");
         addPersonButton.addClickListener(event -> {
-            if(addPersonSelector.getValue() != null && !addPersonSelector.getValue().isEmpty()) {
+            if (addPersonSelector.getValue() != null && !addPersonSelector.getValue().isEmpty()) {
                 group.getMembers().addAll(addPersonSelector.getValue());
                 members.setItems(group.getMembers());
                 addablePersons.removeAll(addPersonSelector.getValue());

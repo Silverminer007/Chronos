@@ -1,6 +1,8 @@
 package de.kjgstbarbara.service;
 
-import de.kjgstbarbara.data.*;
+import de.kjgstbarbara.data.Date;
+import de.kjgstbarbara.data.Group;
+import de.kjgstbarbara.data.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
@@ -18,5 +20,6 @@ public interface DateRepository extends JpaRepository<Date, Long> {
     List<Date> findByStartBetweenAndGroupMembersIn(LocalDateTime start, LocalDateTime end, List<Person> personList);
 
     List<Date> findByStartBetween(LocalDateTime after, LocalDateTime before);
+
     List<Date> findByPollScheduledFor(LocalDate localDate);
 }

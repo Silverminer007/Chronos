@@ -12,11 +12,11 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -26,10 +26,13 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
-import de.kjgstbarbara.data.*;
-import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.components.ClosableDialog;
 import de.kjgstbarbara.components.NonNullValidator;
+import de.kjgstbarbara.data.Date;
+import de.kjgstbarbara.data.Group;
+import de.kjgstbarbara.data.Organisation;
+import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.date.DateView;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
@@ -148,17 +151,19 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             Locale locale = fullCalendar.getLocale();
             this.selectedStartDateIndicator.setText(
                     selectedCalendarLayout.equals(Layout.LIST_YEAR) ? "Nächste 20" :
-                    switch (this.selectedCalendarLayout.getCalendarView()) {
-                        default -> intervalStart.format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(locale));
-                        case TIME_GRID_DAY, DAY_GRID_DAY, LIST_DAY ->
-                                intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yyyy").withLocale(locale));
-                        case TIME_GRID_WEEK, DAY_GRID_WEEK, LIST_WEEK ->
-                                intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
-                                        " - " + intervalStart.plusDays(6)
-                                        .format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
-                                        " (kw " + intervalStart.format(DateTimeFormatter.ofPattern("ww").withLocale(locale)) + ")";
-                        case LIST_YEAR -> intervalStart.format(DateTimeFormatter.ofPattern("yyyy").withLocale(locale));
-                    }
+                            switch (this.selectedCalendarLayout.getCalendarView()) {
+                                case TIME_GRID_DAY, DAY_GRID_DAY, LIST_DAY ->
+                                        intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yyyy").withLocale(locale));
+                                case TIME_GRID_WEEK, DAY_GRID_WEEK, LIST_WEEK ->
+                                        intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
+                                                " - " + intervalStart.plusDays(6)
+                                                .format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
+                                                " (kw " + intervalStart.format(DateTimeFormatter.ofPattern("ww").withLocale(locale)) + ")";
+                                case LIST_YEAR ->
+                                        intervalStart.format(DateTimeFormatter.ofPattern("yyyy").withLocale(locale));
+                                default ->
+                                        intervalStart.format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(locale));
+                            }
             );
         });
         fullCalendar.setPrefetchEnabled(true);

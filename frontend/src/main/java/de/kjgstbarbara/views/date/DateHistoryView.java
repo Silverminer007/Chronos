@@ -16,9 +16,14 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.FrontendUtils;
-import de.kjgstbarbara.data.*;
-import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.components.AvatarItem;
+import de.kjgstbarbara.data.Date;
+import de.kjgstbarbara.data.Feedback;
+import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.service.DateRepository;
+import de.kjgstbarbara.service.DatesService;
+import de.kjgstbarbara.service.PersonsRepository;
+import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
@@ -89,7 +94,7 @@ public class DateHistoryView extends VerticalLayout implements BeforeEnterObserv
             action.add(createBadge(feedback.getStatus().getReadable()));
 
             Icon statusIcon;
-            if(Feedback.Status.COMMITTED.equals(feedback.getStatus())) {
+            if (Feedback.Status.COMMITTED.equals(feedback.getStatus())) {
                 statusIcon = VaadinIcon.CHECK.create();
                 statusIcon.setColor("#00ff00");
             } else {

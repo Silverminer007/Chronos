@@ -1,8 +1,5 @@
 package de.kjgstbarbara.security;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 

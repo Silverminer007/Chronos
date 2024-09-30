@@ -13,13 +13,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * The entry point of the Spring Boot application.
  * Use the @PWA annotation make the application installable on phones, tablets
  * and some desktop browsers.
- *
  */
 @PWA(
         name = "Chronos",
         shortName = "Chronos",
-        offlinePath="offline.html",
-        offlineResources = { "./images/offline.png"}
+        offlinePath = "offline.html",
+        offlineResources = {"./images/offline.png"}
 )
 @SpringBootApplication
 @Push

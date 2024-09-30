@@ -16,6 +16,7 @@ public class ResetPasswordView extends VerticalLayout implements BeforeEnterObse
     private boolean tokenExpired;
     private final H3 invalidTokenInfo = new H3("Das Token war ungültig, bitte gib ein neues ein");
     private final H3 tokenExpiredInfo = new H3("Das Token ist abgelaufen. Bitte setze dein Password erneut zurück");
+
     public ResetPasswordView() {
         add(invalidTokenInfo);
         add(tokenExpiredInfo);
@@ -33,6 +34,7 @@ public class ResetPasswordView extends VerticalLayout implements BeforeEnterObse
                                 new RouteParameters(new RouteParam("token", tokenField.getValue())))));
 
     }
+
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         invalidToken = beforeEnterEvent.getRouteParameters().get("status").map(s -> s.equalsIgnoreCase("invalid-token")).orElse(false);

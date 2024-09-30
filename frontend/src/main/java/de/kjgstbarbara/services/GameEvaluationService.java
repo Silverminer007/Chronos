@@ -1,7 +1,7 @@
 package de.kjgstbarbara.services;
 
-import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.data.GameEvaluation;
+import de.kjgstbarbara.data.Person;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

@@ -79,7 +79,7 @@ public class VoteDateView extends VerticalLayout implements BeforeEnterObserver 
                         });
                         HorizontalLayout confirmIdentity = new HorizontalLayout(lastName, confirm);
                         this.add(confirmIdentity);
-                        if(person.equals(principal)) {
+                        if (person.equals(principal)) {
                             confirm.click();
                         }
                         return;

@@ -10,7 +10,9 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Data
@@ -98,7 +100,7 @@ public class Person {
 
         private static String splitPhoneNumber(String phoneNumber, int index) {
             String[] parts = phoneNumber.split(" ");
-            if(parts.length <= index) {
+            if (parts.length <= index) {
                 return "0";
             } else {
                 return parts[index];

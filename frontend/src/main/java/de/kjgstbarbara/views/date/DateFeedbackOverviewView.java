@@ -13,7 +13,6 @@ import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -84,7 +83,7 @@ public class DateFeedbackOverviewView extends VerticalLayout implements BeforeEn
         NativeLabel time = new NativeLabel((date.getStart().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))));
         this.add(time);
 
-        NativeLabel pollPlannedFor = new NativeLabel( date.getPollScheduledFor() == null ? "Aktuell ist keine Feedback-Erinnerung geplant" : "Für den " + date.getPollScheduledFor().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + " ist eine Erinnerung ans Abstimmen geplant");
+        NativeLabel pollPlannedFor = new NativeLabel(date.getPollScheduledFor() == null ? "Aktuell ist keine Feedback-Erinnerung geplant" : "Für den " + date.getPollScheduledFor().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + " ist eine Erinnerung ans Abstimmen geplant");
         pollPlannedFor.setVisible(date.getPollScheduledFor() != null && date.isPollRunning());
         this.add(pollPlannedFor);
 
