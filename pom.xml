@@ -6,7 +6,7 @@
 
     <groupId>de.kjgstbarbara</groupId>
     <artifactId>Chronos</artifactId>
-    <version>0.4.4</version>
+    <version>0.4.5</version>
     <packaging>pom</packaging>
     <modules>
         <module>shared</module>
@@ -24,7 +24,6 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <shared-version>0.4.4</shared-version>
         <image>ghcr.io/silverminer007/${project.artifactId}:${project.version}</image>
     </properties>
 

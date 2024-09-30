@@ -15,7 +15,7 @@
     <parent>
         <groupId>de.kjgstbarbara</groupId>
         <artifactId>Chronos</artifactId>
-        <version>0.4.4</version>
+        <version>0.4.5</version>
     </parent>
 
     <dependencies>
