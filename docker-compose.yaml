@@ -27,7 +27,11 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_PWD: $DATABASE_PWD
+      DATABASE_PWD: ${DATABASE_PWD}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_DB: ${DATABASE_DB}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
     networks:
       backend:
     volumes:
