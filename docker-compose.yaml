@@ -14,7 +14,8 @@ services:
       DATABASE_PORT: ${DATABASE_PORT}
       HOST_DOMAIN: ${HOST_DOMAIN}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       frontend:
     volumes:
@@ -26,7 +27,8 @@ services:
       context: .
       dockerfile: cron/Dockerfile
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_PWD: $DATABASE_PWD
     networks:
@@ -50,6 +52,11 @@ services:
     networks:
       frontend:
       backend:
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   chronos-database-mariadb:
