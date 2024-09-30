@@ -1,11 +1,10 @@
 services:
   frontend:
-#    image: ghcr.io/silverminer007/chronos-frontend
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    image: ghcr.io/silverminer007/chronos-frontend:0.4.4
     ports:
       - "8080:8080"
+      - "5005:5005"
+      - "35729:35729"
     environment:
       DATABASE_PWD: ${DATABASE_PWD}
       DATABASE_USER: ${DATABASE_USER}
@@ -13,6 +12,7 @@ services:
       DATABASE_HOST: ${DATABASE_HOST}
       DATABASE_PORT: ${DATABASE_PORT}
       HOST_DOMAIN: ${HOST_DOMAIN}
+      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     depends_on:
       db:
         condition: service_healthy
@@ -22,10 +22,7 @@ services:
       - ./logs/:/logs/
 
   cron:
-#    image: ghcr.io/silverminer007/chronos-cron
-    build:
-      context: .
-      dockerfile: cron/Dockerfile
+    image: ghcr.io/silverminer007/chronos-cron:0.4.4
     depends_on:
       db:
         condition: service_healthy

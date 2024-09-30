@@ -25,6 +25,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <shared-version>0.4.4</shared-version>
+        <image>ghcr.io/silverminer007/${project.artifactId}:${project.version}</image>
     </properties>
 
     <build>
@@ -33,6 +34,11 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>com.google.cloud.tools</groupId>
+                    <artifactId>jib-maven-plugin</artifactId>
+                    <version>3.4.3</version>
                 </plugin>
             </plugins>
         </pluginManagement>
