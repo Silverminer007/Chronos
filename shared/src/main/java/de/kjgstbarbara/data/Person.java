@@ -76,6 +76,14 @@ public class Person {
         }
     }
 
+    public ZoneId getTimezone() {
+        return timezone == null ? ZoneOffset.UTC : timezone;
+    }
+
+    public CalendarLayout getCalendarLayout() {
+        return calendarLayout == null ? CalendarLayout.LIST_NEXT : calendarLayout;
+    }
+
     public record PhoneNumber(String countryCode, Integer areaCode, Integer subscriber) {
         public long number() {
             try {

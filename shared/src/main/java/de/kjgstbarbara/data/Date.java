@@ -81,7 +81,7 @@ public class Date implements Comparable<Date> {
                 return f.getStatus();
             }
         }
-        return Feedback.Status.DONTKNOW;
+        return Feedback.Status.NONE;
     }
 
     public List<Feedback> getFeedbackList() {

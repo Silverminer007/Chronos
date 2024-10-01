@@ -1,209 +1,347 @@
 package de.kjgstbarbara.views;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.menubar.MenuBar;
-import com.vaadin.flow.component.menubar.MenuBarVariant;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.*;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
-import de.kjgstbarbara.components.ClosableDialog;
-import de.kjgstbarbara.components.NonNullValidator;
-import de.kjgstbarbara.data.Date;
-import de.kjgstbarbara.data.Group;
-import de.kjgstbarbara.data.Organisation;
-import de.kjgstbarbara.data.Person;
+import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.kjgstbarbara.components.*;
+import de.kjgstbarbara.data.*;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.date.DateView;
+import de.kjgstbarbara.views.security.RegisterView;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.User;
 import org.vaadin.stefan.fullcalendar.*;
 import org.vaadin.stefan.fullcalendar.dataprovider.CallbackEntryProvider;
 import org.vaadin.stefan.fullcalendar.dataprovider.EntryProvider;
 
-import java.time.DayOfWeek;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.util.Locale;
+import java.util.List;
 
-@Route(value = "calendar/:week?/:layout?", layout = MainNavigationView.class)
-@RouteAlias(value = ":week?/:layout?", layout = MainNavigationView.class)
+@Route(value = "calendar/:page?", layout = MainNavigationView.class)
+@RouteAlias(value = ":page?", layout = MainNavigationView.class)
 @PageTitle("Meine Termine")
 @PermitAll
 public class CalendarView extends VerticalLayout implements BeforeEnterObserver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CalendarView.class);
 
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
     private final DateRepository dateRepository;
     private final GroupRepository groupRepository;
+    private final FeedbackRepository feedbackRepository;
 
     private final Person person;
 
-    private final FullCalendar fullCalendar = FullCalendarBuilder.create().withAutoBrowserLocale()/*.withAutoBrowserTimezone()*/.build();// Siehe EditDateDialog
-    private final H4 selectedStartDateIndicator = new H4();
-    private LocalDate selectedStartDate = LocalDate.now();
-    private Layout selectedCalendarLayout = Layout.LIST;
+    private final FullCalendar fullCalendar;
+    private final VerticalLayout dateListLayout = new VerticalLayout();
+    private final Scroller dateListScroller;
 
-    private final Button previous = new Button(LumoIcon.ARROW_LEFT.create());
-    private final Button today = new Button(LumoIcon.CALENDAR.create());
-    private final Button next = new Button(LumoIcon.ARROW_RIGHT.create());
+    private final H4 shownIntervalLabel = new H4();
+    private int page = 0;
 
-    public CalendarView(PersonsService personsService, OrganisationService organisationService, DatesService datesService, GroupService groupService, AuthenticationContext authenticationContext) {
+    private String search = null;
+
+    public CalendarView(PersonsService personsService, OrganisationService organisationService, DatesService datesService, GroupService groupService, FeedbackService feedbackService, AuthenticationContext authenticationContext) {
         this.personsRepository = personsService.getPersonsRepository();
         this.organisationRepository = organisationService.getOrganisationRepository();
         this.dateRepository = datesService.getDateRepository();
         this.groupRepository = groupService.getGroupRepository();
-        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
+        this.feedbackRepository = feedbackService.getFeedbackRepository();
+        this.person = authenticationContext.getAuthenticatedUser(User.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
                 .orElse(null);
+        this.fullCalendar = setupCalendar();
+        this.dateListScroller = new Scroller(this.setupDateList());
         if (person == null) {
-            authenticationContext.logout();
+            UI.getCurrent().navigate(RegisterView.class);
+        } else {
+            this.setPadding(false);
+            this.setSpacing(false);
+            this.setSizeFull();
+
+            this.add(createHeaderBar());
+            this.add(this.fullCalendar);
+            this.dateListScroller.setSizeFull();
+            this.add(this.dateListScroller);
+            this.selectCalendarLayout();
+            this.add(createFooter());
         }
+    }
 
-        this.setSizeFull();
+    private void selectCalendarLayout() {
+        if (this.search == null &&
+                (this.person.getCalendarLayout() == Person.CalendarLayout.MONTH || this.person.getCalendarLayout() == Person.CalendarLayout.YEAR)) {
+            this.fullCalendar.setVisible(true);
+            this.dateListScroller.setVisible(false);
+        } else {
+            this.fullCalendar.setVisible(false);
+            this.dateListScroller.setVisible(true);
+        }
+    }
 
+    private HorizontalLayout createHeaderBar() {
         HorizontalLayout header = new HorizontalLayout();
         header.setWidthFull();
-        header.setJustifyContentMode(JustifyContentMode.BETWEEN);
         header.setAlignItems(Alignment.CENTER);
+        header.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        header.setPadding(true);
+        header.setSpacing(true);
+        header.addClassNames(LumoUtility.Background.PRIMARY);
 
-        MenuBar menu = new MenuBar();
-        menu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
+        header.add(this.shownIntervalLabel);
 
-        Button calendarLayoutMenu = new Button(VaadinIcon.ELLIPSIS_DOTS_V.create());
-        calendarLayoutMenu.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        MenuItem calendarLayout = menu.addItem(calendarLayoutMenu);
-        SubMenu subMenu = calendarLayout.getSubMenu();
-        for (Layout layout : Layout.values()) {
-            Button changeLayout = new Button(layout.getDisplayName());
-            changeLayout.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-            changeLayout.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
-                    new RouteParameters(new RouteParam("layout", layout.name()), new RouteParam("week", this.selectedStartDate.toString()))));
-            subMenu.addItem(changeLayout);
+        header.add(new Search(searchString -> {
+            this.search = searchString;
+            this.selectCalendarLayout();
+            this.setupDateList();
+        }));
+        return header;
+    }
+
+    private FullCalendar setupCalendar() {
+        FullCalendar fullCalendar = FullCalendarBuilder.create().build();
+        if (this.person == null) {// Wenn this.person null ist, wird der View eh direkt verlassen und so lassen sich NullPointerException Warnungen vermeiden
+            return fullCalendar;
         }
-        header.add(menu);
-
-        HorizontalLayout navigation = new HorizontalLayout();
-        navigation.setAlignItems(Alignment.CENTER);
-        navigation.setJustifyContentMode(JustifyContentMode.CENTER);
-        navigation.add(previous);
-        navigation.add(today);
-        navigation.add(selectedStartDateIndicator);
-        navigation.add(next);
-        header.add(navigation);
-
-        HorizontalLayout create = new HorizontalLayout();
-        create.setAlignItems(Alignment.END);
-        create.setJustifyContentMode(JustifyContentMode.END);
-        Button createNew = new Button(VaadinIcon.PLUS.create());
-        createNew.setTooltipText("Einen neuen Termin erstellen");
-        createNew.setAriaLabel("Neuer Termin");
-        createNew.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
-        createNew.addClickListener(event -> createEditDateDialog(new Date()).open());
-        create.add(createNew);
-        header.add(create);
-
-        this.add(header);
-
+        fullCalendar.setTimezone(new Timezone(this.person.getTimezone()));
+        fullCalendar.setLocale(this.person.getUserLocale());
         fullCalendar.setSizeFull();
         fullCalendar.addThemeVariants(FullCalendarVariant.LUMO);
         fullCalendar.setFirstDay(DayOfWeek.MONDAY);
         fullCalendar.addTimeslotClickedListener(event -> {
             Date d = new Date();
             d.setStart(event.getDateTime().withHour(19));
-            d.setEnd(d.getStart().plusHours(1));
-            createEditDateDialog(d).open();
+            d.setEnd(d.getStartAtTimezone(ZoneOffset.UTC).plusHours(1));
+            createCreateDateDialog(d).open();
         });
         fullCalendar.addEntryClickedListener(event -> {
             if (event.getEntry() instanceof DateEntry dateEntry) {
                 UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", dateEntry.getDate().getId())));
             }
         });
-        fullCalendar.addDatesRenderedListener(event -> {
-            LocalDate intervalStart = event.getIntervalStart();
-            Locale locale = fullCalendar.getLocale();
-            this.selectedStartDateIndicator.setText(
-                    selectedCalendarLayout.equals(Layout.LIST_YEAR) ? "Nächste 20" :
-                            switch (this.selectedCalendarLayout.getCalendarView()) {
-                                case TIME_GRID_DAY, DAY_GRID_DAY, LIST_DAY ->
-                                        intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yyyy").withLocale(locale));
-                                case TIME_GRID_WEEK, DAY_GRID_WEEK, LIST_WEEK ->
-                                        intervalStart.format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
-                                                " - " + intervalStart.plusDays(6)
-                                                .format(DateTimeFormatter.ofPattern("dd.MM.yy").withLocale(locale)) +
-                                                " (kw " + intervalStart.format(DateTimeFormatter.ofPattern("ww").withLocale(locale)) + ")";
-                                case LIST_YEAR ->
-                                        intervalStart.format(DateTimeFormatter.ofPattern("yyyy").withLocale(locale));
-                                default ->
-                                        intervalStart.format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(locale));
-                            }
-            );
-        });
         fullCalendar.setPrefetchEnabled(true);
+        fullCalendar.changeView(switch (this.person.getCalendarLayout()) {
+            case LIST_PER_MONTH:
+                yield CalendarViewImpl.LIST_MONTH;
+            case LIST_NEXT:
+                yield CalendarViewImpl.LIST_YEAR;
+            case MONTH:
+                yield CalendarViewImpl.DAY_GRID_MONTH;
+            case YEAR:
+                yield CalendarViewImpl.MULTI_MONTH;
+        });
         CallbackEntryProvider<Entry> entryProvider = EntryProvider.fromCallbacks(
-                query ->
-                        this.selectedCalendarLayout == Layout.LIST_YEAR ?
-                                dateRepository.findByStartBetweenAndGroupMembersIn(LocalDateTime.now(), LocalDateTime.now().plusYears(1), this.person).sorted().limit(20).map(DateEntry::new)
-                                : dateRepository.findByStartBetweenAndGroupMembersIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new)
+                query -> dateRepository.findByStartBetweenAndGroupMembersInAndGroupOrganisationMembersIn(query.getStart(), query.getEnd(), this.person).map(DateEntry::new)
                 ,
                 entryId -> dateRepository.findById(Long.valueOf(entryId)).map(DateEntry::new).orElse(null)
         );
         fullCalendar.setEntryProvider(entryProvider);
         this.add(fullCalendar);
         this.setFlexGrow(1, fullCalendar);
+        return fullCalendar;
+    }
 
-        previous.addThemeVariants(ButtonVariant.LUMO_LARGE);
-        previous.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
-                new RouteParameters(new RouteParam("layout", this.selectedCalendarLayout.name()), new RouteParam("week", this.selectedStartDate.minus(1, this.selectedCalendarLayout.getStepSize()).toString()))));
+    private Component setupDateList() {
+        if (this.person == null) {
+            return dateListLayout;
+        }
+        List<Date> dates = findSubListOfDates();
 
-        today.addThemeVariants(ButtonVariant.LUMO_LARGE, ButtonVariant.LUMO_PRIMARY);
-        today.setTooltipText("Zu heute springen");
-        today.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
-                new RouteParameters(new RouteParam("layout", this.selectedCalendarLayout.name()), new RouteParam("week", LocalDate.now().toString()))));
+        dateListLayout.removeAll();
+        dateListLayout.setSizeFull();
+        LocalDate lastDate = null;
+        for (Date date : dates) {
+            if (lastDate == null || !date.getStartAtTimezone(this.person.getTimezone()).toLocalDate().isEqual(lastDate)) {
+                lastDate = date.getStartAtTimezone(this.person.getTimezone()).toLocalDate();
+                H4 dateLabel = new H4(lastDate.format(DateTimeFormatter.ofPattern("EEE, dd.MM.yyyy")));
+                dateListLayout.add(dateLabel);
+            }
+            HorizontalLayout dateEntry = new HorizontalLayout();
+            dateEntry.setWidthFull();
+            dateEntry.setAlignItems(Alignment.CENTER);
+            dateEntry.setJustifyContentMode(JustifyContentMode.END);
+            dateEntry.addClassNames(LumoUtility.Background.TINT_5, LumoUtility.BorderRadius.SMALL);
 
-        next.addThemeVariants(ButtonVariant.LUMO_LARGE);
-        next.addClickListener(event -> UI.getCurrent().navigate(CalendarView.class,
-                new RouteParameters(new RouteParam("layout", this.selectedCalendarLayout.name()), new RouteParam("week", this.selectedStartDate.plus(1, this.selectedCalendarLayout.getStepSize()).toString()))));
+            HorizontalLayout dateInformation = new HorizontalLayout();
+            dateInformation.setWidthFull();
+            dateInformation.setJustifyContentMode(JustifyContentMode.START);
+            dateInformation.setAlignItems(Alignment.CENTER);
+            dateInformation.addClickListener(event -> UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", date.getId()))));
+
+            dateInformation.add(new NativeLabel());
+
+            Icon circleIcon = VaadinIcon.CIRCLE.create();
+            circleIcon.setColor(date.getGroup().getColor());
+            circleIcon.setSize("10px");
+            dateInformation.add(circleIcon);
+
+            NativeLabel time = new NativeLabel(date.getStartAtTimezone(this.person.getTimezone()).format(DateTimeFormatter.ofPattern("HH:mm")) + " Uhr");
+            dateInformation.add(time);
+
+            NativeLabel dateTitle = new NativeLabel(date.getTitle());
+            dateInformation.add(dateTitle);
+            dateEntry.add(dateInformation);
+
+            HorizontalLayout feedbackButtons = new HorizontalLayout();
+            feedbackButtons.setJustifyContentMode(JustifyContentMode.END);
+            feedbackButtons.setAlignItems(Alignment.CENTER);
+
+            Feedback.Status currentStatus = date.getStatusFor(this.person);
+            FeedbackButton commit = new FeedbackButton(Feedback.Status.COMMITTED, false, !Feedback.Status.COMMITTED.equals(currentStatus));
+            FeedbackButton cancel = new FeedbackButton(Feedback.Status.CANCELLED, false, !Feedback.Status.CANCELLED.equals(currentStatus));
+            commit.addClickListener(event -> {
+                Date d = dateRepository.findById(date.getId()).orElse(null);
+                if (d == null) {
+                    return;
+                }
+                Feedback feedback = new Feedback(person, Feedback.Status.COMMITTED);
+                d.addFeedback(feedback);
+                feedbackRepository.save(feedback);
+                dateRepository.save(d);
+                commit.setEnabled(false);
+                cancel.setEnabled(true);
+            });
+            cancel.addClickListener(event -> {
+                Date d = dateRepository.findById(date.getId()).orElse(null);
+                if (d == null) {
+                    return;
+                }
+                Feedback feedback = new Feedback(person, Feedback.Status.CANCELLED);
+                d.addFeedback(feedback);
+                feedbackRepository.save(feedback);
+                dateRepository.save(d);
+                commit.setEnabled(true);
+                cancel.setEnabled(false);
+            });
+            if (date.isPollRunning() && date.getStartAtTimezone(ZoneOffset.UTC).isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
+                feedbackButtons.add(commit, cancel);
+            } else {
+                if (!commit.isEnabled()) {
+                    feedbackButtons.add(commit);
+                } else if (!cancel.isEnabled()) {
+                    feedbackButtons.add(cancel);
+                } else {
+                    feedbackButtons.add(new FeedbackButton(Feedback.Status.NONE, false, false));
+                }
+            }
+
+            dateEntry.add(feedbackButtons);
+
+            dateListLayout.add(dateEntry);
+        }
+        if (dates.isEmpty()) {
+            if (this.search != null) {
+                dateListLayout.add(new H6("Keine Termine gefunden"));
+            } else {
+                dateListLayout.add(new H6("Bisher keine Termine zu sehen"));
+            }
+        }
+        return dateListLayout;
+    }
+
+    private List<Date> findSubListOfDates() {
+        if (Person.CalendarLayout.LIST_PER_MONTH.equals(this.person.getCalendarLayout())) {
+            return dateRepository.findByStartBetweenAndGroupMembersInAndGroupOrganisationMembersIn(LocalDateTime.now(ZoneOffset.UTC).plusMonths(this.page).withDayOfMonth(1).withHour(0).withMinute(0), LocalDateTime.now(ZoneOffset.UTC).plusMonths(1 + this.page).withDayOfMonth(1).minusDays(1).withHour(0).withMinute(0), this.person).sorted().toList();
+        }
+        return dateRepository.calendarQuery(this.search, this.page, this.person);
+    }
+
+    private HorizontalLayout createFooter() {
+        HorizontalLayout footer = new HorizontalLayout();
+        footer.setSpacing(true);
+        footer.setPadding(true);
+        footer.addClassNames(LumoUtility.Width.FULL,
+                LumoUtility.JustifyContent.BETWEEN,
+                LumoUtility.AlignSelf.STRETCH);
+        footer.setAlignItems(Alignment.CENTER);
+
+        Button previousButton = new Button(LumoIcon.ARROW_LEFT.create());
+        previousButton.addThemeVariants(ButtonVariant.LUMO_LARGE, ButtonVariant.LUMO_CONTRAST);
+        previousButton.addClickListener(event -> this.previous());
+        previousButton.addClickShortcut(Key.ARROW_LEFT);
+        footer.add(previousButton);
+
+        Button createButton = new Button("Erstellen", VaadinIcon.PLUS.create());
+        createButton.setTooltipText("Einen neuen Termin erstellen");
+        createButton.setAriaLabel("Neuer Termin");
+        createButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_LARGE);
+        createButton.addClickListener(event -> createCreateDateDialog(new Date()).open());
+        footer.add(createButton);
+
+        Button nextButton = new Button(LumoIcon.ARROW_RIGHT.create());
+        nextButton.addThemeVariants(ButtonVariant.LUMO_LARGE, ButtonVariant.LUMO_CONTRAST);
+        nextButton.addClickShortcut(Key.ARROW_RIGHT);
+        nextButton.addClickListener(event -> this.next());
+        footer.add(nextButton);
+        return footer;
+    }
+
+    private void next() {
+        UI.getCurrent().navigate(CalendarView.class,
+                new RouteParameters(new RouteParam("page", this.page + 1)));
+    }
+
+    private void previous() {
+        UI.getCurrent().navigate(CalendarView.class,
+                new RouteParameters(new RouteParam("page", this.page - 1)));
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        this.selectedCalendarLayout = beforeEnterEvent.getRouteParameters().get("layout").map(Layout::valueOf).orElse(Layout.LIST_YEAR);
-        this.fullCalendar.changeView(this.selectedCalendarLayout.getCalendarView());
+        if (person == null) {
+            beforeEnterEvent.rerouteTo(RegisterView.class);
+            return;
+        }
+        this.page = beforeEnterEvent.getRouteParameters().get("page").map(Integer::parseInt).orElse(0);
         this.fullCalendar.getEntryProvider().refreshAll();
-        this.selectedStartDate = beforeEnterEvent.getRouteParameters().get("week").map(LocalDate::parse).orElse(LocalDate.now());
-        LocalDate calDate = this.selectedCalendarLayout.getStepSize() == null ? LocalDate.now() : this.selectedStartDate;
+        LocalDate calDate = switch (this.person.getCalendarLayout()) {
+            case LIST_PER_MONTH, MONTH -> LocalDate.now(ZoneOffset.UTC).plusMonths(this.page);
+            case LIST_NEXT -> LocalDate.now(ZoneOffset.UTC);
+            case YEAR -> LocalDate.now(ZoneOffset.UTC).plusYears(this.page);
+        };
         fullCalendar.gotoDate(calDate);
-        previous.setEnabled(this.selectedCalendarLayout != Layout.LIST_YEAR);
-        today.setEnabled(this.selectedCalendarLayout != Layout.LIST_YEAR);
-        next.setEnabled(this.selectedCalendarLayout != Layout.LIST_YEAR);
+        this.setupDateList();
+        this.shownIntervalLabel.setText(
+                switch (this.person.getCalendarLayout()) {
+                    case LIST_NEXT -> {
+                        if (this.page < 0) {
+                            int intervalStart = ((this.page * -1) - 1) * 20 + 1;
+                            yield "Vergangenheit " + intervalStart + " - " + (intervalStart + 19);
+                        } else {
+                            int intervalStart = this.page * 20 + 1;
+                            yield "Zukunft " + intervalStart + " - " + (intervalStart + 19);
+                        }
+                    }
+                    case YEAR ->
+                            LocalDate.now(ZoneOffset.UTC).plusYears(this.page).format(DateTimeFormatter.ofPattern("yyyy").withLocale(this.person.getUserLocale()));
+                    default ->
+                            LocalDate.now(ZoneOffset.UTC).plusMonths(this.page).format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(this.person.getUserLocale()));
+                }
+        );
     }
 
     @Getter
@@ -214,33 +352,16 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
             this.date = date;
             this.setColor(date.getGroup().getColor());
             this.setTitle(date.getTitle());
-            this.setStart(date.getStart());
-            this.setEnd(date.getEnd());
+            this.setStart(date.getStartAtTimezone(ZoneOffset.UTC));
+            this.setEnd(date.getEndAtTimezone(ZoneOffset.UTC));
         }
     }
 
-    @Getter
-    public enum Layout {
-        LIST(CalendarViewImpl.LIST_MONTH, ChronoUnit.MONTHS, "MONATSLISTE"),
-        LIST_YEAR(CalendarViewImpl.LIST_YEAR, ChronoUnit.YEARS, "NÄCHSTE 20"),// TODO Edit names to be more clear
-        MONTH(CalendarViewImpl.DAY_GRID_MONTH, ChronoUnit.MONTHS, "MONAT"),
-        YEAR(CalendarViewImpl.MULTI_MONTH, ChronoUnit.YEARS, "JAHR");
-
-        private final CalendarViewImpl calendarView;
-        private final TemporalUnit stepSize;
-        private final String displayName;
-
-        Layout(CalendarViewImpl calendarView, TemporalUnit stepSize, String displayName) {
-            this.calendarView = calendarView;
-            this.stepSize = stepSize;
-            this.displayName = displayName;
-        }
-    }
-
-    private Dialog createEditDateDialog(Date date) {
+    private Dialog createCreateDateDialog(Date date) {
         ClosableDialog dialog = new ClosableDialog();
         dialog.setTitle(new H3("Termin erstellen"));
         dialog.setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll());
+        dialog.setMaxWidth("800px");
 
         Binder<Date> binder = new Binder<>();
 
@@ -291,11 +412,10 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         selectGroup.addValueChangeListener(event -> selectOrganisation.setVisible(event.getValue().getOrganisation() == null));
 
-
-        DateTimePicker startPicker = new DateTimePicker("Von");// Das Datum wird hier als UTC+2 eingegeben und im DateWidget auch als solches angezeigt. Dass der Kalender aber die Zeitzone des Besuchers automatisch setzt, sind diese als UTC/0 interpretiert und werden entsprechend verschoben um +2 Stunden
+        DateTimePicker startPicker = new DateTimePicker("Von");
         startPicker.setStep(Duration.of(30, ChronoUnit.MINUTES));
         startPicker.setRequiredIndicatorVisible(true);
-        binder.forField(startPicker).withValidator(new NonNullValidator<>()).bind(Date::getStart, Date::setStart);
+        binder.forField(startPicker).withValidator(new NonNullValidator<>()).withConverter(new TimeZoneConverter(person.getTimezone())).bind(Date::getStart, Date::setStart);
         content.add(startPicker);
 
         DateTimePicker endPicker = new DateTimePicker("Bis");
@@ -306,6 +426,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                         s.isAfter(startPicker.getValue()) ?
                                 ValidationResult.ok() :
                                 ValidationResult.error("Das Ende einer Veranstaltung kann nicht vor dessen Beginn liegen"))
+                .withConverter(new TimeZoneConverter(person.getTimezone()))
                 .bind(Date::getEnd, Date::setEnd);
         startPicker.addValueChangeListener(event -> {
             if (event.getValue() != null && (endPicker.getValue() == null || endPicker.getValue().isBefore(event.getValue()))) {
@@ -314,24 +435,16 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         });
         content.add(endPicker);
 
-        ComboBox<Integer> selectRepetitionInterval = new ComboBox<>();
-        selectRepetitionInterval.setAllowCustomValue(true);
-        selectRepetitionInterval.setLabel("Terminwiederholung");
-        selectRepetitionInterval.setItems(0, 1, 2, 7, 14, 21);
-        selectRepetitionInterval.setValue(0);
-        selectRepetitionInterval.setItemLabelGenerator(value -> {
-            if (value == 0) {
-                return "Keine Wiederholung";
-            } else if (value == 1) {
-                return "jeden Tag";
-            } else if (value == 7) {
-                return "jede Woche";
-            } else if (value == 14) {
-                return "alle zwei Wochen";
-            } else {
-                return "alle " + value + " Tage";
-            }
-        });
+        TextField venue = new TextField("Veranstaltungsort");
+        binder.forField(venue).bind(Date::getVenue, Date::setVenue);
+        content.add(venue);
+
+        TextArea notes = new TextArea("Notizen");
+        binder.forField(notes).bind(Date::getNotes, Date::setNotes);
+        content.add(notes);
+        content.setColspan(notes, 2);
+
+        ComboBox<Integer> selectRepetitionInterval = createRepetitionIntervalSelector();
         content.add(selectRepetitionInterval);
 
         DatePicker endOfSeries = new DatePicker("Ende der Terminserie");
@@ -350,13 +463,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
         binder.readBean(date);
 
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.setWidthFull();
-        footer.setJustifyContentMode(JustifyContentMode.END);
-        Button save = new Button("Speichern", VaadinIcon.SAFE.create());
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        save.addClickShortcut(Key.ENTER);
-        save.addClickListener(event -> {
+        dialog.getFooter().add(new DialogFooter(dialog::close, () -> {
             try {
                 binder.writeBean(date);
                 if (selectOrganisation.isVisible()) {
@@ -372,24 +479,58 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                     }
                 }
                 groupRepository.save(date.getGroup());
-                dateRepository.save(date);
+                Date d = dateRepository.save(date);
                 if (selectRepetitionInterval.getValue() != 0) {
-                    Date dateCopy = new Date(date);
-                    LocalDate localDate = date.getStart().toLocalDate().plusDays(selectRepetitionInterval.getValue());
+                    d.setRepetitionRule(selectRepetitionInterval.getValue());
+                    d.setLinkedTo(d.getId());
+                    d.setEndOfRepetition(endOfSeries.getValue());
+                }
+                dateRepository.save(d);
+                int countDates = 1;
+                if (selectRepetitionInterval.getValue() != 0) {
+                    Date dateCopy = new Date(d);
+                    LocalDate localDate = d.getStartAtTimezone(ZoneOffset.UTC).toLocalDate().plusDays(selectRepetitionInterval.getValue());
                     while (localDate.isBefore(endOfSeries.getValue())) {
-                        dateCopy.setStart(dateCopy.getStart().plusDays(selectRepetitionInterval.getValue()));
-                        dateCopy.setEnd(dateCopy.getEnd().plusDays(selectRepetitionInterval.getValue()));
+                        countDates++;
+                        dateCopy.setStart(dateCopy.getStartAtTimezone(ZoneOffset.UTC).plusDays(selectRepetitionInterval.getValue()));
+                        dateCopy.setEnd(dateCopy.getEndAtTimezone(ZoneOffset.UTC).plusDays(selectRepetitionInterval.getValue()));
                         dateCopy = new Date(dateCopy);
                         dateRepository.save(dateCopy);
                         localDate = localDate.plusDays(selectRepetitionInterval.getValue());
                     }
                 }
+                UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", 0), new RouteParam("date", date.getId())));
+                if (selectRepetitionInterval.getValue() != null) {
+                    Notification.show("Es wurden " + countDates + " Termine erstellt");
+                } else {
+                    Notification.show("\"" + date.getTitle() + "\" wurde erstellt");
+                }
                 dialog.close();
             } catch (ValidationException ignored) {
             }
-        });
-        footer.add(save);
-        dialog.getFooter().add(footer);
+        }, "Erstellen"));
         return dialog;
+    }
+
+    private static ComboBox<Integer> createRepetitionIntervalSelector() {
+        ComboBox<Integer> selectRepetitionInterval = new ComboBox<>();
+        selectRepetitionInterval.setAllowCustomValue(true);
+        selectRepetitionInterval.setLabel("Terminwiederholung");
+        selectRepetitionInterval.setItems(0, 1, 2, 7, 14, 21);
+        selectRepetitionInterval.setValue(0);
+        selectRepetitionInterval.setItemLabelGenerator(value -> {
+            if (value == 0) {
+                return "Keine Wiederholung";
+            } else if (value == 1) {
+                return "jeden Tag";
+            } else if (value == 7) {
+                return "jede Woche";
+            } else if (value == 14) {
+                return "alle zwei Wochen";
+            } else {
+                return "alle " + value + " Tage";
+            }
+        });
+        return selectRepetitionInterval;
     }
 }

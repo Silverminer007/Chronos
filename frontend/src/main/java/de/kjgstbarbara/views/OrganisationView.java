@@ -36,7 +36,6 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.ClosableDialog;
-import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.EMailSender;
@@ -278,9 +277,7 @@ public class OrganisationView extends VerticalLayout {
                     "Ja, löschen", e -> {
                 groupRepository.findByOrganisation(organisation).forEach(g -> {
                     dateRepository.findByGroup(g).forEach(date -> {
-                        for (Feedback f : date.getFeedbackList()) {
-                            feedbackRepository.delete(f);
-                        }
+                        feedbackRepository.deleteAll(date.getFeedbackList());
                         dateRepository.delete(date);
                     });
                     groupRepository.delete(g);

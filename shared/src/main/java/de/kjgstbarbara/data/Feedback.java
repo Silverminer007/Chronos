@@ -19,6 +19,11 @@ public class Feedback implements Comparable<Feedback> {
     private LocalDateTime timeStamp = LocalDateTime.now();
     private Status status;
 
+    public Feedback(Person person, Status status) {
+        this.person = person;
+        this.status = status;
+    }
+
     @Override
     public int compareTo(Feedback o) {
         return this.getTimeStamp().compareTo(o.getTimeStamp()) * -1;
@@ -26,7 +31,7 @@ public class Feedback implements Comparable<Feedback> {
 
     @Getter
     public enum Status {
-        COMMITTED("Bin dabei"), CANCELLED("Bin raus"), DONTKNOW("Weiß nicht");
+        COMMITTED("Bin dabei"), CANCELLED("Bin raus"), NONE("Weiß nicht");
 
         private final String readable;
 

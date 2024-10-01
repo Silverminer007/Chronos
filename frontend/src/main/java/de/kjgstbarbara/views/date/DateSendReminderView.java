@@ -17,7 +17,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.FriendlyError;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.DateRepository;
@@ -38,7 +37,6 @@ import java.time.format.FormatStyle;
 @PageTitle("Feedback Historie")
 @PermitAll
 public class DateSendReminderView extends VerticalLayout implements BeforeEnterObserver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DateSendReminderView.class);
 
     private final PersonsRepository personsRepository;
     private final DateRepository dateRepository;
@@ -110,15 +108,10 @@ public class DateSendReminderView extends VerticalLayout implements BeforeEnterO
         Button remindNow = new Button("Jetzt erinnern");
         remindNow.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         remindNow.addClickListener(e -> {
-            try {
-                date.getGroup().getOrganisation().sendDatePollToAll(date);
-                UI.getCurrent().navigate(DateFeedbackOverviewView.class, new RouteParameters(new RouteParam("date", date.getId())));
-                Notification.show("Die Abfrage wurde erfolgreich verschickt")
-                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            } catch (FriendlyError ex) {
-                Notification.show("Die Abfrage konnte nicht an alle verschickt werden")
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
+            date.getGroup().getOrganisation().sendDatePollToAll(date);
+            UI.getCurrent().navigate(DateFeedbackOverviewView.class, new RouteParameters(new RouteParam("date", date.getId())));
+            Notification.show("Die Abfrage wurde erfolgreich verschickt")
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         });
         this.add(remindNow);
     }
