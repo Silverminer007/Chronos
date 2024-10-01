@@ -23,20 +23,22 @@ public class PhoneNumberField extends CustomField<Person.PhoneNumber> implements
         HorizontalLayout horizontalLayout = new HorizontalLayout();
         horizontalLayout.setSpacing(true);
 
-        countryCode = new ComboBox<>("Vorwahl");
-        countryCode.setWidth("120px");
+        countryCode = new ComboBox<>("Country Code");
+        countryCode.setWidth("90px");
         countryCode.setItems(Arrays.stream(Locale.getISOCountries()).map(PhoneNumberUtil.getInstance()::getCountryCodeForRegion).map(s -> "+" + s).toList());
         countryCode.setValue("+49");
 
         areaCode = new IntegerField("Region");
-        areaCode.setWidth("120px");
+        areaCode.setWidth("90px");
         areaCode.setPlaceholder("Region");
 
         subscriber = new IntegerField("Nummer");
         subscriber.setPlaceholder("Nummer");
+        subscriber.setMaxWidth("120px");
 
         horizontalLayout.add(this.countryCode, areaCode, subscriber);
-        horizontalLayout.setFlexGrow(1.0, subscriber);
+        horizontalLayout.setWidth("300px");
+        //horizontalLayout.setFlexGrow(1.0, subscriber);
 
         add(horizontalLayout);
     }
