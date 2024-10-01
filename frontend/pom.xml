@@ -5,6 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/672d51f0-d845-42bd-936a-2e7ef19a2c65 -->
     <artifactId>chronos-frontend</artifactId>
+    <version>${chronos.version}</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -18,7 +19,7 @@
     <parent>
         <groupId>de.kjgstbarbara</groupId>
         <artifactId>Chronos</artifactId>
-        <version>0.4.6</version>
+        <version>1.0.0</version>
     </parent>
 
     <repositories>
@@ -48,7 +49,7 @@
         <dependency>
             <groupId>de.kjgstbarbara</groupId>
             <artifactId>shared</artifactId>
-            <version>${project.version}</version>
+            <version>${chronos.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>

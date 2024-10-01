@@ -6,7 +6,7 @@
 
     <groupId>de.kjgstbarbara</groupId>
     <artifactId>Chronos</artifactId>
-    <version>0.4.6</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>shared</module>
@@ -21,6 +21,7 @@
     </parent>
 
     <properties>
+        <chronos.version>dev-master</chronos.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
