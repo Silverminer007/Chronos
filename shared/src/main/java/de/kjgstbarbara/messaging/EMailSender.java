@@ -1,6 +1,6 @@
 package de.kjgstbarbara.messaging;
 
-import de.kjgstbarbara.FriendlyError;
+import de.kjgstbarbara.Result;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Person;
 import jakarta.annotation.Nullable;
@@ -25,9 +25,9 @@ public class EMailSender {
     @Nullable
     private String smtpPassword;
 
-    public void sendMessage(String message, Person sendTo) {
-        if (senderEmailAddress == null || senderName == null || smtpServer == null || smtpPassword == null) {
-            return;
+    public Result sendMessage(String message, Person sendTo) {
+        if(senderEmailAddress == null || senderName == null || smtpServer == null || smtpPassword == null) {
+            return Result.error("No E-Mail Server is configured. Message failed to send");
         }
         Mailer mailer = MailerBuilder
                 .withSMTPServer(smtpServer,
@@ -42,9 +42,10 @@ public class EMailSender {
                 .withPlainText(message)
                 .buildEmail();
         mailer.sendMail(email);
+        return Result.success();
     }
 
-    public void sendDatePoll(Date date, Person sendTo) throws FriendlyError {
-        sendMessage(date.getTitle(), sendTo);
+    public Result sendDatePoll(Date date, Person sendTo) {
+        return sendMessage(date.getTitle(), sendTo);
     }
 }

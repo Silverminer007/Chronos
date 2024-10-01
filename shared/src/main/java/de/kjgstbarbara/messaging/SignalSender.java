@@ -1,5 +1,6 @@
 package de.kjgstbarbara.messaging;
 
+import de.kjgstbarbara.Result;
 import de.kjgstbarbara.data.Person;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class SignalSender {
     private static final Logger LOGGER = LogManager.getLogger(SignalSender.class);
     private long phoneNumber;
 
-    public void sendMessage(String message, Person sendTo) {
+    public Result sendMessage(String message, Person sendTo) {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder();
             processBuilder.command("/usr/local/bin/signal-cli", "-a", "+" + phoneNumber, "send", "-m", message, "+" + sendTo.getPhoneNumber().number());
@@ -28,15 +29,16 @@ public class SignalSender {
             streamGobbler.run();
 
             int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                LOGGER.info("Die Nachricht konnte nicht via Signal an {} verschickt werden. Nachricht \n {}", sendTo.getName(), message);
+            if(exitCode != 0) {
+                Result.error(String.format("Die Nachricht konnte nicht via Signal an %s verschickt werden. Nachricht \n %s", sendTo.getName(), message));
             }
+            return Result.success();
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            return Result.error(e.getMessage());
         }
     }
 
-    public void register(Consumer<String> linkConsumer) {
+    public Result register(Consumer<String> linkConsumer) {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder();
             processBuilder.command("/usr/local/bin/signal-cli", "link", "-n", "Chronos");
@@ -45,12 +47,14 @@ public class SignalSender {
             StreamGobbler streamGobbler =
                     new StreamGobbler(process.getInputStream(), linkConsumer);
             new Thread(streamGobbler).start();
+            return Result.success();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Failed to register new Signal Account", e);
+            return Result.error("Failed to register new Signal Account. Please report this Error to the developer");
         }
     }
 
-    public void unregister() {
+    public Result unregister() {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder();
             processBuilder.command("/usr/local/bin/signal-cli", "-a", "+" + phoneNumber, "unregister");
@@ -59,8 +63,10 @@ public class SignalSender {
             StreamGobbler streamGobbler =
                     new StreamGobbler(process.getInputStream(), LOGGER::info);
             streamGobbler.run();
+            return Result.success();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Failed to unregister new Signal Account", e);
+            return Result.error("Failed to unregister new Signal Account. Please report this Error to the developer");
         }
     }
 

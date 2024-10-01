@@ -59,7 +59,7 @@ public class ScheduledRunner implements CommandLineRunner {
                         if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
                             cancelled.append("--> Niemand\n");
                         }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.DONTKNOW::equals)) {
+                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.NONE::equals)) {
                             noAnswer.append("--> Niemand\n");
                         }
                         summary.append("\n").append(cancelled).append("\n").append(noAnswer);
@@ -86,11 +86,7 @@ public class ScheduledRunner implements CommandLineRunner {
                             for (Person p : d.getGroup().getMembers()) {
                                 if (p.getRemindMeTime().contains(now.getHour())) {
                                     LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), p.getName());
-                                    try {
-                                        d.getGroup().getOrganisation().sendDatePoll(d, p);
-                                    } catch (FriendlyError e) {
-                                        LOGGER.error("Die geplante Terminabfrage konnte nicht verschickt werden", e);
-                                    }
+                                    d.getGroup().getOrganisation().sendDatePoll(d, p);
                                 }
                             }
                         }
