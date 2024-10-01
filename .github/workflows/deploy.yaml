@@ -39,5 +39,10 @@ jobs:
       - name: Test
         run: mvn --batch-mode --update-snapshots verify
 
-      - name: Create and push docker images
+      - if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        name: Create and push docker images
+        run: mvn package jib:build -Pproduction -Dchronos.version=${{ github.event.release.tag_name }}
+
+      - if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+        name: Create and push docker images
         run: mvn package jib:build -Pproduction
