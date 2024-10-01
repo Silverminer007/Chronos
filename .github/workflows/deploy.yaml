@@ -38,7 +38,7 @@ jobs:
 
       - if: ${{ startsWith(github.ref, 'refs/tags/') }}
         name: Create and push docker images for tags
-        run: mvn package jib:build -Pproduction -Dchronos.version=${{ github.event.release.tag_name }}
+        run: mvn package jib:build -Pproduction -Dchronos.version=${{ github.ref_name }}
 
       - if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
         name: Create and push docker images for push
