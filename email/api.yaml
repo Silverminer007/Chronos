@@ -1,0 +1,40 @@
+openapi: 3.1.0
+info:
+  title: HTTP E-Mail API
+  description: HTTP E-Mail API
+  version: 1.0.0
+paths:
+  /ping:
+    get:
+      summary: Test the APIs status
+      responses:
+        "200":
+          description: API is ready
+        "404":
+          description: API is unavailable
+
+  /send:
+    put:
+      summary: Send a Message to the specified mail address with the specified subject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              content:
+                to:
+                  type: string
+                  description: A valid E-Mail Address to send the message to
+                subject:
+                  type: string
+                  description: The subject for the e-mail (not empty)
+                message:
+                  type: string
+                  description: The Message to send (This is expected to be a html document)
+      responses:
+        "200":
+          description: Poll Successfully send
+        "400":
+          description: Message failed to send (Invalid Mail Address or invalid subject)
+        "503":
+          description: You're not allowed to send this message

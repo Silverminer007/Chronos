@@ -5,13 +5,8 @@ services:
       - "8080:8080"
       - "5005:5005"
       - "35729:35729"
+    env_file: .env
     environment:
-      DATABASE_PWD: ${DATABASE_PWD}
-      DATABASE_USER: ${DATABASE_USER}
-      DATABASE_DB: ${DATABASE_DB}
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_PORT: ${DATABASE_PORT}
-      HOST_DOMAIN: ${HOST_DOMAIN}
       JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     depends_on:
       db:
@@ -26,12 +21,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DATABASE_PWD: ${DATABASE_PWD}
-      DATABASE_USER: ${DATABASE_USER}
-      DATABASE_DB: ${DATABASE_DB}
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_PORT: ${DATABASE_PORT}
+    env_file: .env
     networks:
       backend:
     volumes:
@@ -59,6 +49,17 @@ services:
       timeout: 5s
       retries: 5
 
+  email:
+    image: ghcr.io/silverminer007/email:dev-master
+    ports:
+      - "8090:8080"
+    container_name: email
+    env_file: .env
+    networks:
+      messaging:
+    volumes:
+      - ./logs/:/logs/
+
 volumes:
   chronos-database-mariadb:
 
@@ -66,4 +67,6 @@ networks:
   frontend:
     driver: bridge
   backend:
+    driver: bridge
+  messaging:
     driver: bridge
