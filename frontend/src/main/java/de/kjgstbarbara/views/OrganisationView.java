@@ -17,16 +17,9 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.IntegerField;
-import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
@@ -38,16 +31,9 @@ import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.ClosableDialog;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.messaging.EMailSender;
-import de.kjgstbarbara.messaging.MessageFormatter;
-import de.kjgstbarbara.messaging.SignalSender;
 import de.kjgstbarbara.service.*;
 import it.auties.whatsapp.api.QrHandler;
-import it.auties.whatsapp.api.Whatsapp;
-import it.auties.whatsapp.model.mobile.PhoneNumber;
 import jakarta.annotation.security.PermitAll;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.vaadin.olli.ClipboardHelper;
@@ -64,7 +50,6 @@ import java.util.stream.Stream;
 @PageTitle("Organisationen")
 @PermitAll
 public class OrganisationView extends VerticalLayout {
-    private static final Logger LOGGER = LogManager.getLogger(OrganisationView.class);
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
     private final GroupRepository groupRepository;
@@ -211,12 +196,6 @@ public class OrganisationView extends VerticalLayout {
                 }
             }
         });
-
-        Button settingsButton = new Button(VaadinIcon.TOOLS.create());
-        settingsButton.setVisible(organisation.getAdmin().equals(person));
-        settingsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        settingsButton.addClickListener(event -> createMessageSetupDialog(organisation, Person.Reminder.SIGNAL));
-        summary.add(settingsButton);
 
         boolean admin = organisation.getAdmin().equals(person);
 
@@ -463,140 +442,6 @@ public class OrganisationView extends VerticalLayout {
         dialog.setWidth("500px");
 
         return dialog;
-    }
-
-
-    private void createMessageSetupDialog(Organisation organisation, Person.Reminder open) {
-        ClosableDialog closableDialog = new ClosableDialog("Absender von Nachrichten");
-
-        TabSheet tabSheet = new TabSheet();
-        VerticalLayout whatsapp = new VerticalLayout();
-        Image qrCode = new Image("", "");
-        NativeLabel qrCodeDescription = new NativeLabel("QR Code wird geladen");
-        Whatsapp whatsappAccess = Whatsapp.webBuilder().newConnection(organisation.getIDAsUUID())
-                .unregistered(qrCodeString -> {
-                    LOGGER.info("Setting up Whatsapp with QR Code: {}", qrCodeString);
-                    this.getUI().ifPresent(ui -> ui.access(() -> {
-                        qrCode.setSrc(qrHandler(qrCodeString));
-                        qrCodeDescription.setText("Bitte Scanne den QR Code um WhatsApp Nachrichten über dein Telefon zu verschicken");
-                    }));
-                });
-        Button reconnect = new Button("Trennen");
-        reconnect.addClickListener(event -> {
-            whatsappAccess.logout();
-            closableDialog.close();
-            createMessageSetupDialog(organisation, Person.Reminder.WHATSAPP);
-        });
-        whatsappAccess.addLoggedInListener(api ->
-                api.store().phoneNumber().ifPresent(senderPhoneNumber ->
-                        this.getUI().ifPresent(ui ->
-                                ui.access(() -> {
-                                    qrCodeDescription.setVisible(false);
-                                    qrCode.setVisible(false);
-                                    whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + senderPhoneNumber + " verschickt"));
-                                    whatsapp.add(reconnect);
-                                }))));
-        whatsappAccess.connect().join();
-        if (whatsappAccess.store().chats() != null && !whatsappAccess.store().chats().isEmpty()) {
-            qrCodeDescription.setVisible(false);
-            qrCode.setVisible(false);
-            whatsapp.add(new H3("WhatsApp Nachrichten werden über +" + whatsappAccess.store().phoneNumber().map(PhoneNumber::number).orElse(0L) + " verschickt"));
-            whatsapp.add(reconnect);
-        }
-        whatsapp.add(qrCode);
-        whatsapp.add(qrCodeDescription);
-        closableDialog.setCloseListener(whatsappAccess::disconnect);
-
-        Tab whatsAppTab = new Tab("WhatsApp");
-        tabSheet.add(whatsAppTab, whatsapp);
-
-        VerticalLayout signal = new VerticalLayout();
-        if (organisation.getSignalSender() != null && organisation.getSignalSender().getPhoneNumber() != 0) {
-            signal.add(new H3("Signal Nachrichten werden über +" + organisation.getSignalSender().getPhoneNumber() + " verschickt"));
-            Button signOutSignal = new Button("Abmelden");
-            signOutSignal.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            signOutSignal.addClickListener(event -> {
-                organisation.getSignalSender().unregister();
-                organisation.setSignalSender(null);
-                organisationRepository.save(organisation);
-                closableDialog.close();
-                createMessageSetupDialog(organisation, Person.Reminder.SIGNAL);
-            });
-            signal.add(signOutSignal);
-        } else {
-            signal.add("Bitte öffne auf deinem Handy Signal, gehe dort auf \"Einstellungen\" -> \"Gekoppelte Geräte\" -> \"+\" und scanne den unten stehenden QR-Code. Dadurch wird deine Organisation mit deinem Signal Account verknüpft und Terminerinnerungen und ähnliches werden dafür verschickt");
-            Image signalQRCode = new Image("", "");
-            SignalSender newSignalSender = new SignalSender();
-            newSignalSender.register(new SignalRegisterConsumer(UI.getCurrent(), (ui, line) -> {
-                if (line.startsWith("sgnl")) {
-                    ui.access(() -> signalQRCode.setSrc(qrHandler(line)));
-                } else if (line.startsWith("Associated with: +")) {
-                    long signalPhoneNumber = Long.parseLong(line.replaceAll("Associated with: +", ""));
-                    newSignalSender.setPhoneNumber(signalPhoneNumber);
-                    organisation.setSignalSender(newSignalSender);
-                    organisationRepository.save(organisation);
-                    ui.access(() -> {
-                        closableDialog.close();
-                        createMessageSetupDialog(organisation, Person.Reminder.SIGNAL);
-                    });
-                }
-                LOGGER.info(line);
-            }));
-            signal.add(signalQRCode);
-        }
-
-        Tab signalTab = new Tab("Signal");
-        tabSheet.add(signalTab, signal);
-
-        VerticalLayout email = new VerticalLayout();
-        Binder<EMailSender> emailBinder = new Binder<>();
-        H1 eMailTitle = new H1("E-Mail Konfiguration");
-        email.add(eMailTitle);
-        TextField smtpServer = new TextField("SMTP Server");
-        emailBinder.forField(smtpServer).bind(EMailSender::getSmtpServer, EMailSender::setSmtpServer);
-        email.add(smtpServer);
-        IntegerField smtpPort = new IntegerField("SMTP Port");
-        emailBinder.forField(smtpPort).bind(EMailSender::getSmtpServerPort, EMailSender::setSmtpServerPort);
-        email.add(smtpPort);
-        TextField name = new TextField("Name des Absenders");
-        emailBinder.forField(name).bind(EMailSender::getSenderName, EMailSender::setSenderName);
-        email.add(name);
-        TextField senderMailAddress = new TextField("E-Mail Adresse des Absenders");
-        emailBinder.forField(senderMailAddress).bind(EMailSender::getSenderEmailAddress, EMailSender::setSenderEmailAddress);
-        email.add(senderMailAddress);
-        PasswordField smtpPassword = new PasswordField("Password des Absenders");
-        emailBinder.forField(smtpPassword).bind(EMailSender::getSmtpPassword, EMailSender::setSmtpPassword);
-        email.add(smtpPassword);
-        EMailSender emailSender = organisation.getEmailSender();
-        emailBinder.readBean(emailSender);
-        Button testMail = new Button("Speichern & Test Nachricht schicken");
-        email.add(testMail);
-        testMail.addClickListener(event -> {
-            try {
-                emailBinder.writeBean(emailSender);
-                organisation.setEmailSender(emailSender);
-                organisationRepository.save(organisation);
-                MessageFormatter messageFormatter = new MessageFormatter().person(this.person);
-                organisation.sendMessageTo(messageFormatter.format(EMAIL_TEST_MESSAGE), this.person, Person.Reminder.EMAIL);
-                Notification.show("Die E-Mail Konfiguration wurde erfolgreich gespeichert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            } catch (ValidationException e) {
-                Notification.show("Ungültige Konfiguration").addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-        });
-
-        Tab emailTab = new Tab("E-Mail");
-        tabSheet.add(emailTab, email);
-
-        if (open.equals(Person.Reminder.WHATSAPP)) {
-            tabSheet.setSelectedTab(whatsAppTab);
-        } else if (open.equals(Person.Reminder.SIGNAL)) {
-            tabSheet.setSelectedTab(signalTab);
-        } else if (open.equals(Person.Reminder.EMAIL)) {
-            tabSheet.setSelectedTab(emailTab);
-        }
-
-        closableDialog.add(tabSheet);
-        closableDialog.open();
     }
 
     private StreamResource qrHandler(String qr) {
