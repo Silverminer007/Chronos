@@ -19,6 +19,7 @@ public class EmailApplication {
     private static final String SMTP_MAIL_ADDRESS = System.getenv("SMTP_MAIL_ADDRESS");
     private static final String SMTP_PASSWORD = System.getenv("SMTP_PASSWORD");
     private static final int SMTP_PORT = Integer.parseInt(System.getenv("SMTP_PORT"));
+    private static final boolean SMTP_SSL = Boolean.parseBoolean(System.getenv("SMTP_SSL"));
 
     public static void main(String[] args) {
         SpringApplication.run(EmailApplication.class, args);
@@ -38,7 +39,7 @@ public class EmailApplication {
         if (!testMailSchema(message.getTo())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email Schema not valid");
         }
-        if(message.getSubject().isBlank()) {
+        if (message.getSubject().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject must not be blank");
         }
         Mailer mailer = MailerBuilder
@@ -46,7 +47,10 @@ public class EmailApplication {
                         SMTP_PORT,
                         SMTP_MAIL_ADDRESS,
                         SMTP_PASSWORD)
-                .withTransportStrategy(TransportStrategy.SMTPS).buildMailer();
+                .withTransportStrategy(SMTP_SSL ?
+                        TransportStrategy.SMTPS :
+                        TransportStrategy.SMTP
+                ).buildMailer();
         Email email = EmailBuilder.startingBlank()
                 .from(SMTP_USER, SMTP_MAIL_ADDRESS)
                 .to(message.getTo())
