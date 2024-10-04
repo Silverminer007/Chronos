@@ -25,7 +25,7 @@ public class ScheduledRunner {
     @Autowired
     private DatesService datesService;
 
-    @Scheduled(cron = "0 27 * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void run() {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
