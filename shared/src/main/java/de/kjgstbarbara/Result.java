@@ -29,10 +29,10 @@ public interface Result {
             return result;
         }
         if(this instanceof MultiError multiError) {
-            multiError.addError(result);
+            return multiError.addError(result);
         }
         if(result instanceof MultiError multiError) {
-            multiError.addError(this);
+            return multiError.addError(this);
         }
         return new MultiError(this, result);
     }
@@ -77,20 +77,21 @@ public interface Result {
             this.errorMessages.add(errorMessage);
         }
 
-        public void addError(Result error) {
+        public Result addError(Result error) {
             if(error instanceof MultiError multiError) {
                 this.errorMessages.addAll(multiError.errorMessages);
-                return;
+                return this;
             }
             this.errorMessages.add(error.getErrorMessage());
+            return this;
         }
 
         @Override
         public String getErrorMessage() {
             StringBuilder errorMessage = new StringBuilder();
-            errorMessage.append(errorMessages.size()).append(" error(s) occurred:");
+            errorMessage.append(errorMessages.size()).append(" error(s) occurred:").append("\n");
             for(int i = 0; i < errorMessages.size(); i++) {
-                errorMessage.append((i + 1)).append(". ").append(errorMessage);
+                errorMessage.append((i + 1)).append(". ").append(errorMessages.get(i)).append("\n");
             }
             return errorMessage.toString();
         }
