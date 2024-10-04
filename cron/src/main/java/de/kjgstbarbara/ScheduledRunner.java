@@ -9,7 +9,7 @@ import de.kjgstbarbara.service.DatesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -19,14 +19,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 
 @Component
-public class ScheduledRunner implements CommandLineRunner {
+public class ScheduledRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScheduledRunner.class);
 
     @Autowired
     private DatesService datesService;
 
-    @Override
-    public void run(String... args) throws Exception {
+    @Scheduled(cron = "0 27 * * * *")
+    public void run() {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
         LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: START", now.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
