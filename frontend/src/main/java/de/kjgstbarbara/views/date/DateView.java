@@ -495,7 +495,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         remindNow.addClickListener(e -> {
             Result result = Result.success();
             for(Person member : date.getGroup().getMembers()) {
-                result = result.and(new MessageSender(member).date(this.date).send(Messages.DATE_POLL));
+                result = result.and(new MessageSender(member).date(this.date).person(member).send(Messages.DATE_POLL));
             }
             if (result.isSuccess()) {
                 Notification.show("Die Abfrage wurde erfolgreich verschickt")
