@@ -22,7 +22,7 @@ public class Messages {
             """
                     Hey #PERSON_FIRSTNAME,
                     du hast #DATE_TIME_UNTIL_START einen Termin bei der #ORGANISATION_NAME :)
-                    #DATE_TITLE (#BOARD_TITLE)
+                    #DATE_TITLE (#GROUP_NAME)
                     Von #DATE_START_TIME am #DATE_START_DATE
                     Bis #DATE_END_TIME am #DATE_END_DATE
                                        \s
