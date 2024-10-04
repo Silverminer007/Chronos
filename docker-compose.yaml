@@ -23,6 +23,10 @@ services:
       db:
         condition: service_healthy
     env_file: .env
+    ports:
+      - "5006:5005"
+    environment:
+      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     networks:
       backend:
       messaging:
@@ -39,9 +43,9 @@ services:
       MYSQL_DATABASE: chronos
     volumes:
       - chronos-database-mariadb:/var/lib/mysql
-#      - type: bind
- #       source: ./chronos-production2.sql
- #       target: /docker-entrypoint-initdb.d/chronos-production.sql
+    #      - type: bind
+    #       source: ./chronos-production2.sql
+    #       target: /docker-entrypoint-initdb.d/chronos-production.sql
     networks:
       frontend:
       backend:
@@ -55,6 +59,10 @@ services:
     image: ghcr.io/silverminer007/email:dev-master
     container_name: email
     env_file: .env
+    ports:
+      - "5007:5005"
+    environment:
+      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     networks:
       messaging:
     volumes:
