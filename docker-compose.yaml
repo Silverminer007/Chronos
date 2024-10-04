@@ -13,6 +13,7 @@ services:
         condition: service_healthy
     networks:
       frontend:
+      messaging:
     volumes:
       - ./logs/:/logs/
 
@@ -24,6 +25,7 @@ services:
     env_file: .env
     networks:
       backend:
+      messaging:
     volumes:
       - ./logs/:/logs/
 
@@ -51,14 +53,21 @@ services:
 
   email:
     image: ghcr.io/silverminer007/email:dev-master
-    ports:
-      - "8090:8080"
     container_name: email
     env_file: .env
     networks:
       messaging:
     volumes:
       - ./logs/:/logs/
+
+  mock-smtp:
+    image: haravich/fake-smtp-server
+    container_name: mock-smtp
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+    networks:
+      messaging:
 
 volumes:
   chronos-database-mariadb:
