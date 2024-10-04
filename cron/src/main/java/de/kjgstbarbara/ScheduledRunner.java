@@ -3,7 +3,8 @@ package de.kjgstbarbara;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.messaging.MessageFormatter;
+import de.kjgstbarbara.messaging.MessageSender;
+import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.DatesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +64,7 @@ public class ScheduledRunner implements CommandLineRunner {
                             noAnswer.append("--> Niemand\n");
                         }
                         summary.append("\n").append(cancelled).append("\n").append(noAnswer);
-                        d.getGroup().getOrganisation().sendMessageTo(summary.toString(), admin);
+                        new MessageSender(admin).send(summary.toString());
                     });
                 }
 
@@ -72,7 +73,7 @@ public class ScheduledRunner implements CommandLineRunner {
                     if (!feedback.equals(Feedback.Status.CANCELLED)) {
                         if ((p.getRemindMeTime().contains(now.getHour()) && p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
                                 || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
-                            d.getGroup().getOrganisation().sendMessageTo(new MessageFormatter().person(p).date(d).format(DATE_REMINDER_TEMPLATE), p);
+                            new MessageSender(p).person(p).date(d).send(Messages.DATE_REMINDER);
                         }
                     }
                 }
@@ -86,7 +87,7 @@ public class ScheduledRunner implements CommandLineRunner {
                             for (Person p : d.getGroup().getMembers()) {
                                 if (p.getRemindMeTime().contains(now.getHour())) {
                                     LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), p.getName());
-                                    d.getGroup().getOrganisation().sendDatePoll(d, p);
+                                    new MessageSender(p).date(d).send(Messages.DATE_POLL);
                                 }
                             }
                         }
@@ -99,15 +100,4 @@ public class ScheduledRunner implements CommandLineRunner {
         LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: ENDE", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
         LOGGER.info("------------------------------------------------------------------------------------------------");
     }
-
-    private static final String DATE_REMINDER_TEMPLATE =
-            """
-                    Hey #PERSON_FIRSTNAME,
-                    du hast #DATE_TIME_UNTIL_START einen Termin bei der #ORGANISATION_NAME :)
-                    #DATE_TITLE (#BOARD_TITLE)
-                    Von #DATE_START_TIME am #DATE_START_DATE
-                    Bis #DATE_END_TIME am #DATE_END_DATE
-                                       \s
-                    Deine Rückmeldung zu diesem Termin: #FEEDBACK_STATUS
-                    Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK""";
 }

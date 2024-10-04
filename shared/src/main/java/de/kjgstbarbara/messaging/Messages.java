@@ -28,4 +28,27 @@ public class Messages {
                                        \s
                     Deine Rückmeldung zu diesem Termin: #FEEDBACK_STATUS
                     Weitere Informationen zu diesem Termin findest du unter: #DATE_LINK""";
+
+    public static final String ORGANISATION_JOIN_REQUEST_ACCEPTED =
+            """
+                    Hi #PERSON_NAME,
+                    deine Beitrittsanfrage zu #ORGANISATION_NAME wurde akzeptiert. Du kannst jetzt Mitglied von Gruppen dieser Organisation werden um Termine zu sehen und neue Gruppen erstellen
+                    #BASE_URL/groups
+                    """;
+
+    public static final String ORGANISATION_JOIN_REQUEST_DECLINED =
+            """
+                    Hi #PERSON_NAME,
+                    deine Beitrittsanfrage zu #ORGANISATION_NAME wurde abgelehnt
+                    """;
+
+    public static final String ORGANISATION_JOIN_REQUEST_NEW =
+            """
+                    Hi #ORGANISATION_ADMIN_NAME,
+                    #PERSON_NAME möchte gerne deiner Organisation #ORGANISATION_NAME beitreten. Wenn du diese Anfrage bearbeiten möchtest, klicke bitte auf diesen Link
+                    
+                    Anfrage annehmen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/yes
+                    
+                    Anfrage ablehnen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/no
+                    """;
 }

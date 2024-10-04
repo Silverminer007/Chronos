@@ -12,21 +12,19 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.messaging.MessageFormatter;
+import de.kjgstbarbara.messaging.MessageSender;
+import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.OrganisationRepository;
 import de.kjgstbarbara.service.OrganisationService;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @Route(value = "organisation/join/:organisationID", layout = MainNavigationView.class)
 @PermitAll
 public class JoinOrganisationView extends VerticalLayout implements BeforeEnterObserver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JoinOrganisationView.class);
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
 
@@ -53,17 +51,7 @@ public class JoinOrganisationView extends VerticalLayout implements BeforeEnterO
                     organisation.getMembershipRequests().add(person);
                     organisationRepository.save(organisation);
                     this.add("Deine Beitrittsanfrage für " + organisation.getName() + " wurde verschickt");
-                    MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(person);
-                    organisation.sendMessageTo(messageFormatter.format(
-                            """
-                                    Hi #ORGANISATION_ADMIN_NAME,
-                                    #PERSON_NAME möchte gerne deiner Organisation #ORGANISATION_NAME beitreten. Wenn du diese Anfrage bearbeiten möchtest, klicke bitte auf diesen Link
-                                    
-                                    Anfrage annehmen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/yes
-                                    
-                                    Anfrage ablehnen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/no
-                                    """
-                    ), organisation.getAdmin());
+                    new MessageSender(organisation.getAdmin()).organisation(organisation).person(person).send(Messages.ORGANISATION_JOIN_REQUEST_NEW);
                 } else {
                     this.add("Du gehörst schon zu dieser Organisation: " + organisation.getName());
                 }
@@ -75,9 +63,8 @@ public class JoinOrganisationView extends VerticalLayout implements BeforeEnterO
         }
 
         Button startPage = new Button("Zur Startseite");
-        startPage.addClickListener(event -> {
-            UI.getCurrent().navigate("");
-        });
+        startPage.addClickListener(event ->
+                UI.getCurrent().navigate(""));
         startPage.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         startPage.setIcon(VaadinIcon.HOME.create());
         this.add(startPage);

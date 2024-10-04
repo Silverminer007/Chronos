@@ -35,7 +35,7 @@ import de.kjgstbarbara.IcsHelper;
 import de.kjgstbarbara.Result;
 import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.*;
-import de.kjgstbarbara.messaging.MessageFormatter;
+import de.kjgstbarbara.messaging.MessageSender;
 import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.MainNavigationView;
@@ -352,8 +352,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             this.date.setDateCancelled(LocalDate.now(ZoneOffset.UTC));
             dateRepository.save(this.date);
             for (Person p : this.date.getGroup().getMembers()) {
-                MessageFormatter messageFormatter = new MessageFormatter().date(this.date).person(p);
-                this.date.getGroup().getOrganisation().sendMessageTo(messageFormatter.format(Messages.DATE_CANCELLED), p);
+                new MessageSender(p).date(this.date).person(p).send(Messages.DATE_CANCELLED);
             }
             UI.getCurrent().navigate(DateView.class);
         });
@@ -494,7 +493,10 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         Button remindNow = new Button("Jetzt erinnern");
         remindNow.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         remindNow.addClickListener(e -> {
-            Result result = date.getGroup().getOrganisation().sendDatePollToAll(date);
+            Result result = Result.success();
+            for(Person member : date.getGroup().getMembers()) {
+                result = result.and(new MessageSender(member).date(this.date).send(Messages.DATE_POLL));
+            }
             if (result.isSuccess()) {
                 Notification.show("Die Abfrage wurde erfolgreich verschickt")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);

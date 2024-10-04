@@ -12,21 +12,19 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.messaging.MessageFormatter;
+import de.kjgstbarbara.messaging.MessageSender;
+import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.OrganisationRepository;
 import de.kjgstbarbara.service.OrganisationService;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @Route(value = "organisation/manage/:organisationID/:person/:action", layout = MainNavigationView.class)
 @PermitAll
 public class EditJoinOrganisationRequestsView extends VerticalLayout implements BeforeEnterObserver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EditJoinOrganisationRequestsView.class);
     private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
 
@@ -57,25 +55,12 @@ public class EditJoinOrganisationRequestsView extends VerticalLayout implements 
                         organisation.getMembers().add(requester);
                         organisationRepository.save(organisation);
                         this.add("Die Beitrittsanfrage von " + requester.getName() + " wurde akzeptiert. Sie*er ist jetzt Mitglied deiner Organisation");
-                        MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(requester);
-                        organisation.sendMessageTo(messageFormatter.format(
-                                """
-                                        Hi #PERSON_NAME,
-                                        deine Beitrittsanfrage zu #ORGANISATION_NAME wurde akzeptiert. Du kannst jetzt Mitglied von Gruppen dieser Organisation werden um Termine zu sehen und neue Gruppen erstellen
-                                        #BASE_URL/groups
-                                        """
-                        ), requester);
+                        new MessageSender(requester).organisation(organisation).person(requester).send(Messages.ORGANISATION_JOIN_REQUEST_ACCEPTED);
                     } else {
                         organisation.getMembershipRequests().remove(requester);
                         organisationRepository.save(organisation);
                         this.add("Die Beitrittsanfrage von " + requester.getName() + " wurde abgelehnt");
-                        MessageFormatter messageFormatter = new MessageFormatter().organisation(organisation).person(requester);
-                        organisation.sendMessageTo(messageFormatter.format(
-                                """
-                                        Hi #PERSON_NAME,
-                                        deine Beitrittsanfrage zu #ORGANISATION_NAME wurde abgelehnt
-                                        """
-                        ), requester);
+                        new MessageSender(requester).organisation(organisation).person(requester).send(Messages.ORGANISATION_JOIN_REQUEST_DECLINED);
                     }
                 } else {
                     this.add("Diese Person ist schon Mitglied deiner Organisation: " + organisation.getName());

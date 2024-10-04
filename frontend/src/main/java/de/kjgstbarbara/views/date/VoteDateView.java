@@ -16,7 +16,6 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
-import de.kjgstbarbara.messaging.MessageFormatter;
 import de.kjgstbarbara.service.DateRepository;
 import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.FeedbackService;
@@ -25,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 @AnonymousAllowed
 @Route("date/:dateID/vote/:answer/:personID")
@@ -53,8 +54,7 @@ public class VoteDateView extends VerticalLayout implements BeforeEnterObserver 
                     Person person = beforeEnterEvent.getRouteParameters().get("personID").map(Long::valueOf).flatMap(personsService.getPersonsRepository()::findById).orElse(null);
                     if (person != null) {
                         this.removeAll();
-                        MessageFormatter messageFormatter = new MessageFormatter().date(date).person(person);
-                        this.add(new H3(messageFormatter.format("#DATE_TITLE am #DATE_START_DATE. Du bist " + (answer == 2 ? "nicht " : "") + " dabei")));
+                        this.add(new H3(date.getTitle() + " am" + date.getStart().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN)) + ". Du bist " + (answer == 2 ? "nicht " : "") + " dabei"));
                         this.add("Bitte gib deinen Nachnamen ein, um deine Identität zu bestätigen");
                         TextField lastName = new TextField();
                         Button confirm = new Button(VaadinIcon.CHECK.create());

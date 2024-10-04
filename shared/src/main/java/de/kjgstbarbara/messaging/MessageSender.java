@@ -1,8 +1,14 @@
 package de.kjgstbarbara.messaging;
 
+import de.kjgstbarbara.Result;
 import de.kjgstbarbara.data.*;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,7 +17,9 @@ import java.util.Locale;
 
 @Setter
 @Accessors(fluent = true)
-public class MessageFormatter {
+public class MessageSender {
+    private static final Logger LOGGER = LogManager.getLogger();
+    private final Person sendTo;
     private Organisation organisation;
     private Date date;
     private Person person;
@@ -19,7 +27,28 @@ public class MessageFormatter {
     private Feedback.Status feedback;
     private String baseURL = "";
 
-    public String format(String input) {
+    public MessageSender(Person sendTo) {
+        this.sendTo = sendTo;
+    }
+
+    public Result send(String message) {
+        String formattedMessage = this.format(message);
+        RestClient restClient = RestClient.create("http://email:8080/send");
+        try {
+            restClient.put()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new MessageSender.Email(this.sendTo.getEMailAddress(), "Chronos Message", formattedMessage))
+                    .header("Content-Type", "application/json")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve().toBodilessEntity();
+            return Result.success();
+        } catch (RestClientException e) {
+            LOGGER.error("Failed to send email", e);
+            return Result.error("Die Nachricht konnte nicht an " + this.sendTo.getEMailAddress() + " verschickt werden");
+        }
+    }
+
+    private String format(String input) {
         if (baseURL.isBlank()) {
             baseURL = System.getenv("HOST_DOMAIN");
         }
@@ -160,5 +189,8 @@ public class MessageFormatter {
         String adminName = organisation.getAdmin().getName();
         output = output.replaceAll("#ORGANISATION_ADMIN_NAME", adminName);
         return output;
+    }
+
+    private record Email(String to, String subject, String message) {
     }
 }

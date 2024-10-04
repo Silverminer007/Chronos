@@ -19,14 +19,14 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.messaging.MessageSender;
+import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.DateRepository;
 import de.kjgstbarbara.service.DatesService;
 import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
@@ -108,7 +108,9 @@ public class DateSendReminderView extends VerticalLayout implements BeforeEnterO
         Button remindNow = new Button("Jetzt erinnern");
         remindNow.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         remindNow.addClickListener(e -> {
-            date.getGroup().getOrganisation().sendDatePollToAll(date);
+            for(Person member : date.getGroup().getMembers()) {
+                new MessageSender(member).date(date).person(member).send(Messages.DATE_POLL);
+            }
             UI.getCurrent().navigate(DateFeedbackOverviewView.class, new RouteParameters(new RouteParam("date", date.getId())));
             Notification.show("Die Abfrage wurde erfolgreich verschickt")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
