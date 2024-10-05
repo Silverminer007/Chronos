@@ -126,10 +126,10 @@ public class Person {
 
     @Getter
     public enum CalendarLayout {
-        LIST_PER_MONTH("calendar.list-per-month"),
-        LIST_NEXT("calendar.list-next"),
-        MONTH("calendar.month"),
-        YEAR("calendar.year");
+        LIST_PER_MONTH("Liste (Monatsweise)"),
+        LIST_NEXT("Liste (immer 20)"),
+        MONTH("Kalenderblatt (Monat)"),
+        YEAR("Kalenderblatt (Jahr)");
 
 
         private final String readableName;
