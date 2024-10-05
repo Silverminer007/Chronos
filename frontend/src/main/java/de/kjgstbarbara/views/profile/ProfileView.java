@@ -1,8 +1,10 @@
 package de.kjgstbarbara.views.profile;
 
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -72,6 +74,11 @@ public class ProfileView extends VerticalLayout {
             content.add(profilePic);
             content.setColspan(profilePic, 2);
 
+            Checkbox appearance = new Checkbox("Dark Mode");
+            binder.forField(appearance).bind(Person::isDarkMode, Person::setDarkMode);
+            content.add(appearance);
+            content.setColspan(appearance, 2);
+
             TextField firstName = new TextField("Vorname");
             firstName.setRequired(true);
             binder.forField(firstName)
@@ -115,6 +122,7 @@ public class ProfileView extends VerticalLayout {
                     binder.writeBean(person);
                     personsRepository.save(person);
                     Notification.show("Speichern erfolgreich");
+                    UI.getCurrent().getPage().getHistory().go(0);
                 } catch (ValidationException e) {
                     Notification.show(e.getLocalizedMessage());
                 }
