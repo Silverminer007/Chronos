@@ -68,8 +68,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         navigation.setSpacing(false);
         navigation.add(
                 createLink(VaadinIcon.CALENDAR, "Termine", CalendarView.class),
-                createLink(VaadinIcon.GROUP, "Gruppen", GroupView.class),
-                createLink(VaadinIcon.OFFICE, "Organisationen", OrganisationView.class),
+                createLink(VaadinIcon.GROUP, "Gruppen", GroupSettingsView.class),
                 createLink(VaadinIcon.COG, "Einstellungen", SettingsView.class)
         );
 
