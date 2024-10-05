@@ -118,6 +118,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
         nav.addItem(new SideNavItem("Meine Termine", CalendarView.class, VaadinIcon.CALENDAR_USER.create()));
         nav.addItem(new SideNavItem("Gruppen", GroupView.class, VaadinIcon.GROUP.create()));
         nav.addItem(new SideNavItem("Organisationen", OrganisationView.class, VaadinIcon.OFFICE.create()));
+        nav.addItem(new SideNavItem("Einstellungen", SettingsView.class, VaadinIcon.COG.create()));
 
         return nav;
     }
