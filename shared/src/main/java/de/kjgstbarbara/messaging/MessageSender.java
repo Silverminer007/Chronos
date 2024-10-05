@@ -2,13 +2,6 @@ package de.kjgstbarbara.messaging;
 
 import de.kjgstbarbara.Result;
 import de.kjgstbarbara.data.*;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,10 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-@Setter
-@Accessors(fluent = true)
 public class MessageSender {
-    private static final Logger LOGGER = LogManager.getLogger();
     private final List<Context> contexts = new ArrayList<>();
     private final Person sendTo;
 
@@ -29,20 +19,12 @@ public class MessageSender {
     }
 
     public Result send(String message) {
+        return this.send(message, this.sendTo.getPrefferedPlatform());
+    }
+
+    public Result send(String message, Platform platform) {
         String formattedMessage = this.format(message);
-        RestClient restClient = RestClient.create("http://email:8080/send");
-        try {
-            restClient.put()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(new MessageSender.Email(this.sendTo.getEMailAddress(), "Chronos Message", formattedMessage))
-                    .header("Content-Type", "application/json")
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve().toBodilessEntity();
-            return Result.success();
-        } catch (RestClientException e) {
-            LOGGER.error("Failed to send email", e);
-            return Result.error("Die Nachricht konnte nicht an " + this.sendTo.getEMailAddress() + " verschickt werden");
-        }
+        return platform.send(this.sendTo, formattedMessage);
     }
 
     public MessageSender person(Person person) {
@@ -101,9 +83,6 @@ public class MessageSender {
         return output;
     }
 
-    private record Email(String to, String subject, String message) {
-    }
-
     private interface Context {
         String process(String string);
     }
@@ -115,33 +94,33 @@ public class MessageSender {
             String output = string;
             // PERSON_NAME
             String name = person.getName();
-            output = output.replaceAll("#" + name + "_NAME", name);
+            output = output.replaceAll("#" + name() + "_NAME", name);
             // PERSON_FIRSTNAME
             String firstName = person.getFirstName();
-            output = output.replaceAll("#" + name + "_FIRSTNAME", firstName);
+            output = output.replaceAll("#" + name() + "_FIRSTNAME", firstName);
             // PERSON_LASTNAME
             String lastName = person.getLastName();
-            output = output.replaceAll("#" + name + "_LASTNAME", lastName);
+            output = output.replaceAll("#" + name() + "_LASTNAME", lastName);
             // PERSON_USERNAME
             String username = person.getUsername();
-            output = output.replaceAll("#" + name + "_USERNAME", username);
+            output = output.replaceAll("#" + name() + "_USERNAME", username);
             // PERSON_PHONE_NUMBER
             String phoneNumber = "+" + person.getPhoneNumber();
-            output = output.replaceAll("#" + name + "_PHONE_NUMBER", phoneNumber);
+            output = output.replaceAll("#" + name() + "_PHONE_NUMBER", phoneNumber);
             // PERSON_E_MAIL
             String eMail = person.getEMailAddress();
-            output = output.replaceAll("#" + name + "_E_MAIL", eMail);
+            output = output.replaceAll("#" + name() + "_E_MAIL", eMail);
             // PERSON_RESET_TOKEN
             String resetToken = person.getResetToken();
-            output = output.replaceAll("#" + name + "_RESET_TOKEN", resetToken);
+            output = output.replaceAll("#" + name() + "_RESET_TOKEN", resetToken);
             // PERSON_RESET_LINK
             String resetLink = person.getResetToken();
-            output = output.replaceAll("#" + name + "_RESET_LINK", resetLink);
+            output = output.replaceAll("#" + name() + "_RESET_LINK", resetLink);
             // PERSON_RESET_EXPIRES_IN
             if (person.getResetTokenExpires() != null) {
                 long hoursUntilExpired = person.getResetTokenExpires().until(LocalDateTime.now(), ChronoUnit.HOURS);
                 String resetExpiresIn = String.valueOf(hoursUntilExpired);
-                output = output.replaceAll("#" + name + "_RESET_EXPIRES_IN", resetExpiresIn);
+                output = output.replaceAll("#" + name() + "_RESET_EXPIRES_IN", resetExpiresIn);
             }
             // PERSON_ID
             output = output.replaceAll("#" + name + "_ID", String.valueOf(person.getId()));
@@ -194,15 +173,7 @@ public class MessageSender {
             }
             // DATE_TIME_UNTIL_START
             LocalDateTime now = LocalDateTime.now();
-            long daysUntilStart = now.until(date.getStart(), ChronoUnit.DAYS);
-            long hoursUntilStart = now.until(date.getStart(), ChronoUnit.HOURS);
-            String timeUntilStart = switch ((int) daysUntilStart) {
-                case 0 -> hoursUntilStart == 1 ? "in einer Stunde" : "in " + hoursUntilStart + " Stunden";
-                case 1 -> "morgen";
-                case 2 -> "übermorgen";
-                case 7 -> "in einer Woche";
-                default -> "in " + daysUntilStart + " Tagen";
-            };
+            String timeUntilStart = getTimeUntilStart(now);
             output = output.replaceAll("#DATE_TIME_UNTIL_START", timeUntilStart);
             // DATE_LINK
             String link = System.getenv("HOST_DOMAIN") + "/date/" + date.getId();
@@ -210,6 +181,18 @@ public class MessageSender {
             // DATE_ID
             output = output.replaceAll("#DATE_ID", String.valueOf(date.getId()));
             return output;
+        }
+
+        private String getTimeUntilStart(LocalDateTime now) {
+            long daysUntilStart = now.until(date.getStart(), ChronoUnit.DAYS);
+            long hoursUntilStart = now.until(date.getStart(), ChronoUnit.HOURS);
+            return switch ((int) daysUntilStart) {
+                case 0 -> hoursUntilStart == 1 ? "in einer Stunde" : "in " + hoursUntilStart + " Stunden";
+                case 1 -> "morgen";
+                case 2 -> "übermorgen";
+                case 7 -> "in einer Woche";
+                default -> "in " + daysUntilStart + " Tagen";
+            };
         }
     }
 
