@@ -24,7 +24,14 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
 
     List<Group> findByNameIgnoreCaseLikeAndMembersIn(String title, List<Person> person, PageRequest of);
 
-    default List<Group> findByOrganisation(Organisation organisation) {
-        return List.of();
+    default List<Group> findByNameAndPerson(String name, Person person) {
+        return this.findByNameIgnoreCaseLikeAndMembersInOrNameIgnoreCaseLikeAndOrganisationAdmin(
+                "%" + name + "%", List.of(person), "%" + name + "%", person);
     }
+
+    List<Group> findByNameIgnoreCaseLikeAndMembersInOrNameIgnoreCaseLikeAndOrganisationAdmin(String name, List<Person> person, String name2, Person admin);
+
+    List<Group> findByOrganisation(Organisation organisation);
+
+    long countByOrganisation(Organisation organisation);
 }

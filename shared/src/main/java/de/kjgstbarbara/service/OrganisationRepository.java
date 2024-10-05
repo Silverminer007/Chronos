@@ -10,6 +10,8 @@ import java.util.List;
 public interface OrganisationRepository extends JpaRepository<Organisation, Long> {
     List<Organisation> findByNameIgnoreCaseLikeAndMembersIn(String title, List<Person> person, PageRequest of);
 
+    List<Organisation> findByNameIgnoreCaseLikeAndMembersIn(String title, List<Person> person);
+
     List<Organisation> findByMembersIn(List<Person> person);
 
     default List<Organisation> findByMembersIn(Person... person) {

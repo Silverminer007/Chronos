@@ -2,6 +2,7 @@ package de.kjgstbarbara.service;
 
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Group;
+import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -46,4 +47,7 @@ public interface DateRepository extends JpaRepository<Date, Long> {
     List<Date> findByStartBetween(LocalDateTime after, LocalDateTime before);
 
     List<Date> findByPollScheduledFor(LocalDate localDate);
+
+    long countByGroup(Group group);
+    long countByGroupOrganisation(Organisation organisation);
 }
