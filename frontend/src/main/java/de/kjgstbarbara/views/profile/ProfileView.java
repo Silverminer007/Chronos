@@ -5,6 +5,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -77,7 +78,12 @@ public class ProfileView extends VerticalLayout {
             Checkbox appearance = new Checkbox("Dark Mode");
             binder.forField(appearance).bind(Person::isDarkMode, Person::setDarkMode);
             content.add(appearance);
-            content.setColspan(appearance, 2);
+
+            ComboBox<Person.CalendarLayout> calendarLayoutComboBox = new ComboBox<>("Kalender Layout");
+            calendarLayoutComboBox.setItems(Person.CalendarLayout.values());
+            calendarLayoutComboBox.setItemLabelGenerator(Person.CalendarLayout::getReadableName);
+            binder.forField(calendarLayoutComboBox).bind(Person::getCalendarLayout, Person::setCalendarLayout);
+            content.add(calendarLayoutComboBox);
 
             TextField firstName = new TextField("Vorname");
             firstName.setRequired(true);
