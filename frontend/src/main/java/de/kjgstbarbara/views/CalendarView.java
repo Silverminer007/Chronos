@@ -26,6 +26,7 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.components.*;
+import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.data.*;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.date.DateView;
@@ -104,13 +105,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
     }
 
     private HorizontalLayout createHeaderBar() {
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setAlignItems(Alignment.CENTER);
-        header.setJustifyContentMode(JustifyContentMode.BETWEEN);
-        header.setPadding(true);
-        header.setSpacing(true);
-        header.addClassNames(LumoUtility.Background.PRIMARY);
+        HorizontalLayout header = new Header();
 
         header.add(this.shownIntervalLabel);
 
@@ -499,7 +494,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
                         localDate = localDate.plusDays(selectRepetitionInterval.getValue());
                     }
                 }
-                UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", 0), new RouteParam("date", date.getId())));
+                UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", 0)));
                 if (selectRepetitionInterval.getValue() != null) {
                     Notification.show("Es wurden " + countDates + " Termine erstellt");
                 } else {

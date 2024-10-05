@@ -33,71 +33,87 @@ public class ScheduledRunner {
         try {
             // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
             for (Date d : datesService.getDateRepository().findByStartBetween(now, now.plusDays(8)).stream().sorted(Comparator.comparing(Date::getStart)).toList()) {
-                LOGGER.info("Erinnerungen für {} am {} werden verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-
-                if (now.until(d.getStart(), ChronoUnit.HOURS) == 2) {
-                    d.getGroup().getAdmins().forEach(admin -> {
-                        LOGGER.info("Termin Infos für {} am {} werden an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), admin.getName());
-                        StringBuilder summary = new StringBuilder();
-                        summary.append("Hey ").append(admin.getFirstName()).append(",\n");
-                        summary.append("gleich ist ").append(d.getTitle()).append("\n\n");
-                        summary.append("Dabei sind:\n");
-                        StringBuilder cancelled = new StringBuilder("Nicht dabei sind:\n");
-                        StringBuilder noAnswer = new StringBuilder("Bisher nicht gemeldet haben sich:\n");
-                        for (Person p : d.getGroup().getMembers()) {
-                            Feedback.Status status = d.getStatusFor(p);
-                            if (status.equals(Feedback.Status.COMMITTED)) {
-                                summary.append("- ").append(p.getName()).append("\n");
-                            } else if (status.equals(Feedback.Status.CANCELLED)) {
-                                cancelled.append("- ").append(p.getName()).append("\n");
-                            } else {
-                                noAnswer.append("- ").append(p.getName()).append("\n");
-                            }
-                        }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.COMMITTED::equals)) {
-                            summary.append("--> Niemand\n");
-                        }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
-                            cancelled.append("--> Niemand\n");
-                        }
-                        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.NONE::equals)) {
-                            noAnswer.append("--> Niemand\n");
-                        }
-                        summary.append("\n").append(cancelled).append("\n").append(noAnswer);
-                        new MessageSender(admin).send(summary.toString());
-                    });
-                }
-
-                for (Person p : d.getGroup().getMembers()) {
-                    Feedback.Status feedback = d.getStatusFor(p);
-                    if (!feedback.equals(Feedback.Status.CANCELLED)) {
-                        if ((p.getRemindMeTime().contains(now.getHour()) && p.getDayReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.DAYS)))
-                                || p.getHourReminderIntervals().contains((int) now.until(d.getStart(), ChronoUnit.HOURS))) {
-                            new MessageSender(p).person(p).date(d).send(Messages.DATE_REMINDER);
-                        }
-                    }
-                }
-
+                this.processNotifications(d);
             }
             for (Date d : datesService.getDateRepository().findByPollScheduledFor(LocalDate.now())) {
                 LOGGER.info("Umfragen für {} am {} werden verschicken wird geprüft", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-                if (d.getPollScheduledFor() != null) {
-                    if (LocalDate.now().isEqual(d.getPollScheduledFor())) {
-                        if (d.isPollRunning()) {
-                            for (Person p : d.getGroup().getMembers()) {
-                                if (p.getRemindMeTime().contains(now.getHour())) {
-                                    LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), p.getName());
-                                    new MessageSender(p).date(d).send(Messages.DATE_POLL);
-                                }
-                            }
-                        }
-                    }
+                if (d.getPollScheduledFor() == null) {
+                    continue;
                 }
+                if (!LocalDate.now().isEqual(d.getPollScheduledFor())) {
+                    continue;
+                }
+                if (!d.isPollRunning()) {
+                    continue;
+                }
+                sendPoll(d);
             }
         } catch (Throwable e) {
             LOGGER.error("Es ist ein Fehler für die Terminerinnerungen aufgetreten", e);
         }
         LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: ENDE", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
         LOGGER.info("------------------------------------------------------------------------------------------------");
+    }
+
+    private void processNotifications(Date d) {
+        LocalDateTime now = LocalDateTime.now();
+        LOGGER.info("Erinnerungen für {} am {} werden verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+
+        if (LocalDateTime.now().until(d.getStart(), ChronoUnit.HOURS) == 2) {
+            this.processAdminOverviewMessage(d);
+        }
+
+        for (Person p : d.getGroup().getMembers()) {
+            for (Person.Notification notification : p.getNotifications()) {
+                if (now.until(d.getStart(), ChronoUnit.HOURS) == notification.getHoursBefore()) {
+                    new MessageSender(p).person(p).date(d).send(Messages.DATE_REMINDER, notification.getPlatform());
+                }
+            }
+        }
+    }
+
+    private void processAdminOverviewMessage(Date d) {
+        for (Person admin : d.getGroup().getMembers()) {
+            new MessageSender(admin).send(this.buildAdminMessage(admin, d));
+        }
+    }
+
+    private String buildAdminMessage(Person admin, Date d) {
+        LOGGER.info("Termin Infos für {} am {} werden an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), admin.getName());
+        StringBuilder summary = new StringBuilder();
+        summary.append("Hey ").append(admin.getFirstName()).append(",\n");
+        summary.append("gleich ist ").append(d.getTitle()).append("\n\n");
+        summary.append("Dabei sind:\n");
+        StringBuilder cancelled = new StringBuilder("Nicht dabei sind:\n");
+        StringBuilder noAnswer = new StringBuilder("Bisher nicht gemeldet haben sich:\n");
+        for (Person p : d.getGroup().getMembers()) {
+            Feedback.Status status = d.getStatusFor(p);
+            StringBuilder selection = switch (status) {
+                case CANCELLED -> cancelled;
+                case COMMITTED -> summary;
+                default -> noAnswer;
+            };
+            selection.append(p.getName()).append("\n");
+        }
+        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.COMMITTED::equals)) {
+            summary.append("--> Niemand\n");
+        }
+        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.CANCELLED::equals)) {
+            cancelled.append("--> Niemand\n");
+        }
+        if (d.getGroup().getMembers().stream().map(d::getStatusFor).noneMatch(Feedback.Status.NONE::equals)) {
+            noAnswer.append("--> Niemand\n");
+        }
+        summary.append("\n").append(cancelled).append("\n").append(noAnswer);
+        return summary.toString();
+    }
+
+    private void sendPoll(Date d) {
+        for (Person p : d.getGroup().getMembers()) {
+            if (LocalDateTime.now().getHour() == 19) {// TODO Wo kommt diese Einstellung hin?
+                LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), p.getName());
+                new MessageSender(p).date(d).person(p).send(Messages.DATE_POLL);
+            }
+        }
     }
 }

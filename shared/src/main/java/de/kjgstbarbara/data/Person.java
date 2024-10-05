@@ -1,6 +1,7 @@
 package de.kjgstbarbara.data;
 
 import de.kjgstbarbara.SecurityUtils;
+import de.kjgstbarbara.messaging.Platform;
 import jakarta.persistence.*;
 import lombok.*;
 import org.slf4j.Logger;
@@ -10,9 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
 @Entity
 @Data
@@ -28,22 +30,24 @@ public class Person {
     private String username = "";
     private String password;
     private boolean darkMode = true;
-    private Reminder reminder = Reminder.WHATSAPP;
     @Embedded
     private PhoneNumber phoneNumber;
     private String eMailAddress;
     private Locale userLocale = Locale.GERMANY;
     private ZoneId timezone = ZoneOffset.UTC;
-    // Die Uhrzeit am Tag an der die Person ihre Benachrichtigungen erhält. 19 entspricht also 19:00 Uhr
-    private Set<Integer> remindMeTime = Set.of(19);
     private boolean monthOverview = true;
-    private Set<Integer> hourReminderIntervals = Set.of(1);
-    private Set<Integer> dayReminderIntervals = Set.of(2);
     private CalendarLayout calendarLayout = CalendarLayout.LIST_NEXT;
     private String resetToken;
     private LocalDateTime resetTokenExpires;
     @Column(length = 1000000)
     private String profileImage;
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<Notification> notifications = new ArrayList<>(
+            List.of(
+                    new Notification(Platform.EMAIL, 2),
+                    new Notification(Platform.EMAIL, 48)
+            ));
+    private Platform prefferedPlatform;
 
     public String toString() {
         return firstName + " " + lastName;
@@ -84,6 +88,10 @@ public class Person {
         return calendarLayout == null ? CalendarLayout.LIST_NEXT : calendarLayout;
     }
 
+    public Platform getPrefferedPlatform() {
+        return this.prefferedPlatform == null ? Platform.EMAIL : this.prefferedPlatform;
+    }
+
     public record PhoneNumber(String countryCode, Integer areaCode, Integer subscriber) {
         public long number() {
             try {
@@ -117,17 +125,6 @@ public class Person {
     }
 
     @Getter
-    public enum Reminder {
-        WHATSAPP("WhatsApp"), SIGNAL("Signal"), EMAIL("E-Mail");
-
-        private final String text;
-
-        Reminder(String text) {
-            this.text = text;
-        }
-    }
-
-    @Getter
     public enum CalendarLayout {
         LIST_PER_MONTH("calendar.list-per-month"),
         LIST_NEXT("calendar.list-next"),
@@ -140,5 +137,25 @@ public class Person {
         CalendarLayout(String readableName) {
             this.readableName = readableName;
         }
+    }
+
+    @Setter
+    @Getter
+    @Embeddable
+    public static class Notification {
+        private Platform platform;
+        private int hoursBefore;
+
+        public Notification(Platform platform, int hoursBefore) {
+            this.platform = platform;
+            this.hoursBefore = hoursBefore;
+        }
+
+
+        public Notification() {
+            this.platform = Platform.EMAIL;
+            this.hoursBefore = 2;
+        }
+
     }
 }
