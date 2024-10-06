@@ -42,10 +42,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DATABASE_PWD}
       MYSQL_DATABASE: chronos
     volumes:
-      - chronos-database-mariadb:/var/lib/mysql
-    #      - type: bind
-    #       source: ./chronos-production2.sql
-    #       target: /docker-entrypoint-initdb.d/chronos-production.sql
+      - chronos-database:/var/lib/mysql
     networks:
       frontend:
       backend:
@@ -77,8 +74,19 @@ services:
     networks:
       messaging:
 
+  signal:
+    image: bbernhard/signal-cli-rest-api:latest
+    container_name: signal
+    ports:
+      - "8095:8080"
+    environment:
+      MODE: json-rpc
+    volumes:
+      - signal:/home/.local/share/signal-cli
+
 volumes:
-  chronos-database-mariadb:
+  chronos-database:
+  signal:
 
 networks:
   frontend:

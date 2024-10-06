@@ -24,6 +24,20 @@ public enum Platform {
         } catch (RestClientException e) {
             return Result.error("Die Nachricht konnte nicht an " + sendTo.getEMailAddress() + " verschickt werden");
         }
+    }),
+    SIGNAL((message, sendTo) -> {
+        RestClient restClient = RestClient.create("http://signal:8080/v2/send");
+        try {
+            restClient.post()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new Signal(message, "+4915752657194", new String[]{sendTo.getPhoneNumber().toString()}, "normal"))
+                    .header("Content-Type", "application/json")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve().toBodilessEntity();
+            return Result.success();
+        } catch (RestClientException e) {
+            return Result.error("Die Nachricht konnte nicht an " + sendTo.getEMailAddress() + " verschickt werden");
+        }
     });
 
     private static final Logger LOGGER = LogManager.getLogger(Platform.class);
@@ -40,4 +54,6 @@ public enum Platform {
 
     private record Email(String to, String subject, String message) {
     }
+
+    private record Signal(String message, String number, String[] recipients, String text_mode) {}
 }
