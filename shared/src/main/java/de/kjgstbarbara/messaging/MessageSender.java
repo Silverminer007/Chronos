@@ -123,7 +123,7 @@ public class MessageSender {
                 output = output.replaceAll("#" + name() + "_RESET_EXPIRES_IN", resetExpiresIn);
             }
             // PERSON_ID
-            output = output.replaceAll("#" + name + "_ID", String.valueOf(person.getId()));
+            output = output.replaceAll("#" + name() + "_ID", String.valueOf(person.getId()));
             return output;
         }
     }
