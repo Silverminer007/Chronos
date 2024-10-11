@@ -39,6 +39,7 @@ public class ResetPassword extends VerticalLayout {
     private final PersonsRepository personsRepository;
     private final PasswordEncoder passwordEncoder;
     private Integer otp = null;
+    private int attempts = 0;
 
     private Component header = new Div();
     private Component content = new Div();
@@ -102,6 +103,11 @@ public class ResetPassword extends VerticalLayout {
                 if (otp.equals(enterOTP.getValue()) && otp > 0) {
                     this.createEnterNewPassword(email.getValue());
                 } else {
+                    if(this.attempts++ > 4) {
+                        Notification.show("Zu viele falsche Eingaben");
+                        UI.getCurrent().getPage().getHistory().go(0);
+                        this.otp = null;
+                    }
                     enterOTP.setInvalid(true);
                     enterOTP.setErrorMessage("Das Einmalpasswort ist ungültig");
                     LOGGER.warn("Für [{}] wurde ein falsches Einmalpasswort beim Passwort zurücksetzen eingegeben", email.getValue());
