@@ -50,7 +50,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         login.setAction("login");
         login.addForgotPasswordListener(event ->
                 event.getSource().getUI().ifPresent(ui ->
-                        ui.navigate(RequestPasswordResetView.class)));
+                        ui.navigate(ResetPassword.class)));
         Button register = new Button("Account erstellen");
         register.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         register.addClickListener(event -> event.getSource().getUI().ifPresent(ui -> ui.navigate(RegisterView.class)));
