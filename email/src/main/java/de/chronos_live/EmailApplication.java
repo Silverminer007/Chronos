@@ -55,7 +55,7 @@ public class EmailApplication {
                 .from(SMTP_USER, SMTP_MAIL_ADDRESS)
                 .to(message.getTo())
                 .withSubject(message.getSubject())
-                .withHTMLText(message.getMessage())
+                .withPlainText(message.getMessage())
                 .buildEmail();
         mailer.sendMail(email);
     }
