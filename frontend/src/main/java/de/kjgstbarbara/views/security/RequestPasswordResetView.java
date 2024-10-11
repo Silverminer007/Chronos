@@ -34,7 +34,7 @@ import java.util.Random;
 
 @Route("reset-password")
 @AnonymousAllowed
-public class ResetPassword extends VerticalLayout {
+public class RequestPasswordResetView extends VerticalLayout {
     private static final Logger LOGGER = LogManager.getLogger();
     private final PersonsRepository personsRepository;
     private final PasswordEncoder passwordEncoder;
@@ -45,10 +45,9 @@ public class ResetPassword extends VerticalLayout {
     private Component content = new Div();
 
     private Person person;
-    private String eMailAddress;
 
 
-    public ResetPassword(PersonsService personsService, PasswordEncoder passwordEncoder) {
+    public RequestPasswordResetView(PersonsService personsService, PasswordEncoder passwordEncoder) {
         this.personsRepository = personsService.getPersonsRepository();
         this.passwordEncoder = passwordEncoder;
         this.setWidthFull();
@@ -90,7 +89,7 @@ public class ResetPassword extends VerticalLayout {
             content.add(email);
             email.focus();
         } else {
-            content.add(new NativeLabel("Wenn zu " + this.eMailAddress + " ein Account existiert, wurde an diesen ein Einmalpasswort verschickt. Bitte sieh in deinem Postfach nach ob du ein Einmalpasswort erhalten hast und gib dieses hier ein"));
+            content.add(new NativeLabel("Wenn zu " + email.getValue() + " ein Account existiert, wurde an diesen ein Einmalpasswort verschickt. Bitte sieh in deinem Postfach nach ob du ein Einmalpasswort erhalten hast und gib dieses hier ein"));
             content.add(enterOTP);
             enterOTP.focus();
         }
@@ -122,7 +121,6 @@ public class ResetPassword extends VerticalLayout {
                     this.otp = -1;
                     LOGGER.warn("Ungültiger Versuch das Passwort zurückzusetzen von [{}]", email.getValue());
                 }
-                this.eMailAddress = email.getValue();
                 this.createContent();
             }
         });
