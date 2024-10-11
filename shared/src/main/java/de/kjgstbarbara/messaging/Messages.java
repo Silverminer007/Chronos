@@ -60,7 +60,5 @@ public class Messages {
                     
                     Dein Einmalpasswort lautet: #PERSON_OTP
                     Dein Benutzername lautet: #PERSON_USERNAME
-                    
-                    Das Einmalpasswort läuft in 2 Stunden ab, dann musst du ein neues Beantragen
                     """;
 }
