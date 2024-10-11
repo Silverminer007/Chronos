@@ -110,18 +110,6 @@ public class MessageSender {
             // PERSON_E_MAIL
             String eMail = person.getEMailAddress();
             output = output.replaceAll("#" + name() + "_E_MAIL", eMail);
-            // PERSON_RESET_TOKEN
-            String resetToken = person.getResetToken();
-            output = output.replaceAll("#" + name() + "_RESET_TOKEN", resetToken);
-            // PERSON_RESET_LINK
-            String resetLink = person.getResetToken();
-            output = output.replaceAll("#" + name() + "_RESET_LINK", resetLink);
-            // PERSON_RESET_EXPIRES_IN
-            if (person.getResetTokenExpires() != null) {
-                long hoursUntilExpired = person.getResetTokenExpires().until(LocalDateTime.now(), ChronoUnit.HOURS);
-                String resetExpiresIn = String.valueOf(hoursUntilExpired);
-                output = output.replaceAll("#" + name() + "_RESET_EXPIRES_IN", resetExpiresIn);
-            }
             // PERSON_ID
             output = output.replaceAll("#" + name() + "_ID", String.valueOf(person.getId()));
             return output;

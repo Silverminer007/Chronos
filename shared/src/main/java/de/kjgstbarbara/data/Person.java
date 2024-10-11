@@ -1,14 +1,11 @@
 package de.kjgstbarbara.data;
 
-import de.kjgstbarbara.SecurityUtils;
 import de.kjgstbarbara.messaging.Platform;
 import jakarta.persistence.*;
 import lombok.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -37,8 +34,6 @@ public class Person {
     private ZoneId timezone = ZoneOffset.UTC;
     private boolean monthOverview = true;
     private CalendarLayout calendarLayout = CalendarLayout.LIST_NEXT;
-    private String resetToken;
-    private LocalDateTime resetTokenExpires;
     @Column(length = 1000000)
     private String profileImage;
     @ElementCollection(fetch = FetchType.EAGER)
@@ -67,17 +62,6 @@ public class Person {
 
     public String getName() {
         return this.getFirstName() + " " + this.getLastName();
-    }
-
-    public boolean createResetPassword() {
-        try {
-            this.setResetToken(SecurityUtils.generatePassword(200));
-            this.setResetTokenExpires(LocalDateTime.now().plusHours(8));
-            return true;
-        } catch (NoSuchAlgorithmException e) {
-            LOGGER.error("Failed to generate Password Reset Token", e);
-            return false;
-        }
     }
 
     public ZoneId getTimezone() {
