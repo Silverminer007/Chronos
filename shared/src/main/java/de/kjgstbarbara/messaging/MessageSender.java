@@ -63,11 +63,11 @@ public class MessageSender {
         return this;
     }
 
-    public MessageSender feedback(Feedback feedback) {
+    public MessageSender feedback(Feedback.Status feedback) {
         return this.feedback(feedback, "FEEDBACK");
     }
 
-    public MessageSender feedback(Feedback feedback, String name) {
+    public MessageSender feedback(Feedback.Status feedback, String name) {
         this.contexts.add(new FeedbackContext(feedback, name));
         return this;
     }
@@ -208,14 +208,14 @@ public class MessageSender {
         }
     }
 
-    private record FeedbackContext(Feedback feedback, String name) implements Context {
+    private record FeedbackContext(Feedback.Status feedback, String name) implements Context {
 
         @Override
         public String process(String string) {
             String output = string;
             // FEEDBACK_STATUS
-            String status = feedback.getStatus().getReadable();
-            output = output.replaceAll("#" + name + "_STATUS", status);
+            String status = feedback.getReadable();
+            output = output.replaceAll("#" + name() + "_STATUS", status);
             return output;
         }
     }

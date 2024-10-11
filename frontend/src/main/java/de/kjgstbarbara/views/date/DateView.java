@@ -63,10 +63,11 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     private final DateRepository dateRepository;
 
     private final Person person;
+    private final FeedbackRepository feedbackRepository;
 
     private Date date;
 
-    public DateView(PersonsService personsService, DatesService datesService, AuthenticationContext authenticationContext) {
+    public DateView(PersonsService personsService, DatesService datesService, AuthenticationContext authenticationContext, FeedbackRepository feedbackRepository) {
         this.dateRepository = datesService.getDateRepository();
         this.person = authenticationContext.getAuthenticatedUser(User.class)
                 .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
@@ -75,6 +76,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             UI.getCurrent().navigate(RegisterView.class);
         }
         this.setMaxWidth("600px");
+        this.feedbackRepository = feedbackRepository;
     }
 
     @Override
@@ -352,7 +354,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             this.date.setDateCancelled(LocalDate.now(ZoneOffset.UTC));
             dateRepository.save(this.date);
             for (Person p : this.date.getGroup().getMembers()) {
-                new MessageSender(p).date(this.date).person(p).send(Messages.DATE_CANCELLED);
+                new MessageSender(p).date(this.date).person(p).feedback(this.date.getStatusFor(p)).send(Messages.DATE_CANCELLED);
             }
             UI.getCurrent().navigate(DateView.class);
         });
