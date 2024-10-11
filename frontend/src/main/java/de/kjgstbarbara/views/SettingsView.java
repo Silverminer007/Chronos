@@ -23,8 +23,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 @PageTitle("Einstellungen")
 @PermitAll
 public class SettingsView extends VerticalLayout {
+    private final AuthenticationContext authenticationContext;
 
     public SettingsView(PersonsService personsService, AuthenticationContext authenticationContext) {
+        this.authenticationContext = authenticationContext;
         PersonsRepository personsRepository = personsService.getPersonsRepository();
         Person person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
@@ -56,10 +58,15 @@ public class SettingsView extends VerticalLayout {
 
         content.add(this.createLink("Profil", ProfileView.class));
         content.add(this.createLink("Benachrichtigungen", NotificationSettingsView.class));
+        content.add(this.createButton("Abmelden", this.authenticationContext::logout));
         return content;
     }
 
     private Component createLink(String name, Class<? extends Component> view) {
+        return this.createButton(name, () -> UI.getCurrent().navigate(view));
+    }
+
+    private Component createButton(String name, Runnable action) {
         HorizontalLayout link = new HorizontalLayout();
         link.setWidthFull();
         link.setJustifyContentMode(JustifyContentMode.BETWEEN);
@@ -70,9 +77,7 @@ public class SettingsView extends VerticalLayout {
 
         link.add(new H5(name));
 
-        link.addClickListener(event -> {
-            UI.getCurrent().navigate(view);
-        });
+        link.addClickListener(event -> action.run());
 
         link.add(VaadinIcon.ARROW_RIGHT.create());
         return link;
