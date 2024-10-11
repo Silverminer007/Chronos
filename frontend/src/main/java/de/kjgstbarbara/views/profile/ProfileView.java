@@ -1,5 +1,6 @@
 package de.kjgstbarbara.views.profile;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -9,6 +10,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.notification.Notification;
@@ -29,6 +31,7 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FileHelper;
 import de.kjgstbarbara.components.ClosableDialog;
+import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.components.PhoneNumberField;
 import de.kjgstbarbara.components.ReCaptcha;
 import de.kjgstbarbara.data.Group;
@@ -53,145 +56,112 @@ import java.util.List;
 @PageTitle("Profil")
 @PermitAll
 public class ProfileView extends VerticalLayout {
+    private final PersonsRepository personsRepository;
+    private final OrganisationRepository organisationRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final GroupRepository groupRepository;
+    private final AuthenticationContext authenticationContext;
+    private final Person person;
+    private final PasswordEncoder passwordEncoder;
 
     public ProfileView(PersonsService personsService, PasswordEncoder passwordEncoder, OrganisationService organisationService, FeedbackService feedbackService, GroupService groupService, AuthenticationContext authenticationContext) {
-        PersonsRepository personsRepository = personsService.getPersonsRepository();
-        Person person = authenticationContext.getAuthenticatedUser(UserDetails.class)
+        this.personsRepository = personsService.getPersonsRepository();
+        this.organisationRepository = organisationService.getOrganisationRepository();
+        this.feedbackRepository = feedbackService.getFeedbackRepository();
+        this.groupRepository = groupService.getGroupRepository();
+        this.authenticationContext = authenticationContext;
+        this.passwordEncoder = passwordEncoder;
+        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
                 .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
                 .orElse(null);
         if (person == null) {
             authenticationContext.logout();
         } else {
+            this.setSizeFull();
+            this.setAlignItems(Alignment.CENTER);
+            this.setJustifyContentMode(JustifyContentMode.START);
+            this.setSpacing(false);
+            this.setPadding(false);
+
             Binder<Person> binder = new Binder<>();
-            setSizeFull();
 
-            setAlignItems(Alignment.CENTER);
-            setJustifyContentMode(JustifyContentMode.CENTER);
+            this.add(this.createHeader());
 
-            FormLayout content = new FormLayout();
-            content.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1), new FormLayout.ResponsiveStep("500px", 2));
+            VerticalLayout layout = new VerticalLayout();
+            layout.setSizeFull();
+            layout.setAlignItems(Alignment.CENTER);
+            layout.setSpacing(true);
+            layout.setPadding(true);
 
-            VerticalLayout profilePic = getProfileImageLayout(person, personsRepository);
-            content.add(profilePic);
-            content.setColspan(profilePic, 2);
+            layout.add(this.createForm(binder));
+            layout.add(this.createChangePasswordButton());
+            layout.add(this.createSaveButton(binder));
+            layout.add(this.createDeleteAccountButton());
 
-            Checkbox appearance = new Checkbox("Dark Mode");
-            binder.forField(appearance).bind(Person::isDarkMode, Person::setDarkMode);
-            content.add(appearance);
-
-            ComboBox<Person.CalendarLayout> calendarLayoutComboBox = new ComboBox<>("Kalender Layout");
-            calendarLayoutComboBox.setItems(Person.CalendarLayout.values());
-            calendarLayoutComboBox.setItemLabelGenerator(Person.CalendarLayout::getReadableName);
-            binder.forField(calendarLayoutComboBox).bind(Person::getCalendarLayout, Person::setCalendarLayout);
-            content.add(calendarLayoutComboBox);
-
-            TextField firstName = new TextField("Vorname");
-            firstName.setRequired(true);
-            binder.forField(firstName)
-                    .withValidator((input, valueContext) ->
-                            input.isBlank() ?
-                                    ValidationResult.error("Dieses Feld ist erforderlich")
-                                    : ValidationResult.ok())
-                    .bind(Person::getFirstName, Person::setFirstName);
-            content.add(firstName);
-            TextField lastName = new TextField("Nachname");
-            lastName.setRequired(true);
-            binder.forField(lastName)
-                    .withValidator((input, valueContext) ->
-                            input.isBlank() ?
-                                    ValidationResult.error("Dieses Feld ist erforderlich")
-                                    : ValidationResult.ok())
-                    .bind(Person::getLastName, Person::setLastName);
-            content.add(lastName);
-
-            PhoneNumberField phoneNumber = new PhoneNumberField();
-            binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
-            content.add(phoneNumber);
-
-            TextField mailAddress = new TextField("E-Mail Adresse");
-            mailAddress.setWidthFull();
-            binder.forField(mailAddress)
-                    .withValidator(new EmailValidator("Diese E-Mail Adresse ist ungültig"))
-                    .bind(Person::getEMailAddress, Person::setEMailAddress);
-            content.add(mailAddress);
-
-            add(content);
-
-            Button changePassword = getChangePasswordButton(passwordEncoder, person, personsRepository);
-            add(changePassword);
-
-            Button save = new Button("Speichern");
-            save.addClickShortcut(Key.ENTER);
-            save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            save.addClickListener(event -> {
-                try {
-                    binder.writeBean(person);
-                    personsRepository.save(person);
-                    Notification.show("Speichern erfolgreich");
-                    UI.getCurrent().getPage().getHistory().go(0);
-                } catch (ValidationException e) {
-                    Notification.show(e.getLocalizedMessage());
-                }
-            });
-            add(save);
-
-            Button deleteAccount = new Button("Account löschen");
-            deleteAccount.addThemeVariants(ButtonVariant.LUMO_ERROR);
-            deleteAccount.addClickListener(event -> {
-                List<Organisation> organisations = organisationService.getOrganisationRepository().findByAdmin(person);
-                List<Group> groups = new ArrayList<>(groupService.getGroupRepository().findByAdminsIn(person));
-                groups.removeIf(g -> g.getAdmins().size() > 1);
-                if (organisations.isEmpty() && groups.isEmpty()) {
-                    PasswordField passwordField = new PasswordField();
-                    ConfirmDialog confirmDialog = new ConfirmDialog(
-                            "Account löschen",
-                            "Bist du sicher, dass du deinen Account löschen möchtest? Du kannst deinen Account nicht wiederherstellen und deine Daten werden unwiderruflich gelöscht. Um diese Aktion zu bestätigen, gib bitte dein Passwort erneut ein",
-                            "Ja, meinen Account löschen",
-                            e -> {
-                                if (person.getPassword().equals(passwordEncoder.encode(passwordField.getValue()))) {
-                                    personsRepository.delete(person);
-                                    feedbackService.getFeedbackRepository().deleteByPerson(person);
-                                    organisationService.getOrganisationRepository().findByMembersIn(person).forEach(org ->
-                                            org.getMembers().remove(person));
-                                    organisationService.getOrganisationRepository().findByMembershipRequestsIn(person).forEach(org ->
-                                            org.getMembershipRequests().remove(person));
-                                    groupService.getGroupRepository().findByMembersIn(person).forEach(group ->
-                                            group.getMembers().remove(person));
-                                    groupService.getGroupRepository().findByAdminsIn(person).forEach(group ->
-                                            group.getAdmins().remove(person));
-                                    authenticationContext.logout();
-                                }
-                            }
-                    );
-                    confirmDialog.add(passwordField);
-                    confirmDialog.open();
-                } else {
-                    ClosableDialog closableDialog = new ClosableDialog("Account löschen nicht möglich");
-                    StringBuilder labelText = new StringBuilder("Bevor du deinen Account löschen kannst musst du alle deine Administratorrechte an jemand anderen übertragen haben.");
-                    if (!organisations.isEmpty()) {
-                        labelText.append("Du bist noch in diesem Organisationen Admin:");
-                        for (Organisation o : organisations) {
-                            labelText.append("\n").append(o.getName());
-                        }
-                    }
-                    if (!groups.isEmpty()) {
-                        labelText.append("Du bist noch diesen Gruppen alleiniger Admin:");
-                        for (Group g : groups) {
-                            labelText.append("\n").append(g.getName());
-                        }
-                    }
-                    NativeLabel label = new NativeLabel(labelText.toString());
-                    closableDialog.add(label);
-                    closableDialog.open();
-                }
-            });
-            add(deleteAccount);
+            this.add(layout);
 
             binder.readBean(person);
         }
     }
 
-    private static Button getChangePasswordButton(PasswordEncoder passwordEncoder, Person person, PersonsRepository personsRepository) {
+    private Component createHeader() {
+        HorizontalLayout header = new Header();
+
+        header.add(new H4("Profil"));
+        return header;
+    }
+
+    private Component createForm(Binder<Person> binder) {
+        FormLayout content = new FormLayout();
+        content.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1), new FormLayout.ResponsiveStep("500px", 2));
+
+        VerticalLayout profilePic = getProfileImageLayout(person, personsRepository);
+        content.add(profilePic);
+        content.setColspan(profilePic, 2);
+
+        Checkbox appearance = new Checkbox("Dark Mode");
+        binder.forField(appearance).bind(Person::isDarkMode, Person::setDarkMode);
+        content.add(appearance);
+
+        ComboBox<Person.CalendarLayout> calendarLayoutComboBox = new ComboBox<>("Kalender Layout");
+        calendarLayoutComboBox.setItems(Person.CalendarLayout.values());
+        calendarLayoutComboBox.setItemLabelGenerator(Person.CalendarLayout::getReadableName);
+        binder.forField(calendarLayoutComboBox).bind(Person::getCalendarLayout, Person::setCalendarLayout);
+        content.add(calendarLayoutComboBox);
+
+        TextField firstName = new TextField("Vorname");
+        firstName.setRequired(true);
+        binder.forField(firstName)
+                .withValidator((input, valueContext) ->
+                        input.isBlank() ?
+                                ValidationResult.error("Dieses Feld ist erforderlich")
+                                : ValidationResult.ok())
+                .bind(Person::getFirstName, Person::setFirstName);
+        content.add(firstName);
+        TextField lastName = new TextField("Nachname");
+        lastName.setRequired(true);
+        binder.forField(lastName)
+                .withValidator((input, valueContext) ->
+                        input.isBlank() ?
+                                ValidationResult.error("Dieses Feld ist erforderlich")
+                                : ValidationResult.ok())
+                .bind(Person::getLastName, Person::setLastName);
+        content.add(lastName);
+
+        PhoneNumberField phoneNumber = new PhoneNumberField();
+        binder.forField(phoneNumber).bind(Person::getPhoneNumber, Person::setPhoneNumber);
+        content.add(phoneNumber);
+
+        TextField mailAddress = new TextField("E-Mail Adresse");
+        mailAddress.setWidthFull();
+        binder.forField(mailAddress)
+                .withValidator(new EmailValidator("Diese E-Mail Adresse ist ungültig"))
+                .bind(Person::getEMailAddress, Person::setEMailAddress);
+        content.add(mailAddress);
+        return content;
+    }
+
+    private Component createChangePasswordButton() {
         Button changePassword = new Button("Passwort ändern");
         changePassword.addClickListener(event -> {
             Dialog dialog = new Dialog();
@@ -248,6 +218,77 @@ public class ProfileView extends VerticalLayout {
             dialog.open();
         });
         return changePassword;
+    }
+
+    private Component createSaveButton(Binder<Person> binder) {
+        Button save = new Button("Speichern");
+        save.addClickShortcut(Key.ENTER);
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        save.addClickListener(event -> {
+            try {
+                binder.writeBean(person);
+                personsRepository.save(person);
+                Notification.show("Speichern erfolgreich");
+                UI.getCurrent().getPage().getHistory().go(0);
+            } catch (ValidationException e) {
+                Notification.show(e.getLocalizedMessage());
+            }
+        });
+        return save;
+    }
+
+    private Component createDeleteAccountButton() {
+        Button deleteAccount = new Button("Account löschen");
+        deleteAccount.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        deleteAccount.addClickListener(event -> {
+            List<Organisation> organisations = this.organisationRepository.findByAdmin(person);
+            List<Group> groups = new ArrayList<>(this.groupRepository.findByAdminsIn(person));
+            groups.removeIf(g -> g.getAdmins().size() > 1);
+            if (organisations.isEmpty() && groups.isEmpty()) {
+                PasswordField passwordField = new PasswordField();
+                ConfirmDialog confirmDialog = new ConfirmDialog(
+                        "Account löschen",
+                        "Bist du sicher, dass du deinen Account löschen möchtest? Du kannst deinen Account nicht wiederherstellen und deine Daten werden unwiderruflich gelöscht. Um diese Aktion zu bestätigen, gib bitte dein Passwort erneut ein",
+                        "Ja, meinen Account löschen",
+                        e -> {
+                            if (person.getPassword().equals(passwordEncoder.encode(passwordField.getValue()))) {
+                                personsRepository.delete(person);
+                                this.feedbackRepository.deleteByPerson(person);
+                                this.organisationRepository.findByMembersIn(person).forEach(org ->
+                                        org.getMembers().remove(person));
+                                this.organisationRepository.findByMembershipRequestsIn(person).forEach(org ->
+                                        org.getMembershipRequests().remove(person));
+                                this.groupRepository.findByMembersIn(person).forEach(group ->
+                                        group.getMembers().remove(person));
+                                this.groupRepository.findByAdminsIn(person).forEach(group ->
+                                        group.getAdmins().remove(person));
+                                authenticationContext.logout();
+                            }
+                        }
+                );
+                confirmDialog.add(passwordField);
+                confirmDialog.open();
+            } else {
+                ClosableDialog closableDialog = new ClosableDialog("Account löschen nicht möglich");
+                StringBuilder labelText = new StringBuilder("Bevor du deinen Account löschen kannst musst du alle deine Administratorrechte an jemand anderen übertragen haben.");
+                if (!organisations.isEmpty()) {
+                    labelText.append("Du bist noch in diesem Organisationen Admin:");
+                    for (Organisation o : organisations) {
+                        labelText.append("\n").append(o.getName());
+                    }
+                }
+                if (!groups.isEmpty()) {
+                    labelText.append("Du bist noch diesen Gruppen alleiniger Admin:");
+                    for (Group g : groups) {
+                        labelText.append("\n").append(g.getName());
+                    }
+                }
+                NativeLabel label = new NativeLabel(labelText.toString());
+                closableDialog.add(label);
+                closableDialog.open();
+            }
+        });
+        return deleteAccount;
     }
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {
