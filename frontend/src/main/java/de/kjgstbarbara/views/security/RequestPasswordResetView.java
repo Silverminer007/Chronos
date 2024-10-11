@@ -57,7 +57,7 @@ public class RequestPasswordResetView extends VerticalLayout {
         this.add(this.header);
         this.add(this.content);
         this.createHeader();
-        this.createContent();
+        this.createEnterEmail();
     }
 
     private void createHeader() {
@@ -79,49 +79,59 @@ public class RequestPasswordResetView extends VerticalLayout {
         this.header = header;
     }
 
-    private void createContent() {
+    private void createEnterEmail() {
         VerticalLayout content = new VerticalLayout();
         content.setWidthFull();
 
         TextField email = new TextField("E-Mail Adresse");
-        IntegerField enterOTP = new IntegerField("Einmalpasswort");
-        if (otp == null) {
-            content.add(email);
-            email.focus();
-        } else {
-            content.add(new NativeLabel("Wenn zu " + email.getValue() + " ein Account existiert, wurde an diesen ein Einmalpasswort verschickt. Bitte sieh in deinem Postfach nach ob du ein Einmalpasswort erhalten hast und gib dieses hier ein"));
-            content.add(enterOTP);
-            enterOTP.focus();
-        }
+        content.add(email);
+        email.focus();
 
         Button ok = new Button("Abschicken");
         ok.addClickShortcut(Key.ENTER);
         ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         ok.addClickListener(event -> {
-            if (otp != null) {
-                if (otp.equals(enterOTP.getValue()) && otp > 0) {
-                    this.createEnterNewPassword(email.getValue());
-                } else {
-                    if(this.attempts++ > 4) {
-                        Notification.show("Zu viele falsche Eingaben");
-                        UI.getCurrent().getPage().getHistory().go(0);
-                        this.otp = null;
-                    }
-                    enterOTP.setInvalid(true);
-                    enterOTP.setErrorMessage("Das Einmalpasswort ist ungültig");
-                    LOGGER.warn("Für [{}] wurde ein falsches Einmalpasswort beim Passwort zurücksetzen eingegeben", email.getValue());
-                }
+            Optional<Person> optionalPerson = personsRepository.findByeMailAddress(email.getValue());
+            if (optionalPerson.isPresent()) {
+                this.person = optionalPerson.get();
+                this.otp = new Random().nextInt(1_000_000);
+                new MessageSender(this.person).person(this.person).send(Messages.PERSON_RESET_PASSWORD.replaceAll("#PERSON_OTP", otp.toString()), Platform.EMAIL);
             } else {
-                Optional<Person> optionalPerson = personsRepository.findByeMailAddress(email.getValue());
-                if (optionalPerson.isPresent()) {
-                    this.person = optionalPerson.get();
-                    this.otp = new Random().nextInt(1_000_000);
-                    new MessageSender(this.person).person(this.person).send(Messages.PERSON_RESET_PASSWORD.replaceAll("#PERSON_OTP", otp.toString()), Platform.EMAIL);
-                } else {
-                    this.otp = -1;
-                    LOGGER.warn("Ungültiger Versuch das Passwort zurückzusetzen von [{}]", email.getValue());
+                this.otp = -1;
+                LOGGER.warn("Ungültiger Versuch das Passwort zurückzusetzen von [{}]", email.getValue());
+            }
+            this.createEnterOTP(email.getValue());
+        });
+        content.add(ok);
+
+        this.replace(this.content, content);
+        this.content = content;
+    }
+
+    private void createEnterOTP(String emailAddress) {
+        VerticalLayout content = new VerticalLayout();
+        content.setWidthFull();
+
+        IntegerField enterOTP = new IntegerField("Einmalpasswort");
+        content.add(new NativeLabel("Wenn zu " + emailAddress + " ein Account existiert, wurde an diesen ein Einmalpasswort verschickt. Bitte sieh in deinem Postfach nach ob du ein Einmalpasswort erhalten hast und gib dieses hier ein"));
+        content.add(enterOTP);
+        enterOTP.focus();
+
+        Button ok = new Button("Abschicken");
+        ok.addClickShortcut(Key.ENTER);
+        ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        ok.addClickListener(event -> {
+            if (otp.equals(enterOTP.getValue()) && otp > 0) {
+                this.createEnterNewPassword(emailAddress);
+            } else {
+                if (this.attempts++ > 4) {
+                    Notification.show("Zu viele falsche Eingaben");
+                    UI.getCurrent().getPage().getHistory().go(0);
+                    this.otp = null;
                 }
-                this.createContent();
+                enterOTP.setInvalid(true);
+                enterOTP.setErrorMessage("Das Einmalpasswort ist ungültig");
+                LOGGER.warn("Für [{}] wurde ein falsches Einmalpasswort beim Passwort zurücksetzen eingegeben", emailAddress);
             }
         });
         content.add(ok);
