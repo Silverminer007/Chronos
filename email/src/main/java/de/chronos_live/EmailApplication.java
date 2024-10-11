@@ -19,7 +19,6 @@ public class EmailApplication {
     private static final String SMTP_MAIL_ADDRESS = System.getenv("SMTP_MAIL_ADDRESS");
     private static final String SMTP_PASSWORD = System.getenv("SMTP_PASSWORD");
     private static final int SMTP_PORT = Integer.parseInt(System.getenv("SMTP_PORT"));
-    private static final boolean SMTP_SSL = Boolean.parseBoolean(System.getenv("SMTP_SSL"));
 
     public static void main(String[] args) {
         SpringApplication.run(EmailApplication.class, args);
@@ -42,21 +41,26 @@ public class EmailApplication {
         if (message.getSubject().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject must not be blank");
         }
-        Mailer mailer = MailerBuilder
+        try (Mailer mailer = MailerBuilder
                 .withSMTPServer(SMTP_SERVER,
                         SMTP_PORT,
                         SMTP_MAIL_ADDRESS,
                         SMTP_PASSWORD)
-                .withTransportStrategy(SMTP_SSL ?
-                        TransportStrategy.SMTPS :
-                        TransportStrategy.SMTP
-                ).buildMailer();
-        Email email = EmailBuilder.startingBlank()
-                .from(SMTP_USER, SMTP_MAIL_ADDRESS)
-                .to(message.getTo())
-                .withSubject(message.getSubject())
-                .withPlainText(message.getMessage())
-                .buildEmail();
-        mailer.sendMail(email);
+                .withTransportStrategy(SMTP_PORT == 587 ?
+                        TransportStrategy.SMTP_TLS :
+                        (SMTP_PORT == 465 ?
+                                TransportStrategy.SMTPS :
+                                TransportStrategy.SMTP)
+                ).buildMailer()) {
+            Email email = EmailBuilder.startingBlank()
+                    .from(SMTP_USER, SMTP_MAIL_ADDRESS)
+                    .to(message.getTo())
+                    .withSubject(message.getSubject())
+                    .withPlainText(message.getMessage())
+                    .buildEmail();
+            mailer.sendMail(email);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
