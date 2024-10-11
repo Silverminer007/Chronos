@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.0</version>
+        <version>3.3.4</version>
     </parent>
 
     <properties>
@@ -27,6 +27,16 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <image>ghcr.io/silverminer007/${project.artifactId}:${project.version}</image>
+        <mysql.version>9.0.0</mysql.version>
+        <lombok.version>1.18.34</lombok.version>
+        <vaadin.version>24.4.13</vaadin.version>
+        <biweekly.version>0.6.8</biweekly.version>
+        <thumbnailator.version>[0.4, 0.5)</thumbnailator.version>
+        <libphonenumber.version>8.13.47</libphonenumber.version>
+        <file-download-wrapper.version>7.1.0</file-download-wrapper.version>
+        <clipboardhelper.version>2.0.0</clipboardhelper.version>
+        <fullcalendar.version>6.2.2</fullcalendar.version>
+        <javamail.version>8.12.2</javamail.version>
     </properties>
 
     <build>
