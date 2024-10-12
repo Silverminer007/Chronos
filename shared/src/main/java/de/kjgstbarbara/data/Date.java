@@ -1,6 +1,5 @@
 package de.kjgstbarbara.data;
 
-import com.google.common.collect.ImmutableList;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -85,7 +84,7 @@ public class Date implements Comparable<Date> {
     }
 
     public List<Feedback> getFeedbackList() {
-        return ImmutableList.copyOf(feedbackList);
+        return new ArrayList<>(feedbackList);
     }
 
     public void addFeedback(Feedback feedback) {
