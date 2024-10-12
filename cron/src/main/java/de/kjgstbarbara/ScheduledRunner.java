@@ -29,14 +29,14 @@ public class ScheduledRunner {
     public void run() {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
-        LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: START", now.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+        LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: START", this.formatDate(now));
         try {
             // Terminerinnerung → Im Profil Erinnerungen erstellen (in welchen Abständen) → Standard 1 Tag vorher, immer 19 Uhr gesammelt
             for (Date d : datesService.getDateRepository().findByStartBetween(now, now.plusDays(8)).stream().sorted(Comparator.comparing(Date::getStart)).toList()) {
                 this.processNotifications(d);
             }
             for (Date d : datesService.getDateRepository().findByPollScheduledFor(LocalDate.now())) {
-                LOGGER.info("Umfragen für {} am {} werden verschicken wird geprüft", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                LOGGER.info("Umfragen für {} am {} werden verschicken wird geprüft", d.getTitle(), this.formatDate(d.getStart()));
                 if (d.getPollScheduledFor() == null) {
                     continue;
                 }
@@ -51,13 +51,13 @@ public class ScheduledRunner {
         } catch (Throwable e) {
             LOGGER.error("Es ist ein Fehler für die Terminerinnerungen aufgetreten", e);
         }
-        LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: ENDE", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+        LOGGER.info("ERINNERUNGEN VERSCHICKEN {}: ENDE", this.formatDate(LocalDateTime.now()));
         LOGGER.info("------------------------------------------------------------------------------------------------");
     }
 
     private void processNotifications(Date d) {
         LocalDateTime now = LocalDateTime.now();
-        LOGGER.info("Erinnerungen für {} am {} werden verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+        LOGGER.info("Erinnerungen für {} am {} werden verschickt", d.getTitle(), this.formatDate(d.getStart()));
 
         if (LocalDateTime.now().until(d.getStart(), ChronoUnit.HOURS) == 2) {
             this.processAdminOverviewMessage(d);
@@ -66,6 +66,7 @@ public class ScheduledRunner {
         for (Person p : d.getGroup().getMembers()) {
             for (Person.Notification notification : p.getNotifications()) {
                 if (now.until(d.getStart(), ChronoUnit.HOURS) == notification.getHoursBefore()) {
+                    LOGGER.info("Erinnerungen für {} am {} werden an \"{}\" verschickt", d.getTitle(), this.formatDate(d.getStart()), p.getName());
                     new MessageSender(p).person(p).date(d).send(Messages.DATE_REMINDER, notification.getPlatform());
                 }
             }
@@ -79,7 +80,7 @@ public class ScheduledRunner {
     }
 
     private String buildAdminMessage(Person admin, Date d) {
-        LOGGER.info("Termin Infos für {} am {} werden an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), admin.getName());
+        LOGGER.info("Termin Infos für {} am {} werden an {} verschickt", d.getTitle(), d.getStart(), admin.getName());
         StringBuilder summary = new StringBuilder();
         summary.append("Hey ").append(admin.getFirstName()).append(",\n");
         summary.append("gleich ist ").append(d.getTitle()).append("\n\n");
@@ -111,9 +112,13 @@ public class ScheduledRunner {
     private void sendPoll(Date d) {
         for (Person p : d.getGroup().getMembers()) {
             if (LocalDateTime.now().getHour() == 19) {// TODO Wo kommt diese Einstellung hin?
-                LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), d.getStart().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), p.getName());
+                LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), this.formatDate(d.getStart()), p.getName());
                 new MessageSender(p).date(d).person(p).send(Messages.DATE_POLL);
             }
         }
+    }
+
+    private String formatDate(LocalDateTime date) {
+        return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
     }
 }
