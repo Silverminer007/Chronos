@@ -168,6 +168,7 @@ public class RequestPasswordResetView extends VerticalLayout {
                 return;
             }
             this.person.setPassword(passwordEncoder.encode(password.getValue()));
+            this.personsRepository.save(this.person);
             Notification.show("Das Passwort wurde erfolgreich zurückgesetzt");
             LOGGER.warn("Das Passwort von [{}] wurde zurückgesetzt", emailAddress);
             UI.getCurrent().navigate(LoginView.class);
