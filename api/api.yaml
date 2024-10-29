@@ -1,0 +1,551 @@
+openapi: 3.1.0
+info:
+  title: Chronos HTTP API
+  description: Chronos HTTP API
+  version: 1.0.0
+paths:
+  /date:
+    get:
+      parameters:
+        - name: groups
+          in: query
+          schema:
+            type: array
+            items:
+              type: long
+        - name: organisations
+          in: query
+          schema:
+            type: array
+            items:
+              type: long
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/date"
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/date"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: long
+                description: The new unique ID of the date
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/date"
+      responses:
+        "200":
+          description: OK
+
+  /date/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/date"
+
+  /group:
+    get:
+      parameters:
+        - name: organisations
+          in: query
+          schema:
+            type: array
+            items:
+              type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/group"
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/group"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: long
+                description: The new unique ID of the group
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/group"
+      responses:
+        "200":
+          description: OK
+
+  /group/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/group"
+
+  /organisation:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/organisation"
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/organisation"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: long
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/organisation"
+      responses:
+        "200":
+          description: OK
+
+  /organisation/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/organisation"
+
+  /feedback/current/{date}:
+    description: Get the latest state of feedbacks
+    get:
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/feedback"
+
+  /feedback/history/{date}:
+    description: Get the entire history of feedbacks
+    get:
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/feedback"
+
+  /feedback/current/{date}/{person}:
+    get:
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: long
+        - name: person
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/feedback"
+
+  /feedback/history/{date}/{person}:
+    description: Get the entire history of feedbacks for this person
+    get:
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: long
+        - name: person
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/feedback"
+
+  /feedback/{date}:
+    post:
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: long
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              description: New status
+              enum:
+                - "COMMITTED"
+                - "CANCELLED"
+                - "NONE"
+      responses:
+        "200":
+          description: OK
+
+  /information/{date}:
+    post:
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: long
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              description: The new Information text
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/information"
+    get:
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/information"
+
+  /person/{id}/profile:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                description: BASE64 Encoded Profile Image
+    put:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              description: BASE64 Encoded Profile Image
+      responses:
+        "200":
+          description: OK
+
+  /person:
+    description: Data of the authenticated user
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/person"
+
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/person"
+      responses:
+        "200":
+          description: OK
+
+  /person/{id}:
+    description: Data of the specified person
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: long
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/person"
+
+components:
+  schemas:
+    date:
+      type: object
+      properties:
+        id:
+          type: long
+        title:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        venue:
+          type: string
+        notes:
+          type: string
+        group:
+          type: long
+        linkedTo:
+          type: long
+          description: The ID of the date this date is linked to or smaller 0 if it is not linked
+        cancelled:
+          type: boolean
+        pollRunning:
+          type: boolean
+        pollScheduled:
+          type: string
+          format: date-time
+          optional: true
+
+    group:
+      type: object
+      properties:
+        id:
+          type: long
+        name:
+          type: string
+        color:
+          type: string
+          pattern: "#[a-f0-9]{6}"
+        organisation:
+          type: long
+        members:
+          type: array
+          items:
+            type: long
+        admins:
+          type: array
+          items:
+            type: long
+
+    organisation:
+      type: object
+      properties:
+        id:
+          type: long
+        name:
+          type: string
+        admin:
+          type: long
+          description: The Persons Unique ID
+        members:
+          type: array
+          items:
+            type: long
+        membershipRequests:
+          type: array
+          items:
+            type: long
+
+    feedback:
+      type: object
+      properties:
+        person:
+          type: long
+          description: The unique id of the Person this feedback belongs to
+        status:
+          type: string
+          enum:
+            - "COMMITTED"
+            - "CANCELLED"
+            - "NONE"
+        timeStamp:
+          type: string
+          format: date-time
+
+    person:
+      type: object
+      properties:
+        id:
+          type: long
+          description: Unique ID of the person. Cannot change
+        firstName:
+          type: string
+        lastName:
+          type: string
+        username:
+          type: string
+          description: Is not editable, gets ignored on put/post methods
+        darkMode:
+          type: boolean
+        eMailAddress:
+          type: string
+        locale:
+          type: string
+          description: The locale in ISO Format. e.g. "EN-US"
+        timeZone:
+          type: string
+          description: I don't know yet which format to use here
+        calendarLayout:
+          type: string
+          enum: [ "LIST_PER_MONTH", "LIST_NEXT", "MONTH", "YEAR" ]
+        preferredPlatform:
+          $ref: "#/components/schemas/platform"
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/notification"
+
+    information:
+      type: object
+      properties:
+        person:
+          type: long
+          description: The unique ID of the person
+        timeStamp:
+          type: string
+          format: date-time
+        text:
+          type: string
+
+    platform:
+      type: string
+      enum:
+        - "EMAIL"
+        - "SIGNAL"
+
+    notification:
+      type: object
+      properties:
+        platform:
+          $ref: "#/components/schemas/platform"
+        hoursBefore:
+          type: int
+          minimum: 0
+          maximum: 168

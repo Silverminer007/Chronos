@@ -74,13 +74,18 @@ public class Date implements Comparable<Date> {
     }
 
     public Feedback.Status getStatusFor(Person person) {
+        Feedback f = this.getFeedbackFor(person);
+        return f == null ? Feedback.Status.NONE : f.getStatus();
+    }
+
+    public Feedback getFeedbackFor(Person person) {
         Collections.sort(feedbackList);
         for (Feedback f : feedbackList) {
             if (f.getPerson().getId() == person.getId()) {
-                return f.getStatus();
+                return f;
             }
         }
-        return Feedback.Status.NONE;
+        return null;
     }
 
     public List<Feedback> getFeedbackList() {
