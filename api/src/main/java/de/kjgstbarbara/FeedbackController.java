@@ -86,7 +86,7 @@ public class FeedbackController {
 
     private Person getPrincipal(JwtAuthenticationToken token) {
         System.out.println(token.getToken().getClaimAsString(StandardClaimNames.PREFERRED_USERNAME));
-        return this.personsRepository.findByUsernameOrEmail(token.getToken().getClaimAsString(StandardClaimNames.PREFERRED_USERNAME)).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        return this.personsRepository.findByUsername(token.getToken().getClaimAsString(StandardClaimNames.PREFERRED_USERNAME)).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
     public record SlimFeedback(long person, String status, String timeStamp) {

@@ -89,7 +89,7 @@ public class DateController {
 
     private Person getPrincipal(JwtAuthenticationToken token) {
         System.out.println(token.getToken().getClaimAsString(StandardClaimNames.PREFERRED_USERNAME));
-        return this.personsRepository.findByUsernameOrEmail(token.getToken().getClaimAsString(StandardClaimNames.PREFERRED_USERNAME)).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        return this.personsRepository.findByUsername(token.getToken().getClaimAsString(StandardClaimNames.PREFERRED_USERNAME)).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
     public record SlimDate(long id, String title, String start, String end, String venue, String notes, long group,
