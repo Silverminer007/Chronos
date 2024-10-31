@@ -19,12 +19,12 @@ paths:
             type: array
             items:
               type: long
-        - name: from
+        - name: after
           in: query
           schema:
             type: string
             format: date-time
-        - name: until
+        - name: before
           in: query
           schema:
             type: string

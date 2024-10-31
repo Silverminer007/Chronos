@@ -36,12 +36,12 @@ public class DateController {
     public List<SlimDate> getDate(
             @RequestParam(required = false) List<Long> groups,
             @RequestParam(required = false) List<Long> organisations,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String until,
+            @RequestParam(required = false) String after,
+            @RequestParam(required = false) String before,
             JwtAuthenticationToken token) {
         Person principal = getPrincipal(token);
-        LocalDateTime fromDate = from == null ? null : LocalDateTime.parse(from, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        LocalDateTime untilDate = until == null ? null : LocalDateTime.parse(until, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        LocalDateTime fromDate = after == null ? null : LocalDateTime.parse(after, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        LocalDateTime untilDate = before == null ? null : LocalDateTime.parse(before, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         Stream<Date> baseList =
                 fromDate == null
                         ?
