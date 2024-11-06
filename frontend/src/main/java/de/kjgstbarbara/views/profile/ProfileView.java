@@ -33,7 +33,6 @@ import de.kjgstbarbara.FileHelper;
 import de.kjgstbarbara.components.ClosableDialog;
 import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.components.PhoneNumberField;
-import de.kjgstbarbara.components.ReCaptcha;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
@@ -174,34 +173,29 @@ public class ProfileView extends VerticalLayout {
             PasswordField reTypePassword = new PasswordField("Neues Passwort wiederholen");
             reTypePassword.setRequired(true);
             reTypePassword.setWidthFull();
-            ReCaptcha reCaptcha = new ReCaptcha();
-            dialog.add(password, newPassword, reTypePassword, reCaptcha);
+            dialog.add(password, newPassword, reTypePassword);
             dialog.setHeaderTitle("Passwort ändern");
             Button save = new Button("Speichern");
             save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             save.addClickListener(e -> {
-                if (reCaptcha.isValid()) {
-                    if (passwordEncoder.encode(password.getValue()).equals(person.getPassword())) {
-                        if (newPassword.getValue().length() >= 8) {
-                            if (newPassword.getValue().equals(reTypePassword.getValue())) {
-                                person.setPassword(passwordEncoder.encode(password.getValue()));
-                                personsRepository.save(person);
-                                dialog.close();
-                                Notification.show("Passwort geändert");
-                            } else {
-                                reTypePassword.setInvalid(true);
-                                reTypePassword.setErrorMessage("Die Passwörter stimmen nicht überein");
-                            }
+                if (passwordEncoder.encode(password.getValue()).equals(person.getPassword())) {
+                    if (newPassword.getValue().length() >= 8) {
+                        if (newPassword.getValue().equals(reTypePassword.getValue())) {
+                            person.setPassword(passwordEncoder.encode(password.getValue()));
+                            personsRepository.save(person);
+                            dialog.close();
+                            Notification.show("Passwort geändert");
                         } else {
-                            newPassword.setInvalid(true);
-                            newPassword.setErrorMessage("Das Passwort muss aus mindestens 8 Zeichen bestehen");
+                            reTypePassword.setInvalid(true);
+                            reTypePassword.setErrorMessage("Die Passwörter stimmen nicht überein");
                         }
                     } else {
-                        password.setInvalid(true);
-                        password.setErrorMessage("Das Passwort ist falsch");
+                        newPassword.setInvalid(true);
+                        newPassword.setErrorMessage("Das Passwort muss aus mindestens 8 Zeichen bestehen");
                     }
                 } else {
-                    Notification.show("Bitte löse zuerst das Captcha");
+                    password.setInvalid(true);
+                    password.setErrorMessage("Das Passwort ist falsch");
                 }
             });
             Button cancel = new Button("Zurück");
