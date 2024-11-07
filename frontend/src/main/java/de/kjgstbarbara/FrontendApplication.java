@@ -18,7 +18,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         name = "Chronos",
         shortName = "Chronos",
         offlinePath = "offline.html",
-        offlineResources = {"./images/offline.png"}
+        offlineResources = {"./images/offline.png"},
+        description = "Manage your dates with different Organisations and Groups together and see them united",
+        themeColor = "#00b6be",
+        backgroundColor = "#006d84"
 )
 @SpringBootApplication
 @Push
