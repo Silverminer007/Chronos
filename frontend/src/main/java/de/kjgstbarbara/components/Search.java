@@ -14,6 +14,10 @@ public class Search extends HorizontalLayout {
     private String search;
 
     public Search(Consumer<String> searchUpdated) {
+        this(searchUpdated, "");
+    }
+
+    public Search(Consumer<String> searchUpdated, String currentSearch) {
         this.setAlignItems(Alignment.CENTER);
         this.setJustifyContentMode(JustifyContentMode.END);
 
@@ -22,6 +26,7 @@ public class Search extends HorizontalLayout {
             this.search = event.getValue();
             searchUpdated.accept(this.search);
         });
+        searchTextField.setValue(currentSearch);
         searchTextField.setVisible(false);
         this.add(searchTextField);
 

@@ -29,21 +29,19 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.IcsHelper;
 import de.kjgstbarbara.Result;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.*;
 import de.kjgstbarbara.messaging.MessageSender;
 import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.MainNavigationView;
-import de.kjgstbarbara.views.security.RegisterView;
 import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.security.core.userdetails.User;
 import org.vaadin.olli.FileDownloadWrapper;
 
 import java.io.ByteArrayInputStream;
@@ -63,26 +61,18 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     private final DateRepository dateRepository;
 
     private final Person person;
-    private final FeedbackRepository feedbackRepository;
 
     private Date date;
 
-    public DateView(PersonsService personsService, DatesService datesService, AuthenticationContext authenticationContext, FeedbackRepository feedbackRepository) {
+    public DateView(PersonsService personsService, DatesService datesService) {
         this.dateRepository = datesService.getDateRepository();
-        this.person = authenticationContext.getAuthenticatedUser(User.class)
-                .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (person == null) {
-            UI.getCurrent().navigate(RegisterView.class);
-        }
+        this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         this.setMaxWidth("600px");
-        this.feedbackRepository = feedbackRepository;
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         if (person == null) {
-            beforeEnterEvent.rerouteTo(RegisterView.class);
             return;
         }
         this.date = beforeEnterEvent.getRouteParameters().get("date").map(Long::valueOf).flatMap(dateRepository::findById).orElse(null);

@@ -1,7 +1,6 @@
 package de.kjgstbarbara.views;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.icon.Icon;
@@ -13,13 +12,14 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsService;
-import de.kjgstbarbara.views.security.RegisterView;
-import org.springframework.security.core.userdetails.User;
+import de.kjgstbarbara.views.date.calendar.CalendarView;
+import de.kjgstbarbara.views.organisation.NewOrganisationView;
+import de.kjgstbarbara.views.settings.SettingsView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,16 +32,10 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
     private final Person person;
     private final List<Link> links = new ArrayList<>();
 
-    public MainNavigationView(PersonsService personsService, AuthenticationContext authenticationContext) {
-        this.person = authenticationContext.getAuthenticatedUser(User.class)
-                .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (person == null) {
-            UI.getCurrent().navigate(RegisterView.class);
-        } else {
-            setPrimarySection(Section.NAVBAR);
-            addToNavbar(true, getNavigation());
-        }
+    public MainNavigationView(PersonsService personsService) {
+        this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        setPrimarySection(Section.NAVBAR);
+        addToNavbar(true, getNavigation());
     }
 
     private Component wrappedContent;
@@ -111,7 +105,6 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         if (person == null) {
-            beforeEnterEvent.rerouteTo(RegisterView.class);
             return;
         }
         this.setTheme(this.person.isDarkMode());

@@ -1,4 +1,4 @@
-package de.kjgstbarbara.views.profile;
+package de.kjgstbarbara.views.settings;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
@@ -28,8 +28,8 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import de.kjgstbarbara.FileHelper;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.ClosableDialog;
 import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.components.PhoneNumberField;
@@ -40,7 +40,6 @@ import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
 import net.coobird.thumbnailator.Thumbnails;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.awt.*;
@@ -59,48 +58,46 @@ public class ProfileView extends VerticalLayout {
     private final OrganisationRepository organisationRepository;
     private final FeedbackRepository feedbackRepository;
     private final GroupRepository groupRepository;
-    private final AuthenticationContext authenticationContext;
     private final Person person;
     private final PasswordEncoder passwordEncoder;
 
-    public ProfileView(PersonsService personsService, PasswordEncoder passwordEncoder, OrganisationService organisationService, FeedbackService feedbackService, GroupService groupService, AuthenticationContext authenticationContext) {
+    public ProfileView(PersonsService personsService, PasswordEncoder passwordEncoder, OrganisationService organisationService, FeedbackService feedbackService, GroupService groupService) {
         this.personsRepository = personsService.getPersonsRepository();
         this.organisationRepository = organisationService.getOrganisationRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.groupRepository = groupService.getGroupRepository();
-        this.authenticationContext = authenticationContext;
         this.passwordEncoder = passwordEncoder;
-        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (person == null) {
-            authenticationContext.logout();
-        } else {
-            this.setSizeFull();
-            this.setAlignItems(Alignment.CENTER);
-            this.setJustifyContentMode(JustifyContentMode.START);
-            this.setSpacing(false);
-            this.setPadding(false);
-
-            Binder<Person> binder = new Binder<>();
-
-            this.add(this.createHeader());
-
-            VerticalLayout layout = new VerticalLayout();
-            layout.setSizeFull();
-            layout.setAlignItems(Alignment.CENTER);
-            layout.setSpacing(true);
-            layout.setPadding(true);
-
-            layout.add(this.createForm(binder));
-            layout.add(this.createChangePasswordButton());
-            layout.add(this.createSaveButton(binder));
-            layout.add(this.createDeleteAccountButton());
-
-            this.add(layout);
-
-            binder.readBean(person);
+        this.person = Utility.getAuthenticatedUser(personsRepository).orElse(null);
+        if (this.person != null) {
+            this.init();
         }
+    }
+
+    private void init() {
+        this.setSizeFull();
+        this.setAlignItems(Alignment.CENTER);
+        this.setJustifyContentMode(JustifyContentMode.START);
+        this.setSpacing(false);
+        this.setPadding(false);
+
+        Binder<Person> binder = new Binder<>();
+
+        this.add(this.createHeader());
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setSizeFull();
+        layout.setAlignItems(Alignment.CENTER);
+        layout.setSpacing(true);
+        layout.setPadding(true);
+
+        layout.add(this.createForm(binder));
+        layout.add(this.createChangePasswordButton());
+        layout.add(this.createSaveButton(binder));
+        layout.add(this.createDeleteAccountButton());
+
+        this.add(layout);
+
+        binder.readBean(this.person);
     }
 
     private Component createHeader() {
@@ -239,28 +236,7 @@ public class ProfileView extends VerticalLayout {
             List<Group> groups = new ArrayList<>(this.groupRepository.findByAdminsIn(person));
             groups.removeIf(g -> g.getAdmins().size() > 1);
             if (organisations.isEmpty() && groups.isEmpty()) {
-                PasswordField passwordField = new PasswordField();
-                ConfirmDialog confirmDialog = new ConfirmDialog(
-                        "Account löschen",
-                        "Bist du sicher, dass du deinen Account löschen möchtest? Du kannst deinen Account nicht wiederherstellen und deine Daten werden unwiderruflich gelöscht. Um diese Aktion zu bestätigen, gib bitte dein Passwort erneut ein",
-                        "Ja, meinen Account löschen",
-                        e -> {
-                            if (person.getPassword().equals(passwordEncoder.encode(passwordField.getValue()))) {
-                                personsRepository.delete(person);
-                                this.feedbackRepository.deleteByPerson(person);
-                                this.organisationRepository.findByMembersIn(person).forEach(org ->
-                                        org.getMembers().remove(person));
-                                this.organisationRepository.findByMembershipRequestsIn(person).forEach(org ->
-                                        org.getMembershipRequests().remove(person));
-                                this.groupRepository.findByMembersIn(person).forEach(group ->
-                                        group.getMembers().remove(person));
-                                this.groupRepository.findByAdminsIn(person).forEach(group ->
-                                        group.getAdmins().remove(person));
-                                authenticationContext.logout();
-                            }
-                        }
-                );
-                confirmDialog.add(passwordField);
+                ConfirmDialog confirmDialog = createConfirmDeleteAccountDialog();
                 confirmDialog.open();
             } else {
                 ClosableDialog closableDialog = new ClosableDialog("Account löschen nicht möglich");
@@ -283,6 +259,32 @@ public class ProfileView extends VerticalLayout {
             }
         });
         return deleteAccount;
+    }
+
+    private ConfirmDialog createConfirmDeleteAccountDialog() {
+        PasswordField passwordField = new PasswordField();
+        ConfirmDialog confirmDialog = new ConfirmDialog(
+                "Account löschen",
+                "Bist du sicher, dass du deinen Account löschen möchtest? Du kannst deinen Account nicht wiederherstellen und deine Daten werden unwiderruflich gelöscht. Um diese Aktion zu bestätigen, gib bitte dein Passwort erneut ein",
+                "Ja, meinen Account löschen",
+                e -> {
+                    if (person.getPassword().equals(passwordEncoder.encode(passwordField.getValue()))) {
+                        personsRepository.delete(person);
+                        this.feedbackRepository.deleteByPerson(person);
+                        this.organisationRepository.findByMembersIn(person).forEach(org ->
+                                org.getMembers().remove(person));
+                        this.organisationRepository.findByMembershipRequestsIn(person).forEach(org ->
+                                org.getMembershipRequests().remove(person));
+                        this.groupRepository.findByMembersIn(person).forEach(group ->
+                                group.getMembers().remove(person));
+                        this.groupRepository.findByAdminsIn(person).forEach(group ->
+                                group.getAdmins().remove(person));
+                        Utility.logout();// TODO User bleibt aktuell eingeloggt und Account in Keycloak wird auch nicht gelöscht
+                    }
+                }
+        );
+        confirmDialog.add(passwordField);
+        return confirmDialog;
     }
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {

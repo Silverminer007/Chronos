@@ -1,4 +1,4 @@
-package de.kjgstbarbara.views;
+package de.kjgstbarbara.views.organisation;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -11,16 +11,15 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.views.security.RegisterView;
+import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.springframework.security.core.userdetails.User;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,7 +29,6 @@ import java.util.stream.Stream;
 @PageTitle("Organisationen")
 @PermitAll
 public class NewOrganisationView extends VerticalLayout {
-    private final PersonsRepository personsRepository;
     private final OrganisationRepository organisationRepository;
     private final GroupRepository groupRepository;
 
@@ -40,16 +38,16 @@ public class NewOrganisationView extends VerticalLayout {
     private final Person person;
 
     public NewOrganisationView(PersonsService personsService, OrganisationService organisationService,
-                                GroupService groupService, AuthenticationContext authenticationContext) {
-        this.personsRepository = personsService.getPersonsRepository();
+                               GroupService groupService) {
         this.organisationRepository = organisationService.getOrganisationRepository();
         this.groupRepository = groupService.getGroupRepository();
-        this.person = authenticationContext.getAuthenticatedUser(User.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (person == null) {
-            UI.getCurrent().navigate(RegisterView.class);
+        this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        if (this.person != null) {
+            this.init();
         }
+    }
+
+    private void init() {
         this.setHeightFull();
         this.setPadding(false);
         this.setSpacing(false);

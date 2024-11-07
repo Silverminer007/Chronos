@@ -9,7 +9,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.security.AuthenticationContext;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageSender;
@@ -20,7 +20,6 @@ import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.springframework.security.core.userdetails.UserDetails;
 
 @Route(value = "organisation/manage/:organisationID/:person/:action", layout = MainNavigationView.class)
 @PermitAll
@@ -30,15 +29,10 @@ public class EditJoinOrganisationRequestsView extends VerticalLayout implements 
 
     private final Person person;
 
-    public EditJoinOrganisationRequestsView(PersonsService personsService, OrganisationService organisationService, AuthenticationContext authenticationContext) {
+    public EditJoinOrganisationRequestsView(PersonsService personsService, OrganisationService organisationService) {
         this.personsRepository = personsService.getPersonsRepository();
         this.organisationRepository = organisationService.getOrganisationRepository();
-        this.person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (person == null) {
-            authenticationContext.logout();
-        }
+        this.person = Utility.getAuthenticatedUser(this.personsRepository).orElse(null);
     }
 
     @Override

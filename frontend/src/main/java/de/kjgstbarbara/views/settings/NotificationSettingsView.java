@@ -1,4 +1,4 @@
-package de.kjgstbarbara.views.profile;
+package de.kjgstbarbara.views.settings;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
@@ -16,7 +16,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.security.AuthenticationContext;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.Platform;
@@ -24,7 +24,6 @@ import de.kjgstbarbara.service.PersonsRepository;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,22 +35,22 @@ public class NotificationSettingsView extends VerticalLayout {
     private final PersonsRepository personsRepository;
     private final Person principal;
 
-    public NotificationSettingsView(PersonsService personsService, AuthenticationContext authenticationContext) {
+    public NotificationSettingsView(PersonsService personsService) {
         this.personsRepository = personsService.getPersonsRepository();
-        this.principal = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (this.principal == null) {
-            authenticationContext.logout();
-        } else {
-            setSizeFull();
-            this.setSpacing(false);
-            this.setPadding(false);
-            this.add(this.createHeader());
-            this.add(this.createIntroduction());
-            this.add(this.createPreferredPlatform());
-            this.add(this.createReminders());
+        this.principal = Utility.getAuthenticatedUser(personsRepository).orElse(null);
+        if(principal != null) {
+            this.init();
         }
+    }
+
+    private void init() {
+        this.setSizeFull();
+        this.setSpacing(false);
+        this.setPadding(false);
+        this.add(this.createHeader());
+        this.add(this.createIntroduction());
+        this.add(this.createPreferredPlatform());
+        this.add(this.createReminders());
     }
 
     private Component createHeader() {

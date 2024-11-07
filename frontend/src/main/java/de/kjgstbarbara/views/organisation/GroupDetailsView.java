@@ -1,4 +1,4 @@
-package de.kjgstbarbara.views;
+package de.kjgstbarbara.views.organisation;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -19,9 +19,9 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.FrontendUtils;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.ClosableDialog;
 import de.kjgstbarbara.components.ColorButton;
 import de.kjgstbarbara.components.DialogFooter;
@@ -29,9 +29,8 @@ import de.kjgstbarbara.components.Search;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.views.security.RegisterView;
+import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.springframework.security.core.userdetails.User;
 
 import java.util.Comparator;
 import java.util.List;
@@ -49,15 +48,17 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
     private Component footer = new HorizontalLayout();
     private Group group;
 
-    public GroupDetailsView(PersonsService personsService, GroupService groupService, DatesService datesService, AuthenticationContext authenticationContext, FeedbackRepository feedbackRepository) {
+    public GroupDetailsView(PersonsService personsService, GroupService groupService, DatesService datesService, FeedbackRepository feedbackRepository) {
         this.groupRepository = groupService.getGroupRepository();
         this.dateRepository = datesService.getDateRepository();
-        this.loggedInUser = authenticationContext.getAuthenticatedUser(User.class)
-                .flatMap(userDetails -> personsService.getPersonsRepository().findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (loggedInUser == null) {
-            UI.getCurrent().navigate(RegisterView.class);
+        this.feedbackRepository = feedbackRepository;
+        this.loggedInUser = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        if (this.loggedInUser != null) {
+            this.init();
         }
+    }
+
+    private void init() {
         this.setSizeFull();
         this.setAlignItems(Alignment.START);
         this.setJustifyContentMode(JustifyContentMode.START);
@@ -67,7 +68,6 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         this.add(this.header);
         this.add(this.members);
         this.add(this.footer);
-        this.feedbackRepository = feedbackRepository;
     }
 
     private void createHeader() {
@@ -90,7 +90,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         groupInformation.add(back);
 
         H4 groupName = new H4("Gruppe: " + this.group.getName());
-        if(this.group.getAdmins().contains(this.loggedInUser) || this.group.getOrganisation().getAdmin().equals(this.loggedInUser)) {
+        if (this.group.getAdmins().contains(this.loggedInUser) || this.group.getOrganisation().getAdmin().equals(this.loggedInUser)) {
             groupName.addClickListener(e -> this.changeName());
         }
         groupInformation.add(groupName);

@@ -1,4 +1,4 @@
-package de.kjgstbarbara.views;
+package de.kjgstbarbara.views.settings;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -9,38 +9,31 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.Header;
-import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
-import de.kjgstbarbara.views.profile.NotificationSettingsView;
-import de.kjgstbarbara.views.profile.ProfileView;
+import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.springframework.security.core.userdetails.UserDetails;
 
 @Route(value = "settings", layout = MainNavigationView.class)
 @PageTitle("Einstellungen")
 @PermitAll
 public class SettingsView extends VerticalLayout {
-    private final AuthenticationContext authenticationContext;
 
-    public SettingsView(PersonsService personsService, AuthenticationContext authenticationContext) {
-        this.authenticationContext = authenticationContext;
+    public SettingsView(PersonsService personsService) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
-        Person person = authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> personsRepository.findByUsername(userDetails.getUsername()))
-                .orElse(null);
-        if (person == null) {
-            authenticationContext.logout();
-        } else {
-            this.setSizeFull();
-            this.setSpacing(false);
-            this.setPadding(false);
+        Utility.getAuthenticatedUser(personsRepository);
+        this.init();
+    }
 
-            this.add(this.createHeader());
-            this.add(this.createContent());
-        }
+    private void init() {
+        this.setSizeFull();
+        this.setSpacing(false);
+        this.setPadding(false);
+
+        this.add(this.createHeader());
+        this.add(this.createContent());
     }
 
     private Component createHeader() {
@@ -58,7 +51,7 @@ public class SettingsView extends VerticalLayout {
 
         content.add(this.createLink("Profil", ProfileView.class));
         content.add(this.createLink("Benachrichtigungen", NotificationSettingsView.class));
-        content.add(this.createButton("Abmelden", this.authenticationContext::logout));
+        content.add(this.createButton("Abmelden", Utility::logout));
         return content;
     }
 
