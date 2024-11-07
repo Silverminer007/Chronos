@@ -16,22 +16,22 @@ public interface Result {
     String getErrorMessage();
 
     default Result and(Result result) {
-        if(result == null) {
+        if (result == null) {
             return this;
         }
-        if(this.isSuccess() && result.isSuccess()) {
+        if (this.isSuccess() && result.isSuccess()) {
             return this;
         }
-        if(this.isError() && result.isSuccess()) {
+        if (this.isError() && result.isSuccess()) {
             return this;
         }
-        if(this.isSuccess() && result.isError()) {
+        if (this.isSuccess() && result.isError()) {
             return result;
         }
-        if(this instanceof MultiError multiError) {
+        if (this instanceof MultiError multiError) {
             return multiError.addError(result);
         }
-        if(result instanceof MultiError multiError) {
+        if (result instanceof MultiError multiError) {
             return multiError.addError(this);
         }
         return new MultiError(this, result);
@@ -62,7 +62,7 @@ public interface Result {
         }
     }
 
-    class MultiError implements Result{
+    class MultiError implements Result {
         private final List<String> errorMessages = new ArrayList<>();
 
         public MultiError(String... errorMessages) {
@@ -78,7 +78,7 @@ public interface Result {
         }
 
         public Result addError(Result error) {
-            if(error instanceof MultiError multiError) {
+            if (error instanceof MultiError multiError) {
                 this.errorMessages.addAll(multiError.errorMessages);
                 return this;
             }
@@ -90,7 +90,7 @@ public interface Result {
         public String getErrorMessage() {
             StringBuilder errorMessage = new StringBuilder();
             errorMessage.append(errorMessages.size()).append(" error(s) occurred:").append("\n");
-            for(int i = 0; i < errorMessages.size(); i++) {
+            for (int i = 0; i < errorMessages.size(); i++) {
                 errorMessage.append((i + 1)).append(". ").append(errorMessages.get(i)).append("\n");
             }
             return errorMessage.toString();

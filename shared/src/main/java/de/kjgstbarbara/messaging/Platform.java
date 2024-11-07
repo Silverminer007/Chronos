@@ -2,8 +2,6 @@ package de.kjgstbarbara.messaging;
 
 import de.kjgstbarbara.Result;
 import de.kjgstbarbara.data.Person;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -40,8 +38,6 @@ public enum Platform {
         }
     });
 
-    private static final Logger LOGGER = LogManager.getLogger(Platform.class);
-
     private final BiFunction<String, Person, Result> send;
 
     Platform(BiFunction<String, Person, Result> send) {
@@ -55,5 +51,6 @@ public enum Platform {
     private record Email(String to, String subject, String message) {
     }
 
-    private record Signal(String message, String number, String[] recipients, String text_mode) {}
+    private record Signal(String message, String number, String[] recipients, String text_mode) {
+    }
 }
