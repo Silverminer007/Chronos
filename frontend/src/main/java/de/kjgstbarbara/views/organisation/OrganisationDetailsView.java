@@ -33,6 +33,7 @@ import org.vaadin.olli.ClipboardHelper;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @PermitAll
 @Route(value = "new-organisations/organisation/:organisation", layout = MainNavigationView.class)
@@ -45,6 +46,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
     private String search = null;
     private Component header = new HorizontalLayout();
     private Component invite = new HorizontalLayout();
+    private Component membersTitle = new HorizontalLayout();
     private Component members = new VerticalLayout();
     private Component footer = new HorizontalLayout();
     private Organisation organisation;
@@ -55,7 +57,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackRepository;
         this.loggedInUser = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
-        if(this.loggedInUser != null) {
+        if (this.loggedInUser != null) {
             this.init();
         }
     }
@@ -69,6 +71,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
 
         this.add(this.header);
         this.add(this.invite);
+        this.add(this.membersTitle);
         this.add(this.members);
         this.add(this.footer);
     }
@@ -76,20 +79,20 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
     private void createHeader() {
         HorizontalLayout header = new Header();
 
-        HorizontalLayout groupInformation = new HorizontalLayout();
-        groupInformation.setJustifyContentMode(JustifyContentMode.START);
-        groupInformation.setWidthFull();
-        groupInformation.setAlignItems(Alignment.CENTER);
+        HorizontalLayout organisationInformation = new HorizontalLayout();
+        organisationInformation.setJustifyContentMode(JustifyContentMode.START);
+        organisationInformation.setWidthFull();
+        organisationInformation.setAlignItems(Alignment.CENTER);
 
         Button back = new Button(VaadinIcon.ARROW_LEFT.create());
         back.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_TERTIARY);
         back.addClickListener(event -> UI.getCurrent().navigate(NewOrganisationView.class));
-        groupInformation.add(back);
+        organisationInformation.add(back);
 
         H4 groupName = new H4("Organisation: " + this.organisation.getName());
-        groupInformation.add(groupName);
+        organisationInformation.add(groupName);
 
-        header.add(groupInformation);
+        header.add(organisationInformation);
 
         Button editName = new Button(VaadinIcon.PENCIL.create());
         editName.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -145,19 +148,12 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         this.invite = invite;
     }
 
-    private void createMemberList() {
-        VerticalLayout membersList = new VerticalLayout();
-        membersList.setJustifyContentMode(JustifyContentMode.START);
-        membersList.setAlignItems(Alignment.START);
-        membersList.setPadding(true);
-        membersList.setSpacing(true);
-        membersList.setSizeFull();
-
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setJustifyContentMode(JustifyContentMode.START);
-        header.setAlignItems(Alignment.CENTER);
-        header.addClassNames(LumoUtility.Background.PRIMARY_50, LumoUtility.BorderRadius.MEDIUM);
+    private void createMembersTitle() {
+        HorizontalLayout membersTitle = new HorizontalLayout();
+        membersTitle.setWidthFull();
+        membersTitle.setJustifyContentMode(JustifyContentMode.START);
+        membersTitle.setAlignItems(Alignment.CENTER);
+        membersTitle.addClassNames(LumoUtility.Background.PRIMARY_50, LumoUtility.BorderRadius.MEDIUM);
 
         HorizontalLayout headerLeft = new HorizontalLayout();
         headerLeft.setAlignItems(Alignment.CENTER);
@@ -169,17 +165,26 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         H5 headerTitle = new H5("Mitglieder");
         headerLeft.add(headerTitle);
 
-        header.add(headerLeft);
+        membersTitle.add(headerLeft);
 
-        header.add(new Search(searchString -> {
+        membersTitle.add(new Search(searchString -> {
             this.search = searchString;
             this.createMemberList();
         }));
+        this.replace(this.membersTitle, membersTitle);
+        this.membersTitle = membersTitle;
+    }
 
-        membersList.add(header);
+    private void createMemberList() {
+        VerticalLayout membersList = new VerticalLayout();
+        membersList.setJustifyContentMode(JustifyContentMode.START);
+        membersList.setAlignItems(Alignment.START);
+        membersList.setPadding(true);
+        membersList.setSpacing(true);
+        membersList.setSizeFull();
 
         String search = this.search == null ? "" : this.search;
-        List<Person> memberPersons = organisation.getMembers().stream().filter(mp -> mp.getName().contains(search) ||
+        List<Person> memberPersons = organisation.getMembers().stream().filter(mp -> mp.getName().toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT)) ||
                 (this.organisation.getAdmin().equals(mp) && "Admin".contains(search))).sorted(Comparator.comparing(Person::getName)).toList();
         for (Person mp : memberPersons) {
             membersList.add(createMemberPersonLayout(mp));
@@ -187,7 +192,6 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         if (memberPersons.isEmpty()) {
             membersList.add(new H6("Keine Mitglieder gefunden"));
         }
-
 
         this.replace(this.members, membersList);
         this.members = membersList;
@@ -334,6 +338,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         }
         this.createHeader();
         this.createInviteLink();
+        this.createMembersTitle();
         this.createMemberList();
         this.createFooter();
     }
