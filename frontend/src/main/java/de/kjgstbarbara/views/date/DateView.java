@@ -59,13 +59,15 @@ import java.util.Locale;
 public class DateView extends VerticalLayout implements BeforeEnterObserver {
     private static final Logger LOGGER = LogManager.getLogger(DateView.class);
     private final DateRepository dateRepository;
+    private final FeedbackRepository feedbackRepository;
 
     private final Person person;
 
     private Date date;
 
-    public DateView(PersonsService personsService, DatesService datesService) {
+    public DateView(PersonsService personsService, DatesService datesService, FeedbackService feedbackService) {
         this.dateRepository = datesService.getDateRepository();
+        this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         this.setMaxWidth("600px");
     }
@@ -291,7 +293,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     private void back() {
-        UI.getCurrent().getPage().getHistory().back();
+        UI.getCurrent().getPage().getHistory().back();// TODO Wenn man die Seite neu geladen hat oder einen direkt link zum Termin bekommen hat funktioniert das so nicht ..
     }
 
     private Component createDownloadIcsButton() {
@@ -639,13 +641,15 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         commit.addClickListener(event -> {
             Feedback feedback = new Feedback(person, Feedback.Status.COMMITTED);
             date.addFeedback(feedback);
-            dateRepository.save(date);
+            this.feedbackRepository.save(feedback);
+            this.date = dateRepository.save(date);
             UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", this.date.getId())));
         });
         cancel.addClickListener(event -> {
             Feedback feedback = new Feedback(person, Feedback.Status.CANCELLED);
             date.addFeedback(feedback);
-            dateRepository.save(date);
+            this.feedbackRepository.save(feedback);
+            this.date = dateRepository.save(date);
             UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", this.date.getId())));
         });
 
@@ -672,7 +676,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
                     information.setInformationTime(LocalDateTime.now(ZoneOffset.UTC));
                     information.setInformationText(infoText.getValue());
                     date.getInformation().add(information);
-                    dateRepository.save(date);
+                    this.date = dateRepository.save(date);
                     UI.getCurrent().navigate(DateView.class, new RouteParameters(new RouteParam("date", date.getId())));
                     Notification.show("Anmerkung wurde gespeichert");
                 }
