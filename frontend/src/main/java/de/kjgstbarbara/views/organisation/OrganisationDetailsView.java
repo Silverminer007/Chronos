@@ -18,8 +18,8 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.Utility;
-import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.components.Header;
+import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageSender;
@@ -160,8 +160,10 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
             membersList.add(new H6("Keine Mitglieder gefunden"));
         }
 
-        this.replace(this.members, membersList);
-        this.members = membersList;
+        Scroller scroller = new Scroller(membersList);
+        scroller.setSizeFull();
+        this.replace(this.members, scroller);
+        this.members = scroller;
     }
 
     private HorizontalLayout createMemberPersonLayout(Person memberPerson) {
@@ -234,9 +236,15 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         footer.setSpacing(true);
         footer.setPadding(true);
 
+        Button inviteNewMember = new Button("Einladen", VaadinIcon.PLUS.create());
+        inviteNewMember.setEnabled(this.organisation.getAdmin().equals(this.loggedInUser));
+        inviteNewMember.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        inviteNewMember.setEnabled(this.organisation.getAdmin().equals(this.loggedInUser));
+        inviteNewMember.addClickListener(event -> this.createInviteDialog());
+        footer.add(inviteNewMember);
+
         Button leave = new Button("Verlassen", VaadinIcon.EXIT.create());
         leave.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        leave.setEnabled(this.organisation.getMembers().contains(this.loggedInUser) && !this.organisation.getAdmin().equals(this.loggedInUser));
         leave.addClickListener(event -> {
             this.groupRepository.findByOrganisation(this.organisation).forEach(group -> {
                 group.getMembers().remove(this.loggedInUser);
@@ -248,17 +256,9 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
             UI.getCurrent().navigate(NewOrganisationView.class);
             Notification.show("Du hast die Organisation \"" + this.organisation.getName() + "\" verlassen");
         });
-        footer.add(leave);
-
-        Button inviteNewMember = new Button("Einladen", VaadinIcon.PLUS.create());
-        inviteNewMember.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        inviteNewMember.setEnabled(this.organisation.getAdmin().equals(this.loggedInUser));
-        inviteNewMember.addClickListener(event -> this.createInviteDialog());
-        footer.add(inviteNewMember);
 
         Button delete = new Button("Löschen", VaadinIcon.TRASH.create());
         delete.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        delete.setEnabled(this.organisation.getAdmin().equals(this.loggedInUser));
         delete.addClickListener(event -> {
             ConfirmDialog confirmDeleteDialog = new ConfirmDialog();
             confirmDeleteDialog.setHeader("\"" + this.organisation.getName() + "\" löschen?");
@@ -284,7 +284,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
             });
             confirmDeleteDialog.open();
         });
-        footer.add(delete);
+        footer.add(this.organisation.getAdmin().equals(this.loggedInUser) ? delete : leave);
 
         this.replace(this.footer, footer);
         this.footer = footer;
@@ -310,10 +310,10 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         requestsLayout.setSizeFull();
         Scroller requestScroller = new Scroller(requestsLayout);
         requestScroller.setMaxHeight("50%");
-        for(Person request : this.organisation.getMembershipRequests()) {
+        for (Person request : this.organisation.getMembershipRequests()) {
             requestsLayout.add(createProcessOrgMembershipRequestPane(request));
         }
-        if(this.organisation.getMembershipRequests().isEmpty()) {
+        if (this.organisation.getMembershipRequests().isEmpty()) {
             requestsLayout.add(new H6("Keine offenen Anfragen gefunden"));
         }
         inviteDialog.add(requestScroller);

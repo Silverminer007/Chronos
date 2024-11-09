@@ -12,6 +12,7 @@ import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.router.PageTitle;
@@ -48,9 +49,16 @@ public class NotificationSettingsView extends VerticalLayout {
         this.setSpacing(false);
         this.setPadding(false);
         this.add(this.createHeader());
-        this.add(this.createIntroduction());
-        this.add(this.createPreferredPlatform());
-        this.add(this.createReminders());
+        VerticalLayout content = new VerticalLayout();
+        content.setSizeFull();
+        content.setSpacing(false);
+        content.setPadding(false);
+        content.add(this.createIntroduction());
+        content.add(this.createPreferredPlatform());
+        content.add(this.createReminders());
+        Scroller scroller = new Scroller(content);
+        scroller.setSizeFull();
+        this.add(scroller);
     }
 
     private Component createHeader() {

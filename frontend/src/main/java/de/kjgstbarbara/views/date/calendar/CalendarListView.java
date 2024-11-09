@@ -9,6 +9,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
@@ -132,7 +133,10 @@ public abstract class CalendarListView implements Calendar {
                 dateListLayout.add(new H6("Bisher keine Termine zu sehen"));
             }
         }
-        return dateListLayout;
+
+        Scroller scroller = new Scroller(dateListLayout);
+        scroller.setSizeFull();
+        return scroller;
     }
 
     protected abstract List<Date> findSubListOfDates(String search, int page);

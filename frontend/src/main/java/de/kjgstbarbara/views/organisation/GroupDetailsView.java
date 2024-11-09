@@ -11,6 +11,7 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
@@ -38,6 +39,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
     private final FeedbackRepository feedbackRepository;
     private String search = null;
     private Component header = new HorizontalLayout();
+    private Component membersTitle = new HorizontalLayout();
     private Component members = new VerticalLayout();
     private Component footer = new HorizontalLayout();
     private Group group;
@@ -60,6 +62,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         this.setSpacing(false);
 
         this.add(this.header);
+        this.add(this.membersTitle);
         this.add(this.members);
         this.add(this.footer);
     }
@@ -125,14 +128,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         changeNameDialog.open();
     }
 
-    private void createMemberList() {
-        VerticalLayout membersList = new VerticalLayout();
-        membersList.setJustifyContentMode(JustifyContentMode.START);
-        membersList.setAlignItems(Alignment.START);
-        membersList.setPadding(true);
-        membersList.setSpacing(true);
-        membersList.setSizeFull();
-
+    private void createMembersTitle() {
         HorizontalLayout header = new HorizontalLayout();
         header.setWidthFull();
         header.setJustifyContentMode(JustifyContentMode.START);
@@ -156,7 +152,17 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         add.addClickListener(event -> this.addMembers());
         header.add(add);
 
-        membersList.add(header);
+        this.replace(this.membersTitle, header);
+        this.membersTitle = header;
+    }
+
+    private void createMemberList() {
+        VerticalLayout membersList = new VerticalLayout();
+        membersList.setJustifyContentMode(JustifyContentMode.START);
+        membersList.setAlignItems(Alignment.START);
+        membersList.setPadding(true);
+        membersList.setSpacing(true);
+        membersList.setSizeFull();
 
         String search = this.search == null ? "" : this.search;
         List<Person> memberPersons = group.getMembers().stream().filter(mp -> mp.getName().contains(search) ||
@@ -168,9 +174,10 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
             membersList.add(new H6("Keine Mitglieder gefunden"));
         }
 
-
-        this.replace(this.members, membersList);
-        this.members = membersList;
+        Scroller scroller = new Scroller(membersList);
+        scroller.setSizeFull();
+        this.replace(this.members, scroller);
+        this.members = scroller;
     }
 
     private void addMembers() {
@@ -337,6 +344,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
             return;
         }
         this.createHeader();
+        this.createMembersTitle();
         this.createMemberList();
         this.createFooter();
     }

@@ -17,6 +17,7 @@ import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -99,7 +100,9 @@ public class ProfileView extends VerticalLayout {
         layout.add(this.createSaveButton(binder));
         layout.add(this.createDeleteAccountButton());
 
-        this.add(layout);
+        Scroller scroller = new Scroller(layout);
+        scroller.setSizeFull();
+        this.add(scroller);
 
         binder.readBean(this.person);
     }

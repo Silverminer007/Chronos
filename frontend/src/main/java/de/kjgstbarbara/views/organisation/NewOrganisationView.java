@@ -8,6 +8,7 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
@@ -161,8 +162,10 @@ public class NewOrganisationView extends VerticalLayout {
             }
         });
 
-        this.replace(this.organisations, organisationLayout);
-        this.organisations = organisationLayout;
+        Scroller scroller = new Scroller(organisationLayout);
+        scroller.setSizeFull();
+        this.replace(this.organisations, scroller);
+        this.organisations = scroller;
     }
 
     private void addGroup(Organisation organisation) {
