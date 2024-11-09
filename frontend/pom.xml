@@ -87,12 +87,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.vaadin.olli</groupId>
-            <artifactId>clipboardhelper</artifactId>
-            <version>${clipboardhelper.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.vaadin.stefan</groupId>
             <artifactId>fullcalendar2</artifactId>
             <version>${fullcalendar.version}</version>

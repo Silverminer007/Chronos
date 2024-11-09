@@ -2,8 +2,6 @@ package de.kjgstbarbara.views.organisation;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -20,12 +18,8 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.Utility;
-import de.kjgstbarbara.components.ClosableDialog;
-import de.kjgstbarbara.components.ColorButton;
-import de.kjgstbarbara.components.DialogFooter;
-import de.kjgstbarbara.components.Search;
+import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.*;
@@ -228,19 +222,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         memberPersonLayout.setPadding(true);
         memberPersonLayout.addClassNames(LumoUtility.Padding.SMALL);
 
-        HorizontalLayout memberPersonInformation = new HorizontalLayout();
-        memberPersonInformation.setAlignItems(Alignment.CENTER);
-        memberPersonInformation.setJustifyContentMode(JustifyContentMode.START);
-        memberPersonInformation.setWidthFull();
-
-        memberPersonInformation.add(new NativeLabel());
-
-        Avatar avatarItem = FrontendUtils.getAvatar(memberPerson);
-        avatarItem.addThemeVariants(AvatarVariant.LUMO_XSMALL);
-        memberPersonInformation.add(avatarItem);
-
-        NativeLabel name = new NativeLabel(memberPerson.getName());
-        memberPersonInformation.add(name);
+        HorizontalLayout memberPersonInformation = new PersonPPName(memberPerson);
 
         memberPersonInformation.add(createRoleBadge(memberPerson));
 

@@ -2,8 +2,6 @@ package de.kjgstbarbara.views.organisation;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -11,6 +9,7 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
@@ -18,18 +17,16 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.Utility;
-import de.kjgstbarbara.components.ClosableDialog;
-import de.kjgstbarbara.components.DialogFooter;
+import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.components.Header;
-import de.kjgstbarbara.components.Search;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.messaging.MessageSender;
+import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.MainNavigationView;
 import jakarta.annotation.security.PermitAll;
-import org.vaadin.olli.ClipboardHelper;
 
 import java.util.Comparator;
 import java.util.List;
@@ -45,7 +42,6 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
     private final FeedbackRepository feedbackRepository;
     private String search = null;
     private Component header = new HorizontalLayout();
-    private Component invite = new HorizontalLayout();
     private Component membersTitle = new HorizontalLayout();
     private Component members = new VerticalLayout();
     private Component footer = new HorizontalLayout();
@@ -70,7 +66,6 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         this.setSpacing(false);
 
         this.add(this.header);
-        this.add(this.invite);
         this.add(this.membersTitle);
         this.add(this.members);
         this.add(this.footer);
@@ -118,34 +113,6 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
             changeNameDialog.close();
         }, "Speichern"));
         changeNameDialog.open();
-    }
-
-    private void createInviteLink() {
-        HorizontalLayout invite = new HorizontalLayout();
-        invite.setAlignItems(Alignment.END);
-        invite.setWidthFull();
-        invite.setPadding(true);
-        invite.setVisible(this.organisation.getAdmin().equals(this.loggedInUser));
-
-        TextField invitationLink = new TextField("Einladungslink");
-        invitationLink.setEnabled(false);// Causes "Ignoring update for disabled return channel", but can be ignored, as it's not intended that something should change here, when the user expands the widget
-        invitationLink.setValue("Temp");
-        invite.add(invitationLink);
-
-        Button copyInvitationLink = new Button(VaadinIcon.COPY.create());
-        ClipboardHelper clipboardHelper = new ClipboardHelper("Kopieren fehlgeschlagen", copyInvitationLink);
-        UI.getCurrent().getPage().fetchCurrentURL(url -> {
-            String joinURL = Utility.baseURL(url) + "/organisation/join/" +
-                    organisation.getId();
-            invitationLink.setValue(joinURL);
-            clipboardHelper.setContent(joinURL);
-        });
-        copyInvitationLink.addClickListener(event -> Notification.show("Einladung in Zwischenablage kopiert"));
-        invite.add(clipboardHelper);
-        invite.add(copyInvitationLink);
-
-        this.replace(this.invite, invite);
-        this.invite = invite;
     }
 
     private void createMembersTitle() {
@@ -206,19 +173,7 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         memberPersonLayout.setPadding(true);
         memberPersonLayout.addClassNames(LumoUtility.Padding.SMALL);
 
-        HorizontalLayout memberPersonInformation = new HorizontalLayout();
-        memberPersonInformation.setAlignItems(Alignment.CENTER);
-        memberPersonInformation.setJustifyContentMode(JustifyContentMode.START);
-        memberPersonInformation.setWidthFull();
-
-        memberPersonInformation.add(new NativeLabel());
-
-        Avatar avatarItem = FrontendUtils.getAvatar(memberPerson);
-        avatarItem.addThemeVariants(AvatarVariant.LUMO_XSMALL);
-        memberPersonInformation.add(avatarItem);
-
-        NativeLabel name = new NativeLabel(memberPerson.getName());
-        memberPersonInformation.add(name);
+        HorizontalLayout memberPersonInformation = new PersonPPName(memberPerson);
 
         memberPersonInformation.add(createRoleBadge(memberPerson));
 
@@ -295,6 +250,12 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         });
         footer.add(leave);
 
+        Button inviteNewMember = new Button("Einladen", VaadinIcon.PLUS.create());
+        inviteNewMember.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        inviteNewMember.setEnabled(this.organisation.getAdmin().equals(this.loggedInUser));
+        inviteNewMember.addClickListener(event -> this.createInviteDialog());
+        footer.add(inviteNewMember);
+
         Button delete = new Button("Löschen", VaadinIcon.TRASH.create());
         delete.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         delete.setEnabled(this.organisation.getAdmin().equals(this.loggedInUser));
@@ -329,6 +290,72 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
         this.footer = footer;
     }
 
+    private void createInviteDialog() {
+        ClosableDialog inviteDialog = new ClosableDialog("Mitglieder Einladen");
+        inviteDialog.setCloseListener(this::createMemberList);
+
+        H4 inviteLinkTitle = new H4("Einladungslink");
+        inviteLinkTitle.addClassNames(LumoUtility.Background.PRIMARY_50, LumoUtility.BorderRadius.MEDIUM);
+        inviteDialog.add(inviteLinkTitle);
+
+        NativeLabel inviteLink = new NativeLabel(System.getenv("HOST_DOMAIN") + "/organisation/join/" +
+                organisation.getId());
+        inviteDialog.add(inviteLink);
+
+        H4 openRequests = new H4("Offene Anfragen");
+        openRequests.addClassNames(LumoUtility.Background.PRIMARY_50, LumoUtility.BorderRadius.MEDIUM);
+        inviteDialog.add(openRequests);
+
+        VerticalLayout requestsLayout = new VerticalLayout();
+        requestsLayout.setSizeFull();
+        Scroller requestScroller = new Scroller(requestsLayout);
+        requestScroller.setMaxHeight("50%");
+        for(Person request : this.organisation.getMembershipRequests()) {
+            requestsLayout.add(createProcessOrgMembershipRequestPane(request));
+        }
+        if(this.organisation.getMembershipRequests().isEmpty()) {
+            requestsLayout.add(new H6("Keine offenen Anfragen gefunden"));
+        }
+        inviteDialog.add(requestScroller);
+
+        inviteDialog.open();
+    }
+
+    private Component createProcessOrgMembershipRequestPane(Person member) {
+        VerticalLayout processOrgMembershipRequestPane = new VerticalLayout();
+        processOrgMembershipRequestPane.addClassNames(LumoUtility.Background.PRIMARY_10, LumoUtility.BorderRadius.MEDIUM);
+
+        processOrgMembershipRequestPane.add(new PersonPPName(member));
+
+        HorizontalLayout buttons = new HorizontalLayout();
+        buttons.setJustifyContentMode(JustifyContentMode.EVENLY);
+
+        Button confirmRequest = new Button("Bestätigen", VaadinIcon.THUMBS_UP.create());
+        confirmRequest.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        confirmRequest.addClickListener(event -> {
+            processOrgMembershipRequestPane.setVisible(false);
+            this.organisation.getMembers().add(member);
+            this.organisation.getMembershipRequests().remove(member);
+            this.organisationRepository.save(this.organisation);
+            new MessageSender(member).organisation(organisation).person(member).send(Messages.ORGANISATION_JOIN_REQUEST_ACCEPTED);
+        });
+        buttons.add(confirmRequest);
+
+        Button declineRequest = new Button("Ablehnen", VaadinIcon.THUMBS_DOWN.create());
+        declineRequest.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        declineRequest.addClickListener(event -> {
+            processOrgMembershipRequestPane.setVisible(false);
+            this.organisation.getMembershipRequests().remove(member);
+            this.organisationRepository.save(this.organisation);
+            new MessageSender(member).organisation(organisation).person(member).send(Messages.ORGANISATION_JOIN_REQUEST_DECLINED);
+        });
+        buttons.add(declineRequest);
+
+        processOrgMembershipRequestPane.add(buttons);
+
+        return processOrgMembershipRequestPane;
+    }
+
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
         this.organisation = beforeEnterEvent.getRouteParameters().get("organisation").map(Long::valueOf).flatMap(organisationRepository::findById).orElse(null);
@@ -337,7 +364,6 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
             return;
         }
         this.createHeader();
-        this.createInviteLink();
         this.createMembersTitle();
         this.createMemberList();
         this.createFooter();
