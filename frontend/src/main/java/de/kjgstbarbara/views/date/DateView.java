@@ -183,7 +183,11 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
 
             footer.add(footerLayout);
 
-            selectEditModeDialog.open();
+            if(this.date.getLinkedTo() < 0) {
+                createEditDialog(EditMode.SINGLE);
+            } else {
+                selectEditModeDialog.open();
+            }
         });
         return edit;
     }
