@@ -123,13 +123,13 @@ public class MessageSender {
             String output = string;
             // ORGANISATION_ID
             String id = String.valueOf(organisation.getId());
-            output = output.replaceAll("#" + name + "_ID", id);
+            output = output.replaceAll("#" + name() + "_ID", id);
             // ORGANISATION_NAME
             String name = organisation.getName();
-            output = output.replaceAll("#" + name + "_NAME", name);
+            output = output.replaceAll("#" + name() + "_NAME", name);
             // ORGANISATION_ADMIN_NAME
             String adminName = organisation.getAdmin().getName();
-            output = output.replaceAll("#" + name + "_ADMIN_NAME", adminName);
+            output = output.replaceAll("#" + name() + "_ADMIN_NAME", adminName);
             return output;
         }
     }
@@ -141,33 +141,33 @@ public class MessageSender {
             String output = string;
             // DATE_TITLE
             String dateTitle = date.getTitle();
-            output = output.replaceAll("#" + name + "_TITLE", dateTitle);
+            output = output.replaceAll("#" + name() + "_TITLE", dateTitle);
             // DATE_START_DATE
             String startDate = date.getStart().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
-            output = output.replaceAll("#" + name + "_START_DATE", startDate);
+            output = output.replaceAll("#" + name() + "_START_DATE", startDate);
             // DATE_START_TIME
             String startTime = date.getStart().format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
-            output = output.replaceAll("#" + name + "_START_TIME", startTime);
+            output = output.replaceAll("#" + name() + "_START_TIME", startTime);
             // DATE_END_DATE
             String endDate = date.getEnd().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
-            output = output.replaceAll("#" + name + "_END_DATE", endDate);
+            output = output.replaceAll("#" + name() + "_END_DATE", endDate);
             // DATE_END_TIME
             String endTime = date.getStart().format(DateTimeFormatter.ofPattern("HH:mm", Locale.GERMAN)) + " Uhr";
-            output = output.replaceAll("#" + name + "_END_TIME", endTime);
+            output = output.replaceAll("#" + name() + "_END_TIME", endTime);
             // DATE_POLL_DATE
             if (date.getPollScheduledFor() != null) {
                 String pollDate = date.getPollScheduledFor().format(DateTimeFormatter.ofPattern("d MMM uuuu", Locale.GERMAN));
-                output = output.replaceAll("#" + name + "_POLL_DATE", pollDate);
+                output = output.replaceAll("#" + name() + "_POLL_DATE", pollDate);
             }
             // DATE_TIME_UNTIL_START
             LocalDateTime now = LocalDateTime.now();
             String timeUntilStart = getTimeUntilStart(now);
-            output = output.replaceAll("#DATE_TIME_UNTIL_START", timeUntilStart);
+            output = output.replaceAll("#" + name() + "_TIME_UNTIL_START", timeUntilStart);
             // DATE_LINK
             String link = System.getenv("HOST_DOMAIN") + "/date/" + date.getId();
-            output = output.replaceAll("#DATE_LINK", link);
+            output = output.replaceAll("#" + name() + "_LINK", link);
             // DATE_ID
-            output = output.replaceAll("#DATE_ID", String.valueOf(date.getId()));
+            output = output.replaceAll("#" + name() + "_ID", String.valueOf(date.getId()));
             return output;
         }
 
@@ -191,7 +191,7 @@ public class MessageSender {
             String output = string;
             // BOARD_TITLE
             String title = group.getName();
-            output = output.replaceAll("#" + name + "_NAME", title);
+            output = output.replaceAll("#" + name() + "_NAME", title);
             return output;
         }
     }
