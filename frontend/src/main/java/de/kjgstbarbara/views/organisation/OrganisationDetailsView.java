@@ -188,6 +188,10 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
             remove.addClickListener(event -> {
                 this.organisation.getMembers().remove(memberPerson);
                 this.organisation = organisationRepository.save(this.organisation);
+                this.groupRepository.findByOrganisation(this.organisation).forEach(group -> {
+                    group.getMembers().remove(memberPerson);
+                    this.groupRepository.save(group);
+                });
                 this.createMemberList();
             });
             memberPersonLayout.add(remove);
