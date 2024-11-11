@@ -34,12 +34,12 @@ import java.util.List;
 @PermitAll
 public class NotificationSettingsView extends VerticalLayout {
     private final PersonsRepository personsRepository;
-    private final Person principal;
+    private Person principal;
 
     public NotificationSettingsView(PersonsService personsService) {
         this.personsRepository = personsService.getPersonsRepository();
         this.principal = Utility.getAuthenticatedUser(personsRepository).orElse(null);
-        if(principal != null) {
+        if(this.principal != null) {
             this.init();
         }
     }
@@ -92,7 +92,7 @@ public class NotificationSettingsView extends VerticalLayout {
         platformComboBox.setValue(this.principal.getPrefferedPlatform());
         platformComboBox.addValueChangeListener(event -> {
             this.principal.setPrefferedPlatform(event.getValue());
-            personsRepository.save(this.principal);// TODO Die Person ändert sich, sonst speicher Fehler
+            this.principal = personsRepository.save(this.principal);// TODO Die Person ändert sich, sonst speicher Fehler
         });
         preferredPlatform.add(platformComboBox);
 
@@ -143,7 +143,7 @@ public class NotificationSettingsView extends VerticalLayout {
             platformComboBox.setValue(notification.getPlatform());
             platformComboBox.addValueChangeListener(event -> {
                 notification.setPlatform(event.getValue());
-                personsRepository.save(this.principal);// TODO Die Person ändert sich, sonst speicher Fehler
+                this.principal = personsRepository.save(this.principal);// TODO Die Person ändert sich, sonst speicher Fehler
             });
             return platformComboBox;
         }).setHeader("Platform");
@@ -155,7 +155,7 @@ public class NotificationSettingsView extends VerticalLayout {
             hoursBeforeField.setMax(168);
             hoursBeforeField.addValueChangeListener(event -> {
                 notification.setHoursBefore(event.getValue());
-                personsRepository.save(this.principal);
+                this.principal = personsRepository.save(this.principal);
             });
             return hoursBeforeField;
         }).setHeader("Stunden Vorher");
@@ -165,7 +165,7 @@ public class NotificationSettingsView extends VerticalLayout {
             delete.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY_INLINE);
             delete.addClickListener(event -> {
                 this.principal.getNotifications().remove(notification);
-                personsRepository.save(this.principal);
+                this.principal = personsRepository.save(this.principal);
                 grid.setItems(this.principal.getNotifications());
             });
             return delete;
@@ -175,7 +175,7 @@ public class NotificationSettingsView extends VerticalLayout {
 
         add.addClickListener(event -> {
             this.principal.getNotifications().add(new Person.Notification());
-            personsRepository.save(this.principal);
+            this.principal = personsRepository.save(this.principal);
             grid.setItems(this.principal.getNotifications());
         });
 
@@ -186,7 +186,7 @@ public class NotificationSettingsView extends VerticalLayout {
                             new Person.Notification(this.principal.getPrefferedPlatform(), 48)
                     ))
             );
-            personsRepository.save(this.principal);
+            this.principal = personsRepository.save(this.principal);
             grid.setItems(this.principal.getNotifications());
             Notification.show("Benachrichtigungen auf Standard Einstellungen zurückgesetzt");
         });
