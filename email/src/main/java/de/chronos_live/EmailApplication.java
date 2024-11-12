@@ -58,7 +58,7 @@ public class EmailApplication {
                     .withSubject(message.getSubject())
                     .withPlainText(message.getMessage())
                     .buildEmail();
-            mailer.sendMail(email);
+            mailer.sendMail(email, false);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
