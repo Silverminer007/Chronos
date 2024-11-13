@@ -92,7 +92,7 @@ public class NotificationSettingsView extends VerticalLayout {
         platformComboBox.setValue(this.principal.getPrefferedPlatform());
         platformComboBox.addValueChangeListener(event -> {
             this.principal.setPrefferedPlatform(event.getValue());
-            this.principal = personsRepository.save(this.principal);// TODO Die Person ändert sich, sonst speicher Fehler
+            this.principal = personsRepository.save(this.principal);
         });
         preferredPlatform.add(platformComboBox);
 
@@ -143,7 +143,8 @@ public class NotificationSettingsView extends VerticalLayout {
             platformComboBox.setValue(notification.getPlatform());
             platformComboBox.addValueChangeListener(event -> {
                 notification.setPlatform(event.getValue());
-                this.principal = personsRepository.save(this.principal);// TODO Die Person ändert sich, sonst speicher Fehler
+                this.principal = personsRepository.save(this.principal);
+                grid.setItems(this.principal.getNotifications());
             });
             return platformComboBox;
         }).setHeader("Platform");
@@ -156,6 +157,7 @@ public class NotificationSettingsView extends VerticalLayout {
             hoursBeforeField.addValueChangeListener(event -> {
                 notification.setHoursBefore(event.getValue());
                 this.principal = personsRepository.save(this.principal);
+                grid.setItems(this.principal.getNotifications());
             });
             return hoursBeforeField;
         }).setHeader("Stunden Vorher");
