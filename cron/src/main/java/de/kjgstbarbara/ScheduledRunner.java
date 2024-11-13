@@ -25,7 +25,7 @@ public class ScheduledRunner {
     @Autowired
     private DatesService datesService;
 
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void run() {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
@@ -67,7 +67,16 @@ public class ScheduledRunner {
             for (Person.Notification notification : p.getNotifications()) {
                 if (now.until(d.getStart(), ChronoUnit.HOURS) == notification.getHoursBefore()) {
                     LOGGER.info("Erinnerungen für {} am {} werden an \"{}\" verschickt", d.getTitle(), this.formatDate(d.getStart()), p.getName());
-                    new MessageSender(p).person(p).date(d).send(Messages.DATE_REMINDER, notification.getPlatform());
+                    Result result = new MessageSender(p)
+                            .person(p)
+                            .date(d)
+                            .organisation(d.getGroup().getOrganisation())
+                            .group(d.getGroup())
+                            .feedback(d.getStatusFor(p))
+                            .send(Messages.DATE_REMINDER, notification.getPlatform());
+                    if(result.isError()) {
+                        LOGGER.error(result.getErrorMessage());
+                    }
                 }
             }
         }
