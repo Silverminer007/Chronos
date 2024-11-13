@@ -28,7 +28,7 @@ public enum Platform {
         try {
             restClient.post()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new Signal(message, "+4915752657194", new String[]{sendTo.getPhoneNumber().toString()}, "normal"))
+                    .body(new Signal(message, System.getenv("FROM_NUMBER"), new String[]{sendTo.getPhoneNumber().toString()}, "normal"))
                     .header("Content-Type", "application/json")
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve().toBodilessEntity();
