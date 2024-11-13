@@ -2,6 +2,12 @@ package de.kjgstbarbara.messaging;
 
 import de.kjgstbarbara.Result;
 import de.kjgstbarbara.data.Person;
+import org.apache.logging.log4j.LogManager;
+import org.simplejavamail.api.email.Email;
+import org.simplejavamail.api.mailer.Mailer;
+import org.simplejavamail.api.mailer.config.TransportStrategy;
+import org.simplejavamail.email.EmailBuilder;
+import org.simplejavamail.mailer.MailerBuilder;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -10,18 +16,37 @@ import java.util.function.BiFunction;
 
 public enum Platform {
     EMAIL((message, sendTo) -> {
-        RestClient restClient = RestClient.create("http://email:8080/send");
-        try {
-            restClient.put()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(new Email(sendTo.getEMailAddress(), "Chronos Message", message))
-                    .header("Content-Type", "application/json")
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve().toBodilessEntity();
-            return Result.success();
-        } catch (RestClientException e) {
+        if(!sendTo.getEMailAddress().matches("[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}")) {
+            return Result.error("Invalid e-mail address for User " + sendTo.getName());
+        }
+        String SMTP_SERVER = System.getenv("SMTP_SERVER");
+        String SMTP_USER = System.getenv("SMTP_USER");
+        String SMTP_MAIL_ADDRESS = System.getenv("SMTP_MAIL_ADDRESS");
+        String SMTP_PASSWORD = System.getenv("SMTP_PASSWORD");
+        int SMTP_PORT = Integer.parseInt(System.getenv("SMTP_PORT"));
+        try (Mailer mailer = MailerBuilder
+                .withSMTPServer(SMTP_SERVER,
+                        SMTP_PORT,
+                        SMTP_MAIL_ADDRESS,
+                        SMTP_PASSWORD)
+                .withTransportStrategy(SMTP_PORT == 587 ?
+                        TransportStrategy.SMTP_TLS :
+                        (SMTP_PORT == 465 ?
+                                TransportStrategy.SMTPS :
+                                TransportStrategy.SMTP)
+                ).buildMailer()) {
+            Email email = EmailBuilder.startingBlank()
+                    .from(SMTP_USER, SMTP_MAIL_ADDRESS)
+                    .to(sendTo.getEMailAddress())
+                    .withSubject("Chronos Message")
+                    .withPlainText(message)
+                    .buildEmail();
+            mailer.sendMail(email, false);
+        } catch (Exception e) {
+            LogManager.getLogger(Platform.class).error(e);
             return Result.error("Die Nachricht konnte nicht an " + sendTo.getEMailAddress() + " verschickt werden");
         }
+        return Result.success();
     }),
     SIGNAL((message, sendTo) -> {
         RestClient restClient = RestClient.create("http://signal:8080/v2/send");
@@ -46,9 +71,6 @@ public enum Platform {
 
     public Result send(Person person, String message) {
         return this.send.apply(message, person);
-    }
-
-    private record Email(String to, String subject, String message) {
     }
 
     private record Signal(String message, String number, String[] recipients, String text_mode) {
