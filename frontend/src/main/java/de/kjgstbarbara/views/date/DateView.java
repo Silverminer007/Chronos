@@ -21,7 +21,10 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.*;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -34,11 +37,14 @@ import de.kjgstbarbara.IcsHelper;
 import de.kjgstbarbara.Result;
 import de.kjgstbarbara.Utility;
 import de.kjgstbarbara.components.*;
-import de.kjgstbarbara.data.*;
+import de.kjgstbarbara.data.Date;
+import de.kjgstbarbara.data.Feedback;
+import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageSender;
 import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.MainNavigationView;
+import de.kjgstbarbara.views.date.calendar.CalendarView;
 import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -183,7 +189,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
 
             footer.add(footerLayout);
 
-            if(this.date.getLinkedTo() < 0) {
+            if (this.date.getLinkedTo() < 0) {
                 createEditDialog(EditMode.SINGLE);
             } else {
                 selectEditModeDialog.open();
@@ -297,7 +303,13 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     private void back() {
-        UI.getCurrent().getPage().getHistory().back();// TODO Wenn man die Seite neu geladen hat oder einen direkt link zum Termin bekommen hat funktioniert das so nicht ..
+        long page = this.person == null ? 0 :
+                switch (this.person.getCalendarLayout()) {
+                    case YEAR -> LocalDate.now().until(this.date.getStart(), ChronoUnit.YEARS);
+                    case LIST_NEXT -> 0;
+                    default -> LocalDate.now().until(this.date.getStart(), ChronoUnit.MONTHS);
+                };
+        UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", page)));
     }
 
     private Component createDownloadIcsButton() {
@@ -492,7 +504,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         remindNow.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         remindNow.addClickListener(e -> {
             Result result = Result.success();
-            for(Person member : date.getGroup().getMembers()) {
+            for (Person member : date.getGroup().getMembers()) {
                 result = result.and(new MessageSender(member).date(this.date).person(member).send(Messages.DATE_POLL));
             }
             if (result.isSuccess()) {
