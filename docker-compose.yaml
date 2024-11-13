@@ -53,19 +53,6 @@ services:
       timeout: 5s
       retries: 5
 
-  email:
-    image: ghcr.io/silverminer007/email:dev-master
-    container_name: email
-    env_file: .env
-    ports:
-      - "5007:5005"
-    environment:
-      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-    networks:
-      messaging:
-    volumes:
-      - ./logs/:/logs/
-
   api:
     image: ghcr.io/silverminer007/api:dev-master
     container_name: api

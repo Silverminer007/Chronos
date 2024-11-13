@@ -12,7 +12,6 @@
         <module>shared</module>
         <module>frontend</module>
         <module>cron</module>
-        <module>email</module>
         <module>api</module>
     </modules>
 
