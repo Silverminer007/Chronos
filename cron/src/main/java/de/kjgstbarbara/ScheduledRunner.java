@@ -84,7 +84,11 @@ public class ScheduledRunner {
 
     private void processAdminOverviewMessage(Date d) {
         for (Person admin : d.getGroup().getMembers()) {
-            new MessageSender(admin).send(this.buildAdminMessage(admin, d));
+            Result result = new MessageSender(admin)
+                    .send(this.buildAdminMessage(admin, d));
+            if(result.isError()) {
+                LOGGER.error("Failed to send Admin Overview Message to {}, because {}", admin.getName() , result.getErrorMessage());
+            }
         }
     }
 
@@ -122,7 +126,13 @@ public class ScheduledRunner {
         for (Person p : d.getGroup().getMembers()) {
             if (LocalDateTime.now().getHour() == 19) {// TODO Wo kommt diese Einstellung hin?
                 LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), this.formatDate(d.getStart()), p.getName());
-                new MessageSender(p).date(d).person(p).send(Messages.DATE_POLL);
+                Result result = new MessageSender(p)
+                        .date(d)
+                        .person(p)
+                        .send(Messages.DATE_POLL);
+                if(result.isError()) {
+                    LOGGER.error("Failed to send date poll for {} to {}", d.getTitle(), p.getName());
+                }
             }
         }
     }
