@@ -11,7 +11,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
@@ -21,7 +20,6 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -30,6 +28,8 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -40,6 +40,7 @@ import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.data.PollReminder;
 import de.kjgstbarbara.messaging.MessageSender;
 import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.*;
@@ -68,14 +69,16 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     private final FeedbackRepository feedbackRepository;
 
     private final Person person;
+    private final PollReminderRepository pollReminderRepository;
 
     private Date date;
 
-    public DateView(PersonsService personsService, DatesService datesService, FeedbackService feedbackService) {
+    public DateView(PersonsService personsService, DatesService datesService, FeedbackService feedbackService, PollReminderRepository pollReminderRepository) {
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         this.setMaxWidth("600px");
+        this.pollReminderRepository = pollReminderRepository;
     }
 
     @Override
@@ -468,37 +471,11 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
 
     private void remindAll(ClickEvent<MenuItem> event) {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Erinnerungen verschicken");
-        if (date.getPollScheduledFor() != null && date.getPollScheduledFor().isAfter(LocalDate.now())) {
-            dialog.add(new NativeLabel("Für den " + date.getPollScheduledFor().format(DateTimeFormatter.ofPattern("d MMM yyyy")) + " ist aktuell eine Erinnerung geplant"));
-        }
-        FlexLayout scheduleReminderLayout = new FlexLayout();
-        scheduleReminderLayout.addClassName(LumoUtility.Gap.MEDIUM);
-        scheduleReminderLayout.setFlexWrap(FlexLayout.FlexWrap.WRAP);
-        DatePicker datePicker = new DatePicker();
-        datePicker.setValue(LocalDate.now().plusDays(1));
-        scheduleReminderLayout.add(datePicker);
-        Button scheduleReminder = new Button("Erinnerung planen");
-        scheduleReminder.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        scheduleReminder.addClickListener(e -> {
-            if (datePicker.getValue() == null) {
-                datePicker.setInvalid(true);
-                datePicker.setErrorMessage("Kein Datum ausgewählt");
-            } else if (datePicker.getValue().isBefore(LocalDate.now())) {// TODO Wie muss ich hier Zeitzonen berücksichtigen?
-                datePicker.setInvalid(true);
-                datePicker.setErrorMessage("Das Datum muss in der Zukunft liegen");
-            } else if (datePicker.getValue().isAfter(date.getStartAtTimezone(this.person.getTimezone()).toLocalDate())) {
-                datePicker.setInvalid(true);
-                datePicker.setErrorMessage("Die Abfrage sollte vor beginn des Termins gesendet werden");
-            } else {
-                date.setPollScheduledFor(datePicker.getValue());
-                this.dateRepository.save(date);
-                dialog.close();
-                Notification.show("Erinnerung geplant für den " + datePicker.getValue().format(DateTimeFormatter.ofPattern("d MMM yyyy")));
-            }
-        });
-        scheduleReminderLayout.add(scheduleReminder);
-        dialog.add(scheduleReminderLayout);
+        dialog.setHeaderTitle("Terminerinnerungen");
+        Button planPollReminder = new Button("Erinnerung Planen");
+        planPollReminder.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        planPollReminder.addClickListener(e -> this.planPollReminder());
+        dialog.add(planPollReminder);
         dialog.add(new Hr());
         Button remindNow = new Button("Jetzt erinnern");
         remindNow.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -519,6 +496,63 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         });
         dialog.add(remindNow);
         dialog.open();
+    }
+
+    private void planPollReminder() {
+        PollReminder pollReminder = pollReminderRepository.findByDate(this.date).orElseGet(() -> {
+            PollReminder pR = new PollReminder();
+            pR.setDate(this.date);
+            pR.setPollIntervalStart(this.date.getStart().minusWeeks(1));
+            pR.setPollIntervalEnd(this.date.getStart());
+            return pR;
+        });
+        Binder<PollReminder> binder = new Binder<>(PollReminder.class);
+
+        ClosableDialog planPollDialog = new ClosableDialog("Erinnerungen planen");
+
+        VerticalLayout contentLayout = new VerticalLayout();
+        contentLayout.setSizeFull();
+
+        NativeLabel helpText = new NativeLabel("Alle Personen die noch nicht abgestimmt haben, bekommen in diesem Zeitraum in immer kürzer werdenden Abständen Aufforderungen für diesen Termin abzustimmen");
+
+        DateTimePicker intervalStartPicker = new DateTimePicker();
+        binder.forField(intervalStartPicker)
+                .withValidator((Validator<LocalDateTime>) (localDateTime, valueContext) ->
+                        this.date.getStart().isAfter(localDateTime) ?
+                                ValidationResult.ok()
+                                : ValidationResult.error("Die Erinnerungen können nur vor dem Start des Termins verschickt werden"))
+                .bind(PollReminder::getPollIntervalStart, PollReminder::setPollIntervalStart);
+
+        DateTimePicker intervalEndPicker = new DateTimePicker();
+        binder.forField(intervalEndPicker)
+                .withValidator((Validator<LocalDateTime>) (localDateTime, valueContext) ->
+                        !this.date.getStart().isBefore(localDateTime)
+                                ? localDateTime.isAfter(intervalStartPicker.getValue())
+                                ? ValidationResult.ok()
+                                : ValidationResult.error("Das Ende des Erinnerungszeitraums sollte nach seinem Ende liegen")
+                                : ValidationResult.error("Die Erinnerungen können nur vor dem Start des Termins verschickt werden"))
+                .bind(PollReminder::getPollIntervalEnd, PollReminder::setPollIntervalEnd);
+
+        contentLayout.add(helpText, intervalStartPicker, intervalEndPicker);
+
+        planPollDialog.add(contentLayout);
+
+        Button planPollReminder = new Button("Speichern");
+        planPollReminder.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        planPollReminder.addClickListener(event -> {
+            try {
+                binder.writeBean(pollReminder);
+                this.pollReminderRepository.save(pollReminder);
+                planPollDialog.close();
+                Notification.show("Erinnerung für den " + intervalStartPicker.getValue().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + " geplant");
+            } catch (ValidationException e) {
+                LOGGER.error(e.getMessage());
+            }
+        });
+        planPollDialog.getFooter().add(planPollReminder);
+
+        planPollDialog.open();
+        binder.readBean(pollReminder);
     }
 
     private void stopPoll(ClickEvent<MenuItem> event) {
