@@ -52,16 +52,6 @@ public class Messages {
                     Anfrage ablehnen: #BASE_URL/organisation/manage/#ORGANISATION_ID/#PERSON_ID/no
                     """;
 
-    public static final String PERSON_RESET_PASSWORD =
-            """
-                    Hey #PERSON_NAME,
-                    du hast angefragt dein Passwort zurückzusetzen.
-                    Wenn du das nicht getan hast, kannst du diese Nachricht einfach ignorieren.
-                    
-                    Dein Einmalpasswort lautet: #PERSON_OTP
-                    Dein Benutzername lautet: #PERSON_USERNAME
-                    """;
-
     public static final String DATE_POLL_REMINDER =
             """
                     Hey #PERSON_NAME,
