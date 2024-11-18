@@ -3,9 +3,11 @@ package de.kjgstbarbara;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
 import de.kjgstbarbara.data.Person;
+import de.kjgstbarbara.data.PollReminder;
 import de.kjgstbarbara.messaging.MessageSender;
 import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.DatesService;
+import de.kjgstbarbara.service.PollReminderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,8 @@ public class ScheduledRunner {
 
     @Autowired
     private DatesService datesService;
+    @Autowired
+    private PollReminderRepository pollReminderRepository;
 
     @Scheduled(cron = "0 0 * * * *")
     public void run() {
@@ -47,6 +51,9 @@ public class ScheduledRunner {
                     continue;
                 }
                 sendPoll(d);
+            }
+            for(PollReminder pollReminder : pollReminderRepository.findByPollIntervalStartAfterAndPollIntervalEndBefore(now, now)) {
+                this.sendPollReminders(pollReminder);
             }
         } catch (Throwable e) {
             LOGGER.error("Es ist ein Fehler für die Terminerinnerungen aufgetreten", e);
@@ -139,5 +146,38 @@ public class ScheduledRunner {
 
     private String formatDate(LocalDateTime date) {
         return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+    }
+
+    private void sendPollReminders(PollReminder pollReminder) {
+        if(pollReminder.getPollIntervalStart().isAfter(LocalDateTime.now())) {
+            return;
+        }
+        if(pollReminder.getPollIntervalEnd().isBefore(LocalDateTime.now())) {
+            return;
+        }
+        if(LocalDateTime.now().isAfter(pollReminder.getDate().getStart())) {
+            return;
+        }
+        long pollReminderLength = pollReminder.getPollIntervalStart().until(pollReminder.getPollIntervalEnd(), ChronoUnit.HOURS);
+        long passedReminderTime = pollReminder.getPollIntervalStart().until(LocalDateTime.now(), ChronoUnit.HOURS);
+
+        for(int i = 2; i < pollReminderLength; i++) {
+            if(passedReminderTime != (pollReminderLength * (i - 1)) / i) {
+                continue;
+            }
+            for(Person person : pollReminder.getDate().getGroup().getMembers()) {
+                if(!pollReminder.getDate().getFeedbackFor(person).getStatus().equals(Feedback.Status.NONE)) {
+                    continue;
+                }
+                Result result = new MessageSender(person)
+                        .person(person)
+                        .person(pollReminder.getPollStarter(), "REQUESTER")
+                        .date(pollReminder.getDate())
+                        .send(Messages.DATE_POLL_REMINDER.replaceAll("#REMINDERS", "" + (i - 1)));
+                if(result.isError()) {
+                    LOGGER.error(result.getErrorMessage());
+                }
+            }
+        }
     }
 }

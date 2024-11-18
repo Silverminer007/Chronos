@@ -61,4 +61,13 @@ public class Messages {
                     Dein Einmalpasswort lautet: #PERSON_OTP
                     Dein Benutzername lautet: #PERSON_USERNAME
                     """;
+
+    public static final String DATE_POLL_REMINDER =
+            """
+                    Hey #PERSON_NAME,
+                    
+                    #REQUESTER_NAME würde gerne wissen, ob du bei #DATE_TITLE am #DATE_START_DATE dabei bist.
+                    Das ist deine #REMINDERS-te Erinnerung. Du kannst über diesen Link abstimmen:
+                    #DATE_LINK
+                    """;
 }
