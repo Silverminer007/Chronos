@@ -89,7 +89,6 @@ services:
 volumes:
   chronos-database:
   signal:
-  keycloak:
 
 networks:
   frontend:
@@ -97,8 +96,6 @@ networks:
   backend:
     driver: bridge
   messaging:
-    driver: bridge
-  authentication:
     driver: bridge
   api:
     driver: bridge
