@@ -52,7 +52,7 @@ public class ScheduledRunner {
                 }
                 sendPoll(d);
             }
-            for(PollReminder pollReminder : pollReminderRepository.findByPollIntervalStartAfterAndPollIntervalEndBefore(now, now)) {
+            for (PollReminder pollReminder : pollReminderRepository.findByPollIntervalStartAfterAndPollIntervalEndBefore(now, now)) {
                 this.sendPollReminders(pollReminder);
             }
         } catch (Throwable e) {
@@ -81,7 +81,7 @@ public class ScheduledRunner {
                             .group(d.getGroup())
                             .feedback(d.getStatusFor(p))
                             .send(Messages.DATE_REMINDER, notification.getPlatform());
-                    if(result.isError()) {
+                    if (result.isError()) {
                         LOGGER.error(result.getErrorMessage());
                     }
                 }
@@ -93,8 +93,8 @@ public class ScheduledRunner {
         for (Person admin : d.getGroup().getMembers()) {
             Result result = new MessageSender(admin)
                     .send(this.buildAdminMessage(admin, d));
-            if(result.isError()) {
-                LOGGER.error("Failed to send Admin Overview Message to {}, because {}", admin.getName() , result.getErrorMessage());
+            if (result.isError()) {
+                LOGGER.error("Failed to send Admin Overview Message to {}, because {}", admin.getName(), result.getErrorMessage());
             }
         }
     }
@@ -137,7 +137,7 @@ public class ScheduledRunner {
                         .date(d)
                         .person(p)
                         .send(Messages.DATE_POLL);
-                if(result.isError()) {
+                if (result.isError()) {
                     LOGGER.error("Failed to send date poll for {} to {}", d.getTitle(), p.getName());
                 }
             }
@@ -149,35 +149,40 @@ public class ScheduledRunner {
     }
 
     private void sendPollReminders(PollReminder pollReminder) {
-        if(pollReminder.getPollIntervalStart().isAfter(LocalDateTime.now())) {
+        if (pollReminder.getPollIntervalStart().isAfter(LocalDateTime.now())) {
             return;
         }
-        if(pollReminder.getPollIntervalEnd().isBefore(LocalDateTime.now())) {
+        if (pollReminder.getPollIntervalEnd().isBefore(LocalDateTime.now())) {
             return;
         }
-        if(LocalDateTime.now().isAfter(pollReminder.getDate().getStart())) {
+        if (LocalDateTime.now().isAfter(pollReminder.getDate().getStart())) {
             return;
         }
         long pollReminderLength = pollReminder.getPollIntervalStart().until(pollReminder.getPollIntervalEnd(), ChronoUnit.HOURS);
         long passedReminderTime = pollReminder.getPollIntervalStart().until(LocalDateTime.now(), ChronoUnit.HOURS);
 
-        for(int i = 2; i < pollReminderLength; i++) {
-            if(passedReminderTime != (pollReminderLength * (i - 1)) / i) {
+        for (int i = 1; i < pollReminderLength; i++) {
+            long pollSendTime = (pollReminderLength * (i - 1)) / i;
+            if (passedReminderTime < pollSendTime) {
+                break;
+            }
+            if (passedReminderTime > pollSendTime) {
                 continue;
             }
-            for(Person person : pollReminder.getDate().getGroup().getMembers()) {
-                if(!pollReminder.getDate().getFeedbackFor(person).getStatus().equals(Feedback.Status.NONE)) {
+            for (Person person : pollReminder.getDate().getGroup().getMembers()) {
+                if (!pollReminder.getDate().getFeedbackFor(person).getStatus().equals(Feedback.Status.NONE)) {
                     continue;
                 }
                 Result result = new MessageSender(person)
                         .person(person)
                         .person(pollReminder.getPollStarter(), "REQUESTER")
                         .date(pollReminder.getDate())
-                        .send(Messages.DATE_POLL_REMINDER.replaceAll("#REMINDERS", "" + (i - 1)));
-                if(result.isError()) {
+                        .send(Messages.DATE_POLL_REMINDER.replaceAll("#REMINDERS", "" + i));
+                if (result.isError()) {
                     LOGGER.error(result.getErrorMessage());
                 }
             }
+            break;
         }
     }
 }
