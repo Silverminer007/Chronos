@@ -19,4 +19,5 @@ public class PollReminder {
     private LocalDateTime pollIntervalEnd;
     @ManyToOne
     private Person pollStarter;
+    private int amountOfTimesSend;
 }

@@ -158,17 +158,7 @@ public class ScheduledRunner {
         if (LocalDateTime.now().isAfter(pollReminder.getDate().getStart())) {
             return;
         }
-        long pollReminderLength = pollReminder.getPollIntervalStart().until(pollReminder.getPollIntervalEnd(), ChronoUnit.HOURS);
-        long passedReminderTime = pollReminder.getPollIntervalStart().until(LocalDateTime.now(), ChronoUnit.HOURS);
-
-        for (int i = 1; i < pollReminderLength; i++) {
-            long pollSendTime = (pollReminderLength * (i - 1)) / i;
-            if (passedReminderTime < pollSendTime) {
-                break;
-            }
-            if (passedReminderTime > pollSendTime) {
-                continue;
-            }
+        if (checkSendReminder(pollReminder, LocalDateTime.now())) {
             for (Person person : pollReminder.getDate().getGroup().getMembers()) {
                 if (!pollReminder.getDate().getFeedbackFor(person).getStatus().equals(Feedback.Status.NONE)) {
                     continue;
@@ -177,12 +167,43 @@ public class ScheduledRunner {
                         .person(person)
                         .person(pollReminder.getPollStarter(), "REQUESTER")
                         .date(pollReminder.getDate())
-                        .send(Messages.DATE_POLL_REMINDER.replaceAll("#REMINDERS", "" + i));
+                        .send(Messages.DATE_POLL_REMINDER.replaceAll("#REMINDERS", "" + pollReminder.getAmountOfTimesSend()));
                 if (result.isError()) {
                     LOGGER.error(result.getErrorMessage());
                 }
             }
-            break;
+            pollReminder.setAmountOfTimesSend(pollReminder.getAmountOfTimesSend() + 1);
+            this.pollReminderRepository.save(pollReminder);
         }
+    }
+
+    public static boolean checkSendReminder(PollReminder pollReminder, LocalDateTime dateTime) {
+        long pollReminderLength = pollReminder.getPollIntervalStart().until(pollReminder.getPollIntervalEnd(), ChronoUnit.HOURS);
+        long passedReminderTime = pollReminder.getPollIntervalStart().until(dateTime, ChronoUnit.HOURS);
+
+        if (pollReminder.getDate().getStart().isBefore(dateTime)) {
+            return false;
+        }
+
+        if (passedReminderTime > pollReminderLength) {
+            return true;
+        }
+
+        if (passedReminderTime < 0) {
+            return false;
+        }
+
+        for (int i = 0; i < pollReminderLength; i++) {
+            double step = Math.pow(2, i);
+            long pollSendTime = (long) Math.ceil((pollReminderLength * (step - 1)) / step);
+            if (passedReminderTime < pollSendTime) {
+                break;
+            }
+            if (passedReminderTime > pollSendTime) {
+                continue;
+            }
+            return true;
+        }
+        return false;
     }
 }
