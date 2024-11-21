@@ -62,7 +62,11 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         H4 title = new H4(this.calendarView.getTitle(this.page, this.person.getUserLocale()));
         header.add(title);
 
-        header.add(new Search(searchString -> this.search = searchString, this.search));
+        header.add(new Search(searchString -> {
+            this.search = searchString;
+            UI.getCurrent().navigate(CalendarView.class,
+                    new RouteParameters(new RouteParam("page", this.page), new RouteParam("search", this.search)));
+        }, this.search));
         return header;
     }
 
@@ -106,12 +110,12 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
 
     private void next() {
         UI.getCurrent().navigate(CalendarView.class,
-                new RouteParameters(new RouteParam("page", this.page + 1)));
+                new RouteParameters(new RouteParam("page", this.page + 1), new RouteParam("search", this.search)));
     }
 
     private void previous() {
         UI.getCurrent().navigate(CalendarView.class,
-                new RouteParameters(new RouteParam("page", this.page - 1)));
+                new RouteParameters(new RouteParam("page", this.page - 1), new RouteParam("search", this.search)));
     }
 
     @Override

@@ -27,7 +27,7 @@ public class Search extends HorizontalLayout {
             searchUpdated.accept(this.search);
         });
         searchTextField.setValue(currentSearch);
-        searchTextField.setVisible(false);
+        searchTextField.setVisible(currentSearch != null && !currentSearch.isEmpty());
         this.add(searchTextField);
 
         Button searchButton = new Button(VaadinIcon.SEARCH.create());
