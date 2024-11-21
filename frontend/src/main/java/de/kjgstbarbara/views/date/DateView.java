@@ -502,6 +502,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         PollReminder pollReminder = pollReminderRepository.findByDate(this.date).orElseGet(() -> {
             PollReminder pR = new PollReminder();
             pR.setDate(this.date);
+            pR.setPollStarter(this.person);
             pR.setPollIntervalStart(this.date.getStart().minusWeeks(1));
             pR.setPollIntervalEnd(this.date.getStart());
             return pR;
@@ -542,6 +543,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         planPollReminder.addClickListener(event -> {
             try {
                 binder.writeBean(pollReminder);
+                pollReminder.setPollStarter(this.person);
                 this.pollReminderRepository.save(pollReminder);
                 planPollDialog.close();
                 Notification.show("Erinnerung für den " + intervalStartPicker.getValue().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + " geplant");
