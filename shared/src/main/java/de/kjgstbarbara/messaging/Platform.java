@@ -23,7 +23,11 @@ public enum Platform {
         String SMTP_USER = System.getenv("SMTP_USER");
         String SMTP_MAIL_ADDRESS = System.getenv("SMTP_MAIL_ADDRESS");
         String SMTP_PASSWORD = System.getenv("SMTP_PASSWORD");
-        int SMTP_PORT = Integer.parseInt(System.getenv("SMTP_PORT"));
+        String SMTP_PORT_STRING = System.getenv("SMTP_PORT");
+        if(SMTP_PORT_STRING == null || SMTP_PORT_STRING.isBlank()) {
+            return Result.error("Invalid SMTP_PORT, please specify a valid port number.");
+        }
+        int SMTP_PORT = Integer.parseInt(SMTP_PORT_STRING);
         try (Mailer mailer = MailerBuilder
                 .withSMTPServer(SMTP_SERVER,
                         SMTP_PORT,
