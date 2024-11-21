@@ -92,6 +92,8 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         createButton.addClickListener(event ->
                 new CreateDateDialog()
                         .setPerson(person)
+                        .setCloseListener(d -> UI.getCurrent().navigate(CalendarView.class,
+                                new RouteParameters(new RouteParam("page", this.calendarView.getPage(d, this.search)), new RouteParam("search", this.search))))
                         .setOrganisations(this.organisationRepository.findByMembersIn(this.person))
                         .setGroups(this.groupRepository.findByAdminsIn(this.person))
                         .setGroupSaver(this.groupRepository::save)

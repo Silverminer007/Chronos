@@ -28,10 +28,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class CreateDateDialog {
-    private Runnable closeListener = () -> {};
+    private Consumer<Date> closeListener = d -> {};
     private Person person;
     private List<Organisation> organisations = new ArrayList<>();
     private List<Group> groups = new ArrayList<>();
@@ -43,7 +44,7 @@ public class CreateDateDialog {
     public CreateDateDialog() {
     }
 
-    public CreateDateDialog(Runnable closeListener, Person person, List<Organisation> organisations, List<Group> groups, LocalDate defaultDate, Function<Organisation, Organisation> organisationSaver, Function<Group, Group> groupSaver, Function<Date, Date> dateSaver) {
+    public CreateDateDialog(Consumer<Date> closeListener, Person person, List<Organisation> organisations, List<Group> groups, LocalDate defaultDate, Function<Organisation, Organisation> organisationSaver, Function<Group, Group> groupSaver, Function<Date, Date> dateSaver) {
         this.closeListener = closeListener;
         this.person = person;
         this.organisations = organisations;
@@ -54,7 +55,7 @@ public class CreateDateDialog {
         this.dateSaver = dateSaver;
     }
 
-    public CreateDateDialog setCloseListener(Runnable closeListener) {
+    public CreateDateDialog setCloseListener(Consumer<Date> closeListener) {
         this.closeListener = closeListener;
         return this;
     }
@@ -107,7 +108,6 @@ public class CreateDateDialog {
 
         ClosableDialog dialog = new ClosableDialog();
         dialog.setTitle(new H3("Termin erstellen"));
-        dialog.setCloseListener(closeListener);
         dialog.setMaxWidth("800px");
 
         Binder<Date> binder = new Binder<>();
@@ -253,6 +253,7 @@ public class CreateDateDialog {
                 } else {
                     Notification.show("\"" + date.getTitle() + "\" wurde erstellt");
                 }
+                closeListener.accept(date);
                 dialog.close();
             } catch (ValidationException ignored) {
             }

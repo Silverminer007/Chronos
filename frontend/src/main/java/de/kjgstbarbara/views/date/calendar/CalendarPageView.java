@@ -15,6 +15,7 @@ import org.vaadin.stefan.fullcalendar.dataprovider.EntryProvider;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
 public abstract class CalendarPageView implements Calendar {
@@ -40,7 +41,10 @@ public abstract class CalendarPageView implements Calendar {
         fullCalendar.setFirstDay(DayOfWeek.MONDAY);
         fullCalendar.addTimeslotClickedListener(event ->
                 new CreateDateDialog()
-                        .setCloseListener(() -> fullCalendar.getEntryProvider().refreshAll())
+                        .setCloseListener(d -> {
+                            fullCalendar.getEntryProvider().refreshAll();
+                            fullCalendar.gotoDate(d.getStart().toLocalDate());
+                        })
                         .setPerson(person)
                         .setOrganisations(this.organisationRepository.findByMembersIn(this.person))
                         .setGroups(this.groupRepository.findByAdminsIn(this.person))
@@ -95,6 +99,11 @@ public abstract class CalendarPageView implements Calendar {
         public String getTitle(int page, Locale locale) {
             return getStart(page).format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(locale));
         }
+
+        @Override
+        public int getPage(Date date, String search) {
+            return (int) LocalDate.now().withDayOfMonth(1).until(date.getStart().withDayOfMonth(1), ChronoUnit.MONTHS);
+        }
     }
 
     public static class Year extends CalendarPageView {
@@ -116,6 +125,11 @@ public abstract class CalendarPageView implements Calendar {
         @Override
         public String getTitle(int page, Locale locale) {
             return getStart(page).format(DateTimeFormatter.ofPattern("yyyy").withLocale(locale));
+        }
+
+        @Override
+        public int getPage(Date date, String search) {
+            return (int) LocalDate.now().withDayOfYear(1).until(date.getStart().withDayOfYear(1), ChronoUnit.YEARS);
         }
     }
 

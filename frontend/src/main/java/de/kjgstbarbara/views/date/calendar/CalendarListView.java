@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 
@@ -158,6 +159,11 @@ public abstract class CalendarListView implements Calendar {
             }
         }
 
+        @Override
+        public int getPage(Date date, String search) {
+            return (int) this.dateRepository.countDatesBetween(this.person, search, date.getStart()) / 20;
+        }
+
         protected List<Date> findSubListOfDates(String search, int page) {
             return this.dateRepository.calendarQuery(search, page, this.person);
         }
@@ -172,6 +178,11 @@ public abstract class CalendarListView implements Calendar {
         @Override
         public String getTitle(int page, Locale locale) {
             return LocalDate.now(ZoneOffset.UTC).plusMonths(page).format(DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(locale));
+        }
+
+        @Override
+        public int getPage(Date date, String search) {
+            return (int) LocalDate.now().withDayOfMonth(1).until(date.getStart().withDayOfMonth(1), ChronoUnit.MONTHS);
         }
 
         protected List<Date> findSubListOfDates(String search, int page) {

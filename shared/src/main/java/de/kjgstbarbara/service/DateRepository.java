@@ -40,6 +40,16 @@ public interface DateRepository extends JpaRepository<Date, Long> {
         );
     }
 
+    default long countDatesBetween(Person person, String searchTerm, LocalDateTime until) {
+        searchTerm = "%" + (searchTerm == null ? "" : searchTerm) + "%";
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime start = until.isBefore(now) ? until : now;
+        LocalDateTime end = until.isBefore(now) ? now : until;
+        return countByStartBetweenAndTitleLikeAndGroupMembersInAndGroupOrganisationMembersIn(start, end, searchTerm, List.of(person), List.of(person));
+    }
+
+    long countByStartBetweenAndTitleLikeAndGroupMembersInAndGroupOrganisationMembersIn(LocalDateTime start, LocalDateTime end, String searchTerm, List<Person> inGroup, List<Person> inOrg);
+
     List<Date> findByStartBetweenAndTitleLikeAndGroupMembersInAndGroupOrganisationMembersIn(LocalDateTime start, LocalDateTime end, String searchTerm, List<Person> inGroup, List<Person> inOrg, PageRequest pageRequest);
 
     List<Date> findByLinkedTo(long linkedTo);

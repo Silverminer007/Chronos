@@ -45,6 +45,8 @@ import de.kjgstbarbara.messaging.MessageSender;
 import de.kjgstbarbara.messaging.Messages;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.MainNavigationView;
+import de.kjgstbarbara.views.date.calendar.CalendarListView;
+import de.kjgstbarbara.views.date.calendar.CalendarPageView;
 import de.kjgstbarbara.views.date.calendar.CalendarView;
 import jakarta.annotation.security.PermitAll;
 import org.apache.logging.log4j.LogManager;
@@ -67,15 +69,19 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     private static final Logger LOGGER = LogManager.getLogger(DateView.class);
     private final DateRepository dateRepository;
     private final FeedbackRepository feedbackRepository;
+    private final GroupRepository groupRepository;
+    private final OrganisationRepository organisationRepository;
 
     private final Person person;
     private final PollReminderRepository pollReminderRepository;
 
     private Date date;
 
-    public DateView(PersonsService personsService, DatesService datesService, FeedbackService feedbackService, PollReminderRepository pollReminderRepository) {
+    public DateView(PersonsService personsService, DatesService datesService, FeedbackService feedbackService, PollReminderRepository pollReminderRepository, GroupService groupService, OrganisationService organisationService) {
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackService.getFeedbackRepository();
+        this.groupRepository = groupService.getGroupRepository();
+        this.organisationRepository = organisationService.getOrganisationRepository();
         this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         this.setMaxWidth("600px");
         this.pollReminderRepository = pollReminderRepository;
@@ -306,12 +312,14 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     private void back() {
-        long page = this.person == null ? 0 :
-                switch (this.person.getCalendarLayout()) {
-                    case YEAR -> LocalDate.now().until(this.date.getStart(), ChronoUnit.YEARS);
-                    case LIST_NEXT -> 0;
-                    default -> LocalDate.now().until(this.date.getStart(), ChronoUnit.MONTHS);
-                };
+        long page = (switch (this.person.getCalendarLayout()) {
+            case MONTH ->
+                    new CalendarPageView.Month(dateRepository, groupRepository, organisationRepository, this.person);
+            case YEAR ->
+                    new CalendarPageView.Year(dateRepository, groupRepository, organisationRepository, this.person);
+            case LIST_NEXT -> new CalendarListView.Amount(dateRepository, feedbackRepository, this.person);
+            default -> new CalendarListView.Month(dateRepository, feedbackRepository, this.person);
+        }).getPage(this.date, "");
         UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", page)));
     }
 
