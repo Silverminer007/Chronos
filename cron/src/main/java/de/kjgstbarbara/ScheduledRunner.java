@@ -52,7 +52,7 @@ public class ScheduledRunner {
                 }
                 sendPoll(d);
             }
-            for (PollReminder pollReminder : pollReminderRepository.findByPollIntervalStartAfterAndPollIntervalEndBefore(now, now)) {
+            for (PollReminder pollReminder : pollReminderRepository.findByPollIntervalStartBeforeAndPollIntervalEndAfter(now, now)) {
                 this.sendPollReminders(pollReminder);
             }
         } catch (Throwable e) {
@@ -148,26 +148,21 @@ public class ScheduledRunner {
         return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
     }
 
-    private void sendPollReminders(PollReminder pollReminder) {
-        if (pollReminder.getPollIntervalStart().isAfter(LocalDateTime.now())) {
-            return;
-        }
-        if (pollReminder.getPollIntervalEnd().isBefore(LocalDateTime.now())) {
-            return;
-        }
-        if (LocalDateTime.now().isAfter(pollReminder.getDate().getStart())) {
-            return;
-        }
+    public void sendPollReminders(PollReminder pollReminder) {
         if (checkSendReminder(pollReminder, LocalDateTime.now())) {
+            LOGGER.info("Abstimmungserinnerungen wurden für {} um {} verschickt", pollReminder.getDate().getTitle(), formatDate(LocalDateTime.now()));
             for (Person person : pollReminder.getDate().getGroup().getMembers()) {
-                if (!pollReminder.getDate().getFeedbackFor(person).getStatus().equals(Feedback.Status.NONE)) {
+                if (!pollReminder.getDate().getStatusFor(person).equals(Feedback.Status.NONE)) {
                     continue;
+                }
+                if (pollReminder.getPollStarter() == null || pollReminder.getDate() == null) {
+                    return;
                 }
                 Result result = new MessageSender(person)
                         .person(person)
                         .person(pollReminder.getPollStarter(), "REQUESTER")
                         .date(pollReminder.getDate())
-                        .send(Messages.DATE_POLL_REMINDER.replaceAll("#REMINDERS", "" + pollReminder.getAmountOfTimesSend()));
+                        .send(Messages.DATE_POLL_REMINDER.replaceAll("#REMINDERS", "" + pollReminder.getAmountOfTimesSend() + 1));
                 if (result.isError()) {
                     LOGGER.error(result.getErrorMessage());
                 }

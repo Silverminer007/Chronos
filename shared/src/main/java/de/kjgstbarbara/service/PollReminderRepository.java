@@ -9,6 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PollReminderRepository extends JpaRepository<PollReminder, Long> {
-    List<PollReminder> findByPollIntervalStartAfterAndPollIntervalEndBefore(LocalDateTime start, LocalDateTime end);
+    List<PollReminder> findByPollIntervalStartBeforeAndPollIntervalEndAfter(LocalDateTime start, LocalDateTime end);
     Optional<PollReminder> findByDate(Date date);
 }
