@@ -196,4 +196,32 @@ public abstract class CalendarListView implements Calendar {
                     .sorted().toList();
         }
     }
+
+    public static class Year extends CalendarListView {
+
+        public Year(DateRepository dateRepository, FeedbackRepository feedbackRepository, Person person) {
+            super(dateRepository, feedbackRepository, person);
+        }
+
+        @Override
+        public String getTitle(int page, Locale locale) {
+            return LocalDate.now(ZoneOffset.UTC).plusYears(page).withDayOfYear(1).format(DateTimeFormatter.ofPattern("yyyy").withLocale(locale));
+        }
+
+        @Override
+        public int getPage(Date date, String search) {
+            return (int) LocalDate.now().withDayOfMonth(1).until(date.getStart().withDayOfMonth(1), ChronoUnit.YEARS);
+        }
+
+        protected List<Date> findSubListOfDates(String search, int page) {
+            return dateRepository.findByStartBetweenAndTitleLikeAndGroupMembersInAndGroupOrganisationMembersIn(
+                            LocalDateTime.now(ZoneOffset.UTC)
+                                    .plusYears(page).withDayOfYear(1).withHour(0).withMinute(0),
+                            LocalDateTime.now(ZoneOffset.UTC)
+                                    .plusYears(1 + page).withDayOfYear(1).withHour(0).withMinute(0),
+                            search,
+                            this.person)
+                    .sorted().toList();
+        }
+    }
 }

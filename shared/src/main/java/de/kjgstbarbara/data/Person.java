@@ -111,6 +111,7 @@ public class Person {
     @Getter
     public enum CalendarLayout {
         LIST_PER_MONTH("Liste (Monatsweise)"),
+        LIST_PER_YEAR("Liste (Jahresweise)"),
         LIST_NEXT("Liste (immer 20)"),
         MONTH("Kalenderblatt (Monat)"),
         YEAR("Kalenderblatt (Jahr)");

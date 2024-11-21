@@ -318,6 +318,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             case YEAR ->
                     new CalendarPageView.Year(dateRepository, groupRepository, organisationRepository, this.person);
             case LIST_NEXT -> new CalendarListView.Amount(dateRepository, feedbackRepository, this.person);
+            case LIST_PER_YEAR -> new CalendarListView.Year(dateRepository, feedbackRepository, this.person);
             default -> new CalendarListView.Month(dateRepository, feedbackRepository, this.person);
         }).getPage(this.date, "");
         UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", page)));
