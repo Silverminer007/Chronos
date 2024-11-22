@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -29,7 +28,7 @@ public class ScheduledRunner {
     @Autowired
     private PollReminderRepository pollReminderRepository;
 
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void run() {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
@@ -39,20 +38,7 @@ public class ScheduledRunner {
             for (Date d : datesService.getDateRepository().findByStartBetween(now, now.plusDays(8)).stream().sorted(Comparator.comparing(Date::getStart)).toList()) {
                 this.processNotifications(d);
             }
-            for (Date d : datesService.getDateRepository().findByPollScheduledFor(LocalDate.now())) {
-                LOGGER.info("Umfragen für {} am {} werden verschicken wird geprüft", d.getTitle(), this.formatDate(d.getStart()));
-                if (d.getPollScheduledFor() == null) {
-                    continue;
-                }
-                if (!LocalDate.now().isEqual(d.getPollScheduledFor())) {
-                    continue;
-                }
-                if (!d.isPollRunning()) {
-                    continue;
-                }
-                sendPoll(d);
-            }
-            for (PollReminder pollReminder : pollReminderRepository.findByPollIntervalStartBeforeAndPollIntervalEndAfter(now, now)) {
+            for (PollReminder pollReminder : pollReminderRepository.findByPollIntervalStartBeforeAndDateStartAfter(now, now)) {
                 this.sendPollReminders(pollReminder);
             }
         } catch (Throwable e) {
@@ -127,21 +113,6 @@ public class ScheduledRunner {
         }
         summary.append("\n").append(cancelled).append("\n").append(noAnswer);
         return summary.toString();
-    }
-
-    private void sendPoll(Date d) {
-        for (Person p : d.getGroup().getMembers()) {
-            if (LocalDateTime.now().getHour() == 19) {// TODO Wo kommt diese Einstellung hin?
-                LOGGER.info("Umfragen für {} am {} wird an {} verschickt", d.getTitle(), this.formatDate(d.getStart()), p.getName());
-                Result result = new MessageSender(p)
-                        .date(d)
-                        .person(p)
-                        .send(Messages.DATE_POLL);
-                if (result.isError()) {
-                    LOGGER.error("Failed to send date poll for {} to {}", d.getTitle(), p.getName());
-                }
-            }
-        }
     }
 
     private String formatDate(LocalDateTime date) {
