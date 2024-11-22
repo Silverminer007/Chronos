@@ -76,6 +76,14 @@ public class Person {
         return this.prefferedPlatform == null ? Platform.EMAIL : this.prefferedPlatform;
     }
 
+    public List<Notification> getNotifications() {
+        return this.notifications == null ? new ArrayList<>(
+                List.of(
+                        new Notification(Platform.EMAIL, 2),
+                        new Notification(Platform.EMAIL, 48)
+                )) : this.notifications;
+    }
+
     public record PhoneNumber(String countryCode, Integer areaCode, Integer subscriber) {
         public long number() {
             try {
