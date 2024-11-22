@@ -28,7 +28,7 @@ public class ScheduledRunner {
     @Autowired
     private PollReminderRepository pollReminderRepository;
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void run() {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("------------------------------------------------------------------------------------------------");
