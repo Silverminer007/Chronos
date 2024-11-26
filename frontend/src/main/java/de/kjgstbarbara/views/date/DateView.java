@@ -359,8 +359,13 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             }
         }
         subMenu.addItem("Termin löschen", this::deleteDate).addClassName(LumoUtility.TextColor.ERROR);
+        subMenu.addItem(this.createCopyLink());
 
         return menuBar;
+    }
+
+    private Component createCopyLink() {
+        return new Anchor(System.getenv("HOST_DOMAIN") + "/date/" + this.date.getId(), "Link zu diesem Termin");
     }
 
     private void cancelForAll(ClickEvent<MenuItem> event) {
