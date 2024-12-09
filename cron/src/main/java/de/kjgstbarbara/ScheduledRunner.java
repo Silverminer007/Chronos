@@ -76,7 +76,7 @@ public class ScheduledRunner {
     }
 
     private void processAdminOverviewMessage(Date d) {
-        for (Person admin : d.getGroup().getMembers()) {
+        for (Person admin : d.getGroup().getAdmins()) {
             Result result = new MessageSender(admin)
                     .send(this.buildAdminMessage(admin, d));
             if (result.isError()) {
