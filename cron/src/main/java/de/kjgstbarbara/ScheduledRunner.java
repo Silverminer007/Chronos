@@ -57,6 +57,9 @@ public class ScheduledRunner {
         }
 
         for (Person p : d.getGroup().getMembers()) {
+            if(!Feedback.Status.CANCELLED.equals(d.getStatusFor(p))){
+                continue;
+            }
             for (Person.Notification notification : p.getNotifications()) {
                 if (now.until(d.getStart(), ChronoUnit.HOURS) == notification.getHoursBefore()) {
                     LOGGER.info("Erinnerungen für {} am {} werden an \"{}\" verschickt", d.getTitle(), this.formatDate(d.getStart()), p.getName());
