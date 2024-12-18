@@ -1,12 +1,14 @@
-import MaterialTailwind from "@material-tailwind/react";
-const {
-    Card,
-    CardBody,
-    CardFooter,
-    Typography,
-    Button, CardHeader, Accordion, AccordionBody, IconButton,
-} = MaterialTailwind;
 import React from "react";
+import {
+    Accordion,
+    AccordionDetails,
+    Button,
+    Card, CardActions,
+    CardContent,
+    CardHeader,
+    IconButton,
+    Typography
+} from "@mui/material";
 
 export function DateCard({title, start, end, startShort, ort}: {title: string, start: string, end: string, startShort: string, ort: string}) {
     const [open, setOpen] = React.useState(0);
@@ -20,22 +22,22 @@ export function DateCard({title, start, end, startShort, ort}: {title: string, s
                     {title}  {startShort} <IconButton variant="text" color={"white"}><span class="material-icons">edit</span></IconButton>
                 </Typography>
             </CardHeader>
-            <CardBody className="mt-0 py-2">
+            <CardContent className="mt-0 py-2">
                 <Accordion open={open === 1} className="p-0 m-0">
-                    <AccordionBody className="p-0 m-0">
+                    <AccordionDetails className="p-0 m-0">
                         <Typography className="text-white font-bold">
                             Dieser Termin startet am {start} und geht bis zum {end}
                         </Typography>
                         <Typography className="text-white font-bold">
                             Ort: {ort}
                         </Typography>
-                    </AccordionBody>
+                    </AccordionDetails>
                 </Accordion>
-            </CardBody>
-            <CardFooter className="pt-0 flex flex-row justify-between">
+            </CardContent>
+            <CardActions className="pt-0 flex flex-row justify-between">
                 <Button variant={"outlined"} color={"white"} className="border-blue-600">Bin dabei</Button>
                 <Button variant={"outlined"} color={"white"} className="border-blue-600">Bin raus</Button>
-            </CardFooter>
+            </CardActions>
         </Card>
     );
 }

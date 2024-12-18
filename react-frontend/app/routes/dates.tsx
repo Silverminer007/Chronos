@@ -1,6 +1,5 @@
 import {DateCard} from "~/components/DateCard";
-import MaterialTailwind from "@material-tailwind/react";
-const {Avatar, Typography} = MaterialTailwind;
+import {Avatar, Typography} from "@mui/material";
 
 function Dates() {
     return (
