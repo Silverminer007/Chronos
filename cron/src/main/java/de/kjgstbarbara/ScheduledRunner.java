@@ -52,12 +52,17 @@ public class ScheduledRunner {
         LocalDateTime now = LocalDateTime.now();
         LOGGER.info("Erinnerungen für {} am {} werden verschickt", d.getTitle(), this.formatDate(d.getStart()));
 
+        if (d.getDateCancelled() != null) {
+            LOGGER.info("The Date was cancelled, no messages sent for this date");
+            return;
+        }
+
         if (LocalDateTime.now().until(d.getStart(), ChronoUnit.HOURS) == 2) {
             this.processAdminOverviewMessage(d);
         }
 
         for (Person p : d.getGroup().getMembers()) {
-            if(!Feedback.Status.CANCELLED.equals(d.getStatusFor(p))){
+            if (!Feedback.Status.CANCELLED.equals(d.getStatusFor(p))) {
                 continue;
             }
             for (Person.Notification notification : p.getNotifications()) {
