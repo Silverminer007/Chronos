@@ -19,7 +19,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Person;
@@ -48,7 +48,7 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
         this.groupRepository = groupService.getGroupRepository();
         this.dateRepository = datesService.getDateRepository();
         this.feedbackRepository = feedbackRepository;
-        this.loggedInUser = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        this.loggedInUser = FrontendUtils.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         if (this.loggedInUser != null) {
             this.init();
         }

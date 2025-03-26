@@ -17,7 +17,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.Platform;
@@ -38,7 +38,7 @@ public class NotificationSettingsView extends VerticalLayout {
 
     public NotificationSettingsView(PersonsService personsService) {
         this.personsRepository = personsService.getPersonsRepository();
-        this.principal = Utility.getAuthenticatedUser(personsRepository).orElse(null);
+        this.principal = FrontendUtils.getAuthenticatedUser(personsRepository).orElse(null);
         if(this.principal != null) {
             this.init();
         }

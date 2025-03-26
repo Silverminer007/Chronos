@@ -9,7 +9,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.messaging.MessageSender;
@@ -32,7 +32,7 @@ public class EditJoinOrganisationRequestsView extends VerticalLayout implements 
     public EditJoinOrganisationRequestsView(PersonsService personsService, OrganisationService organisationService) {
         this.personsRepository = personsService.getPersonsRepository();
         this.organisationRepository = organisationService.getOrganisationRepository();
-        this.person = Utility.getAuthenticatedUser(this.personsRepository).orElse(null);
+        this.person = FrontendUtils.getAuthenticatedUser(this.personsRepository).orElse(null);
     }
 
     @Override

@@ -14,7 +14,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.data.Person;
 import de.kjgstbarbara.service.PersonsService;
 import de.kjgstbarbara.views.date.calendar.CalendarView;
@@ -33,7 +33,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
     private final List<Link> links = new ArrayList<>();
 
     public MainNavigationView(PersonsService personsService) {
-        this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        this.person = FrontendUtils.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         setPrimarySection(Section.NAVBAR);
         addToNavbar(true, getNavigation());
     }

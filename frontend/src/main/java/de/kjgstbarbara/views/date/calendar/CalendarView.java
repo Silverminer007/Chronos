@@ -11,7 +11,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.data.*;
@@ -41,7 +41,7 @@ public class CalendarView extends VerticalLayout implements BeforeEnterObserver 
         this.dateRepository = datesService.getDateRepository();
         this.groupRepository = groupService.getGroupRepository();
         FeedbackRepository feedbackRepository = feedbackService.getFeedbackRepository();
-        this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        this.person = FrontendUtils.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         this.calendarView = this.person == null ? null :
                 switch (this.person.getCalendarLayout()) {
                     case MONTH ->

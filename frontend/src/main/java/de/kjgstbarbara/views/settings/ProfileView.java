@@ -8,7 +8,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H4;
@@ -32,7 +31,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.FileHelper;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.components.ClosableDialog;
 import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.components.PhoneNumberField;
@@ -70,7 +69,7 @@ public class ProfileView extends VerticalLayout {
         this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.groupRepository = groupService.getGroupRepository();
         this.passwordEncoder = passwordEncoder;
-        this.person = Utility.getAuthenticatedUser(personsRepository).orElse(null);
+        this.person = FrontendUtils.getAuthenticatedUser(personsRepository).orElse(null);
         if (this.person != null) {
             this.init();
         }
@@ -232,7 +231,7 @@ public class ProfileView extends VerticalLayout {
                                 group.getMembers().remove(person));
                         this.groupRepository.findByAdminsIn(person).forEach(group ->
                                 group.getAdmins().remove(person));
-                        Utility.logout();// TODO User bleibt aktuell eingeloggt und Account in Keycloak wird auch nicht gelöscht
+                        FrontendUtils.logout();// TODO User bleibt aktuell eingeloggt und Account in Keycloak wird auch nicht gelöscht
                     }
                 }
         );

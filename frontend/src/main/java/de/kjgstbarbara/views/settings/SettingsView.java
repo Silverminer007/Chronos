@@ -10,7 +10,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.components.Header;
 import de.kjgstbarbara.service.*;
 import de.kjgstbarbara.views.MainNavigationView;
@@ -23,7 +23,7 @@ public class SettingsView extends VerticalLayout {
 
     public SettingsView(PersonsService personsService) {
         PersonsRepository personsRepository = personsService.getPersonsRepository();
-        Utility.getAuthenticatedUser(personsRepository);
+        FrontendUtils.getAuthenticatedUser(personsRepository);
         this.init();
     }
 
@@ -51,7 +51,7 @@ public class SettingsView extends VerticalLayout {
 
         content.add(this.createLink("Profil", ProfileView.class));
         content.add(this.createLink("Benachrichtigungen", NotificationSettingsView.class));
-        content.add(this.createButton("Abmelden", Utility::logout));
+        content.add(this.createButton("Abmelden", FrontendUtils::logout));
         return content;
     }
 

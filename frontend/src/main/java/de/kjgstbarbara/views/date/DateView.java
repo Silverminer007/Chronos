@@ -35,7 +35,7 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kjgstbarbara.IcsHelper;
 import de.kjgstbarbara.Result;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.Date;
 import de.kjgstbarbara.data.Feedback;
@@ -82,7 +82,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         this.feedbackRepository = feedbackService.getFeedbackRepository();
         this.groupRepository = groupService.getGroupRepository();
         this.organisationRepository = organisationService.getOrganisationRepository();
-        this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        this.person = FrontendUtils.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         this.setMaxWidth("600px");
         this.pollReminderRepository = pollReminderRepository;
     }

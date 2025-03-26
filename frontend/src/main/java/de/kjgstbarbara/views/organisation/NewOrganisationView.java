@@ -13,7 +13,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import de.kjgstbarbara.Utility;
+import de.kjgstbarbara.FrontendUtils;
 import de.kjgstbarbara.components.*;
 import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Organisation;
@@ -42,7 +42,7 @@ public class NewOrganisationView extends VerticalLayout {
                                GroupService groupService) {
         this.organisationRepository = organisationService.getOrganisationRepository();
         this.groupRepository = groupService.getGroupRepository();
-        this.person = Utility.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
+        this.person = FrontendUtils.getAuthenticatedUser(personsService.getPersonsRepository()).orElse(null);
         if (this.person != null) {
             this.init();
         }
