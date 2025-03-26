@@ -26,7 +26,6 @@
         <vaadin.version>24.6.6</vaadin.version>
         <biweekly.version>0.6.8</biweekly.version>
         <thumbnailator.version>[0.4, 0.5)</thumbnailator.version>
-        <libphonenumber.version>8.13.47</libphonenumber.version>
         <file-download-wrapper.version>7.1.0</file-download-wrapper.version>
         <fullcalendar.version>6.3.0</fullcalendar.version>
         <javamail.version>8.12.5</javamail.version>
@@ -77,12 +76,6 @@
             <groupId>net.coobird</groupId>
             <artifactId>thumbnailator</artifactId>
             <version>${thumbnailator.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.googlecode.libphonenumber</groupId>
-            <artifactId>libphonenumber</artifactId>
-            <version>${libphonenumber.version}</version>
         </dependency>
 
         <dependency>

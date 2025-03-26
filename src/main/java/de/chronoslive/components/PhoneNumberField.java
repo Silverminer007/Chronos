@@ -1,6 +1,5 @@
 package de.chronoslive.components;
 
-import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
@@ -8,8 +7,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import de.chronoslive.entitys.Person;
 
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.List;
 
 public class PhoneNumberField extends CustomField<Person.PhoneNumber> implements HasSize {
 
@@ -25,7 +23,7 @@ public class PhoneNumberField extends CustomField<Person.PhoneNumber> implements
 
         countryCode = new ComboBox<>("Country Code");
         countryCode.setWidth("90px");
-        countryCode.setItems(Arrays.stream(Locale.getISOCountries()).map(PhoneNumberUtil.getInstance()::getCountryCodeForRegion).map(s -> "+" + s).toList());
+        countryCode.setItems(List.of("+49"));
         countryCode.setValue("+49");
 
         areaCode = new IntegerField("Region");
