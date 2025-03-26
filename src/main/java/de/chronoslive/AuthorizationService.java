@@ -1,0 +1,32 @@
+package de.chronoslive;
+
+import de.chronoslive.entitys.Date;
+import de.chronoslive.entitys.Group;
+import de.chronoslive.entitys.Organisation;
+import de.chronoslive.entitys.Person;
+
+public class AuthorizationService {
+    public static boolean hasAdminRights(Date date, Person principal) {
+        return date.getGroup().getAdmins().contains(principal) || hasAdminRights(date.getGroup().getOrganisation(), principal);
+    }
+
+    public static boolean canSee(Date date, Person principal) {
+        return canSee(date.getGroup(), principal);
+    }
+
+    public static boolean canSee(Organisation organisation, Person principal) {
+        return organisation.getMembers().contains(principal);
+    }
+
+    public static boolean hasAdminRights(Organisation organisation, Person principal) {
+        return organisation.getAdmin().equals(principal);
+    }
+
+    public static boolean canSee(Group group, Person principal) {
+        return group.getMembers().contains(principal) || hasAdminRights(group.getOrganisation(), principal);
+    }
+
+    public static boolean hasAdminRights(Group group, Person principal) {
+        return group.getAdmins().contains(principal);
+    }
+}
