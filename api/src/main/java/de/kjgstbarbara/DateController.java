@@ -73,7 +73,7 @@ public class DateController {
     @GetMapping(path = "/date/{id}")
     public SlimDate getDate(@PathVariable Long id, JwtAuthenticationToken token) {
         Person principal = this.getPrincipal(token);
-        Optional<Date> d = this.dateRepository.findById(id).filter(date -> Authorization.canSee(date, principal));
+        Optional<Date> d = this.dateRepository.findById(id).filter(date -> AuthorizationService.canSee(date, principal));
         if (d.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
@@ -104,7 +104,7 @@ public class DateController {
                 date = new Date();
             } else {
                 date = dateRepository.findById(this.id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Date ID"));
-                if (!Authorization.hasAdminRights(date, principal)) {
+                if (!AuthorizationService.hasAdminRights(date, principal)) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN);
                 }
             }
@@ -116,7 +116,7 @@ public class DateController {
             Group group = groupRepository.findById(this.group).orElseThrow(() ->
                     new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Group ID"));
             date.setGroup(group);
-            if (!Authorization.hasAdminRights(date, principal)) {
+            if (!AuthorizationService.hasAdminRights(date, principal)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
             if (date.getLinkedTo() != this.linkedTo) {

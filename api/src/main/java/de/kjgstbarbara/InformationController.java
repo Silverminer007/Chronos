@@ -27,7 +27,7 @@ public class InformationController {
     @GetMapping(path = "/information/{date}")
     public List<Information> getInformation(@PathVariable(name = "date") long dateID, JwtAuthenticationToken token) {
         Date date = dateRepository.findById(dateID).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid Date ID"));
-        if(Authorization.canSee(date, getPrincipal(token))) {
+        if(AuthorizationService.canSee(date, getPrincipal(token))) {
             return date.getInformation().stream().map(Information::new).toList();
         } else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -41,7 +41,7 @@ public class InformationController {
         informationDate.setInformationText(information);
         informationDate.setInformationTime(LocalDateTime.now());
         Date date = dateRepository.findById(dateID).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "This date does not exist"));
-        if(Authorization.canSee(date, getPrincipal(token))) {
+        if(AuthorizationService.canSee(date, getPrincipal(token))) {
             date.getInformation().add(informationDate);
             dateRepository.save(date);
             return new Information(informationDate);

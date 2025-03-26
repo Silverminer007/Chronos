@@ -35,7 +35,7 @@ public class OrganisationController {
     @GetMapping(path = "/organisation/{id}")
     public SlimOrganisation getOrganisation(@PathVariable("id") long id, JwtAuthenticationToken token) {
         return organisationRepository.findById(id)
-                .filter(o -> Authorization.canSee(o, getPrincipal(token)))
+                .filter(o -> AuthorizationService.canSee(o, getPrincipal(token)))
                 .map(SlimOrganisation::new)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "This organisation does not exist"));
     }
@@ -63,7 +63,7 @@ public class OrganisationController {
                 organisation = new Organisation();
             } else {
                 organisation = organisationRepository.findById(this.id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "This organisation does not exist"));
-                if (!Authorization.hasAdminRights(organisation, principal)) {
+                if (!AuthorizationService.hasAdminRights(organisation, principal)) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You're not allowed to edit this organisation");
                 }
             }

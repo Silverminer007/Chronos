@@ -5,7 +5,7 @@ import de.kjgstbarbara.data.Group;
 import de.kjgstbarbara.data.Organisation;
 import de.kjgstbarbara.data.Person;
 
-public class Authorization {
+public class AuthorizationService {
     public static boolean hasAdminRights(Date date, Person principal) {
         return date.getGroup().getAdmins().contains(principal) || hasAdminRights(date.getGroup().getOrganisation(), principal);
     }

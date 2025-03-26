@@ -42,7 +42,7 @@ public class GroupController {
 
     @GetMapping(path = "/group/{id}")
     public SlimGroup getGroups(@PathVariable long id, JwtAuthenticationToken token) {
-        return groupRepository.findById(id).filter(g -> Authorization.canSee(g, getPrincipal(token))).map(SlimGroup::new).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
+        return groupRepository.findById(id).filter(g -> AuthorizationService.canSee(g, getPrincipal(token))).map(SlimGroup::new).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
     }
 
     private Person getPrincipal(JwtAuthenticationToken token) {
@@ -66,7 +66,7 @@ public class GroupController {
                 group = new Group();
             } else {
                 group = groupRepository.findById(this.id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "This group does not exist"));
-                if (!Authorization.hasAdminRights(group, principal)) {
+                if (!AuthorizationService.hasAdminRights(group, principal)) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN);
                 }
             }
@@ -76,13 +76,13 @@ public class GroupController {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid color");
             }
             group.setOrganisation(organisationRepository.findById(this.organisation).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "This organisation does not exist")));
-            if (!Authorization.hasAdminRights(group.getOrganisation(), principal)) {
+            if (!AuthorizationService.hasAdminRights(group.getOrganisation(), principal)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
             group.setMembers(this.members.stream()
                     .map(memberId -> personsRepository.findById(memberId)
                             .filter(p ->
-                                    Authorization.canSee(group.getOrganisation(), p))
+                                    AuthorizationService.canSee(group.getOrganisation(), p))
                             .orElseThrow(() ->
                                     new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                             "Not all members exist or are member of the organisation")))
@@ -90,7 +90,7 @@ public class GroupController {
             group.setAdmins(this.admins.stream()
                     .map(memberId -> personsRepository.findById(memberId)
                             .filter(p ->
-                                    Authorization.canSee(group.getOrganisation(), p))
+                                    AuthorizationService.canSee(group.getOrganisation(), p))
                             .orElseThrow(() ->
                                     new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                             "Not all admin exist or are member of the organisation")))

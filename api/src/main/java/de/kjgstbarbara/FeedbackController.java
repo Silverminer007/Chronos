@@ -31,7 +31,7 @@ public class FeedbackController {
     public void postFeedback(@PathVariable(name = "date") long dateID, @RequestBody String status, JwtAuthenticationToken token) {
         try {
             Date date = dateRepository.findById(dateID).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-            if (!Authorization.canSee(date, getPrincipal(token))) {
+            if (!AuthorizationService.canSee(date, getPrincipal(token))) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND);
             }
             Feedback feedback = new Feedback(getPrincipal(token), Feedback.Status.valueOf(status));
@@ -47,7 +47,7 @@ public class FeedbackController {
     public List<SlimFeedback> getCurrentFeedbacks(@PathVariable(name = "date") long dateID, JwtAuthenticationToken token) {
         Person principal = getPrincipal(token);
         Date date = dateRepository.findById(dateID).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
-        if (!Authorization.canSee(date, principal)) {
+        if (!AuthorizationService.canSee(date, principal)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         return date.getGroup().getMembers().stream().map(date::getFeedbackFor).map(SlimFeedback::new).toList();
@@ -57,7 +57,7 @@ public class FeedbackController {
     public List<SlimFeedback> getFeedbacksHistory(@PathVariable(name = "date") long dateID, JwtAuthenticationToken token) {
         Person principal = getPrincipal(token);
         Date date = dateRepository.findById(dateID).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
-        if (!Authorization.canSee(date, principal)) {
+        if (!AuthorizationService.canSee(date, principal)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         return date.getFeedbackList().stream().map(SlimFeedback::new).toList();
@@ -67,7 +67,7 @@ public class FeedbackController {
     public SlimFeedback getCurrentFeedbacks(@PathVariable(name = "date") long dateID, @PathVariable(name = "person") long personID, JwtAuthenticationToken token) {
         Person principal = getPrincipal(token);
         Date date = dateRepository.findById(dateID).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
-        if (!Authorization.canSee(date, principal)) {
+        if (!AuthorizationService.canSee(date, principal)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         Person person = personsRepository.findById(personID).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -78,7 +78,7 @@ public class FeedbackController {
     public List<SlimFeedback> getFeedbacksHistory(@PathVariable(name = "date") long dateID, @PathVariable(name = "person") long personID, JwtAuthenticationToken token) {
         Person principal = getPrincipal(token);
         Date date = dateRepository.findById(dateID).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
-        if (!Authorization.canSee(date, principal)) {
+        if (!AuthorizationService.canSee(date, principal)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         return date.getFeedbackList().stream().filter(f -> f.getPerson().getId() == personID).map(SlimFeedback::new).toList();
