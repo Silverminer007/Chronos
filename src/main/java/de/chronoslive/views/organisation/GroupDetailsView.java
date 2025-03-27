@@ -106,6 +106,8 @@ public class GroupDetailsView extends VerticalLayout implements BeforeEnterObser
 
         header.add(groupInformation);
 
+        header.add(new IcsDownloadButton("group", this.group.getId()));
+
         header.add(new Search(searchString -> {
             this.search = searchString;
             this.createMemberList();

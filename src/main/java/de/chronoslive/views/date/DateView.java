@@ -141,7 +141,7 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
         rightHeader.setSpacing(false);
         rightHeader.setAlignItems(Alignment.CENTER);
 
-        rightHeader.add(createDownloadIcsButton());
+        rightHeader.add(new IcsDownloadButton("date", this.date.getId()));
         if (this.date.getGroup().getAdmins().contains(this.person)) {
             rightHeader.add(createEditButton());
             rightHeader.add(createManageDateMenu());
@@ -317,15 +317,6 @@ public class DateView extends VerticalLayout implements BeforeEnterObserver {
             default -> new CalendarListView.Month(dateRepository, feedbackRepository, this.person);
         }).getPage(this.date, "");
         UI.getCurrent().navigate(CalendarView.class, new RouteParameters(new RouteParam("page", page)));
-    }
-
-    private Component createDownloadIcsButton() {
-        Button downloadIcs = new Button(VaadinIcon.DOWNLOAD.create());
-        downloadIcs.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_TERTIARY);
-
-        Anchor downloadWrapper = new Anchor("http://localhost:8080/api/v1/ical/date/" + this.date.getId() + ".ics", downloadIcs);
-        downloadWrapper.getElement().setAttribute("download", true);
-        return downloadWrapper;
     }
 
     private Component createManageDateMenu() {

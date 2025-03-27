@@ -93,6 +93,8 @@ public class OrganisationDetailsView extends VerticalLayout implements BeforeEnt
 
         header.add(organisationInformation);
 
+        header.add(new IcsDownloadButton("organisation", this.organisation.getId()));
+
         Button editName = new Button(VaadinIcon.PENCIL.create());
         editName.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_TERTIARY_INLINE);
         editName.setEnabled(this.organisation.getAdmin().equals(this.loggedInUser));
