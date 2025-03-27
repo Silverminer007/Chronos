@@ -28,7 +28,6 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.chronoslive.services.FeedbackService;
 import de.chronoslive.services.GroupService;
@@ -244,8 +243,7 @@ public class ProfileView extends VerticalLayout {
     }
 
     private static VerticalLayout getProfileImageLayout(Person person, PersonsRepository personsRepository) {
-        StreamResource profileImageStreamResource = FileHelper.getProfileImage(person);
-        Image profileImage = new Image(profileImageStreamResource, "Profilbild");
+        Image profileImage = new Image("/profile-image/" + person.getId(), "Profilbild");
         profileImage.setWidth("150px");
 
         MemoryBuffer memoryBuffer = new MemoryBuffer();

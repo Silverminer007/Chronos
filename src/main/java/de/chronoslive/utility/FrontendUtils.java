@@ -3,7 +3,6 @@ package de.chronoslive.utility;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
-import com.vaadin.flow.server.StreamResource;
 import de.chronoslive.entitys.Date;
 import de.chronoslive.entitys.Feedback;
 import de.chronoslive.entitys.Person;
@@ -18,15 +17,13 @@ import java.util.Optional;
 public class FrontendUtils {
     public static Avatar getAvatar(Person person) {
         Avatar avatar = new Avatar(person.getName());
-        StreamResource pp = FileHelper.getProfileImage(person);
-        avatar.setImageResource(pp);
+        avatar.setImage("/profile-image/" + person.getId());
         return avatar;
     }
 
     public static AvatarGroup.AvatarGroupItem getAvatarGroupItem(Person person) {
         AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(person.getName());
-        StreamResource pp = FileHelper.getProfileImage(person);
-        avatarGroupItem.setImageResource(pp);
+        avatarGroupItem.setImage("/profile-image/" + person.getId());
         return avatarGroupItem;
     }
 

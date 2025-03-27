@@ -24,3 +24,5 @@ webpack.generated.js
 .env
 *.log
 *.sql
+
+/profile-image
