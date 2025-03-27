@@ -17,6 +17,7 @@ RUN chmod +x mvnw
 RUN ./mvnw -Pnative -Pproduction native:compile
 
 FROM alpine:latest
+RUN apk add gcompat
 WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/target/chronos .
 ENTRYPOINT ["/usr/src/app/chronos"]
