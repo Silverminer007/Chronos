@@ -97,7 +97,8 @@ public class ICalService {
     public ICalendar getPublicCalendar() {
         ICalendar calendar = new ICalendar();
 
-        List<Date> events = this.datesService.getDateRepository().findByPublish(true);
+        //List<Date> events = this.datesService.getDateRepository().findByPublish(true);
+        List<Date> events = this.datesService.getDateRepository().findAll();
 
         for (Date event : events) {
             VEvent vEvent = dateToVEvent(event);
@@ -111,7 +112,8 @@ public class ICalService {
     public ICalendar getPublicCalendarByOrganisation(long organisationId) {
         ICalendar calendar = new ICalendar();
 
-        List<Date> events = this.datesService.getDateRepository().findByPublishAndGroupOrganisationId(true, organisationId);
+        //List<Date> events = this.datesService.getDateRepository().findByPublishAndGroupOrganisationId(true, organisationId);
+        List<Date> events = this.datesService.getDateRepository().findByGroupOrganisationId(organisationId);
 
         for (Date event : events) {
             VEvent vEvent = dateToVEvent(event);
