@@ -20,12 +20,11 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(requests -> {
-            requests.requestMatchers("/api/v1/ical/**").authenticated();
-            requests.requestMatchers("/api/v1/ical/public.ics").permitAll();
             requests.requestMatchers("/api/v1/ical/organisation/*/public.ics").permitAll();
+            requests.requestMatchers("/api/v1/ical/public.ics").permitAll();
+            requests.requestMatchers("/api/v1/ical/**").authenticated();
             requests.requestMatchers("/api/v1/**").hasRole("ADMIN_API");
             requests.requestMatchers("/public/**").permitAll();
-            //requests.anyRequest().authenticated();
         });
         http.logout((logout) -> {
             var logoutSuccessHandler =
