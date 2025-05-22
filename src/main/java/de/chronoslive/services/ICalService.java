@@ -80,7 +80,7 @@ public class ICalService {
         return calendar;
     }
 
-    public ICalendar getCalendarByPrincipal(Person person) {
+    public ICalendar getCalendarByPerson(Person person) {
         ICalendar calendar = new ICalendar();
 
         List<Date> events = this.datesService.getDateRepository().findByGroupMembersInAndGroupOrganisationMembersIn(List.of(person), List.of(person));

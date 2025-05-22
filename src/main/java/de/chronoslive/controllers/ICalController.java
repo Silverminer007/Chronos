@@ -70,7 +70,15 @@ public class ICalController {
     @GetMapping(path = "/ical.ics", produces = "text/calendar")
     public ResponseEntity<String> getCalendar() {
         Person principal = FrontendUtils.getAuthenticatedUser(this.personsService.getPersonsRepository()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        ICalendar calendar = this.icalService.getCalendarByPrincipal(principal);
+        ICalendar calendar = this.icalService.getCalendarByPerson(principal);
+        String result = Biweekly.write(calendar).go();
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    @GetMapping(path = "/person/{person}/public.ics", produces = "text/calendar")
+    public ResponseEntity<String> getPersonsPublicCalendar(@PathVariable("person") long personID) {
+        Person person = this.personsService.getPersonsRepository().findById(personID).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        ICalendar calendar = this.icalService.getCalendarByPerson(person);
         String result = Biweekly.write(calendar).go();
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
