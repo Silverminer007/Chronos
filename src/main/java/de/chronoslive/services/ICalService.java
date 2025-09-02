@@ -9,6 +9,7 @@ import de.chronoslive.entitys.Person;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -130,8 +131,8 @@ public class ICalService {
 
         vEvent.setSummary(event.getTitle());
 
-        vEvent.setDateStart(java.util.Date.from(event.getStart().atZone(ZoneOffset.UTC).toInstant()));
-        vEvent.setDateEnd(java.util.Date.from(event.getEnd().atZone(ZoneOffset.UTC).toInstant()));
+        vEvent.setDateStart(java.util.Date.from(event.getStart().atZone(ZoneId.of("Europe/Berlin")).toInstant()));
+        vEvent.setDateEnd(java.util.Date.from(event.getEnd().atZone(ZoneId.of("Europe/Berlin")).toInstant()));
 
         vEvent.addRelatedTo(String.valueOf(event.getLinkedTo()));
 
