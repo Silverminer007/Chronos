@@ -1,8 +1,8 @@
 services:
   db:
     image: mysql:9
+    container_name: chronos_db
     restart: always
-    # set shared memory limit when using docker-compose
     shm_size: 128mb
     ports:
       - "3306:3306"
@@ -10,9 +10,12 @@ services:
       MYSQL_ROOT_PASSWORD: ${DATABASE_PWD}
       MYSQL_DATABASE: chronos
     volumes:
+      # Datenbank-Volume für persistente MySQL-Daten
       - chronos-database:/var/lib/mysql
+      # Init-SQL für Podman rootless, SELinux-kompatibel
+      - ./init-sql:/docker-entrypoint-initdb.d:Z
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
