@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.4</version>
+        <version>3.5.5</version>
     </parent>
 
     <properties>
@@ -21,14 +21,14 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <image>ghcr.io/silverminer007/${project.artifactId}:${project.version}</image>
-        <mysql.version>9.2.0</mysql.version>
-        <lombok.version>1.18.36</lombok.version>
-        <vaadin.version>24.6.6</vaadin.version>
+        <mysql.version>9.4.0</mysql.version>
+        <lombok.version>1.18.38</lombok.version>
+        <vaadin.version>24.8.7</vaadin.version>
         <biweekly.version>0.6.8</biweekly.version>
         <thumbnailator.version>[0.4, 0.5)</thumbnailator.version>
         <file-download-wrapper.version>7.1.0</file-download-wrapper.version>
         <fullcalendar.version>6.3.0</fullcalendar.version>
-        <javamail.version>8.12.5</javamail.version>
+        <javamail.version>8.12.6</javamail.version>
     </properties>
 
     <repositories>
