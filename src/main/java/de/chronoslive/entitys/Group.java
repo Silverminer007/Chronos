@@ -15,7 +15,7 @@ public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Setter(AccessLevel.PRIVATE)
-    private long id;
+    private Long id;
     @NonNull
     private String name;
     private String color = generateColor();
@@ -25,6 +25,10 @@ public class Group {
     private List<Person> members = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Person> admins = new ArrayList<>();
+
+    public Group(Long id) {
+        this.id = id;
+    }
 
     public String toString() {
         return name;

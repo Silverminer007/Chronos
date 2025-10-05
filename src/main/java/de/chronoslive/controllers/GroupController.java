@@ -61,7 +61,7 @@ public class GroupController {
         public Group getGroup(GroupRepository groupRepository, OrganisationRepository organisationRepository, PersonsRepository personsRepository, Person principal, boolean allowNew) {
             Group group;
             if (allowNew) {
-                group = new Group();
+                group = new Group(id);
             } else {
                 group = groupRepository.findById(this.id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "This group does not exist"));
                 if (!AuthorizationService.hasAdminRights(group, principal)) {

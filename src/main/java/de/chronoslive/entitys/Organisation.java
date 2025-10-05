@@ -16,7 +16,7 @@ public class Organisation {
     private static final Logger LOGGER = LoggerFactory.getLogger(Organisation.class);
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Id
-    private long id;
+    private Long id;
     private String name;
     @ManyToOne
     private Person admin;
@@ -24,6 +24,10 @@ public class Organisation {
     private List<Person> members = new ArrayList<>();
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Person> membershipRequests = new ArrayList<>();
+
+    public Organisation(Long id) {
+        this.id = id;
+    }
 
     public String toString() {
         return name;
@@ -36,6 +40,6 @@ public class Organisation {
 
     @Override
     public int hashCode() {
-        return (int) this.id;
+        return (int)(long) this.id;
     }
 }

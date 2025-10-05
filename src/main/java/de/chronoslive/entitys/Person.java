@@ -44,6 +44,10 @@ public class Person {
             ));
     private Platform prefferedPlatform;
 
+    public Person(long id) {
+        this.id = id;
+    }
+
     public String toString() {
         return firstName + " " + lastName;
     }
@@ -102,16 +106,19 @@ public class Person {
             return countryCode + " " + areaCode + " " + subscriber;
         }
 
-        public PhoneNumber(String s) {
-            this(splitPhoneNumber(s, 0), Integer.valueOf(splitPhoneNumber(s, 1)), Integer.valueOf(splitPhoneNumber(s, 2)));
-        }
-
-        private static String splitPhoneNumber(String phoneNumber, int index) {
-            String[] parts = phoneNumber.split(" ");
-            if (parts.length <= index) {
-                return "0";
+        public static PhoneNumber parse(String phoneNumberString) {
+            String[] parts = phoneNumberString.split(" ");
+            if (parts.length != 3) {
+                throw new IllegalArgumentException("Invalid phone number: " + phoneNumberString);
             } else {
-                return parts[index];
+                try {
+                    String countryCode = parts[0];
+                    Integer areaCode = Integer.valueOf(parts[1]);
+                    Integer subscriber = Integer.valueOf(parts[2]);
+                    return new PhoneNumber(countryCode, areaCode, subscriber);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid phone number: " + phoneNumberString);
+                }
             }
         }
     }
