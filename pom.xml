@@ -21,9 +21,9 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <image>ghcr.io/silverminer007/${project.artifactId}:${project.version}</image>
-        <mysql.version>9.4.0</mysql.version>
-        <lombok.version>1.18.38</lombok.version>
-        <vaadin.version>24.9.2</vaadin.version>
+        <mysql.version>9.5.0</mysql.version>
+        <lombok.version>1.18.42</lombok.version>
+        <vaadin.version>24.9.9</vaadin.version>
         <biweekly.version>0.6.8</biweekly.version>
         <thumbnailator.version>[0.4, 0.5)</thumbnailator.version>
         <file-download-wrapper.version>7.1.0</file-download-wrapper.version>
@@ -156,6 +156,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <version>26.0.7</version> <!-- oder deine Version -->
         </dependency>
     </dependencies>
 

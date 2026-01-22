@@ -26,3 +26,5 @@ webpack.generated.js
 *.sql
 
 /profile-image
+
+application.properties
