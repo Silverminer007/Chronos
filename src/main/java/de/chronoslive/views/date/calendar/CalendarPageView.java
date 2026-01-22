@@ -38,7 +38,7 @@ public abstract class CalendarPageView implements Calendar {
         fullCalendar.setTimezone(new Timezone(this.person.getTimezone()));
         fullCalendar.setLocale(this.person.getUserLocale());
         fullCalendar.setSizeFull();
-        fullCalendar.addThemeVariants(FullCalendarVariant.LUMO);
+        fullCalendar.addThemeVariants(FullCalendarVariant.VAADIN);
         fullCalendar.setFirstDay(DayOfWeek.MONDAY);
         fullCalendar.addTimeslotClickedListener(event ->
                 new CreateDateDialog()

@@ -1,3 +1,5 @@
+/* Chronos application styles */
+
 vaadin-scroller[slot="drawer"] {
   padding: var(--lumo-space-s);
 }

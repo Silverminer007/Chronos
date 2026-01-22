@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>4.0.1</version>
     </parent>
 
     <properties>
@@ -23,11 +23,10 @@
         <image>ghcr.io/silverminer007/${project.artifactId}:${project.version}</image>
         <mysql.version>9.5.0</mysql.version>
         <lombok.version>1.18.42</lombok.version>
-        <vaadin.version>24.9.9</vaadin.version>
+        <vaadin.version>25.0.3</vaadin.version>
         <biweekly.version>0.6.8</biweekly.version>
         <thumbnailator.version>[0.4, 0.5)</thumbnailator.version>
-        <file-download-wrapper.version>7.1.0</file-download-wrapper.version>
-        <fullcalendar.version>6.3.1</fullcalendar.version>
+        <fullcalendar.version>7.0.0</fullcalendar.version>
         <javamail.version>8.12.6</javamail.version>
         <mapstruct.version>1.6.3</mapstruct.version>
     </properties>
@@ -95,11 +94,6 @@
             <version>${javamail.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.vaadin.olli</groupId>
-            <artifactId>file-download-wrapper</artifactId>
-            <version>${file-download-wrapper.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.vaadin.stefan</groupId>
@@ -111,6 +105,11 @@
             <groupId>com.vaadin</groupId>
             <!-- Replace artifactId with vaadin-core to use only free components -->
             <artifactId>vaadin-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-dev</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
@@ -163,9 +162,13 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webclient</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
-            <version>26.0.7</version> <!-- oder deine Version -->
+            <version>26.0.8</version> <!-- oder deine Version -->
         </dependency>
     </dependencies>
 

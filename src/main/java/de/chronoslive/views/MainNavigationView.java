@@ -9,6 +9,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouterLink;
@@ -20,6 +22,7 @@ import de.chronoslive.services.PersonsService;
 import de.chronoslive.views.date.calendar.CalendarView;
 import de.chronoslive.views.organisation.NewOrganisationView;
 import de.chronoslive.views.settings.SettingsView;
+import jakarta.annotation.security.PermitAll;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +30,8 @@ import java.util.List;
 /**
  * The main view is a top-level placeholder for other views.
  */
-public class MainNavigationView extends AppLayout implements BeforeEnterObserver {
+@PermitAll
+public class MainNavigationView extends AppLayout implements BeforeEnterObserver, AfterNavigationObserver {
 
     private final Person person;
     private final List<Link> links = new ArrayList<>();
@@ -91,8 +95,7 @@ public class MainNavigationView extends AppLayout implements BeforeEnterObserver
     }
 
     @Override
-    protected void afterNavigation() {
-        super.afterNavigation();
+    public void afterNavigation(AfterNavigationEvent event) {
         for(Link link : links) {
             if (this.wrappedContent != null && this.wrappedContent.getClass().equals(link.targetView)) {
                 link.icon.setColor("#ff0000");
