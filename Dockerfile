@@ -1,23 +1,14 @@
-FROM ghcr.io/graalvm/native-image-community:25 AS builder
+FROM eclipse-temurin:25-jdk AS builder
 LABEL authors="silverminer"
 
 WORKDIR /usr/src/app
 
-COPY mvnw mvnw
-COPY .mvn .mvn
-RUN chmod +x mvnw
-
-# Copy pom.xml and download dependencies
-COPY pom.xml .
-RUN ./mvnw dependency:go-offline
-
 COPY . .
 RUN chmod +x mvnw
 
-RUN ./mvnw -Pnative -Pproduction native:compile
+RUN ./mvnw -Pproduction package -DskipTests
 
-FROM alpine:latest
-RUN apk add gcompat
+FROM eclipse-temurin:25-jre
 WORKDIR /usr/src/app
-COPY --from=builder /usr/src/app/target/chronos .
-ENTRYPOINT ["/usr/src/app/chronos"]
+COPY --from=builder /usr/src/app/target/*.jar app.jar
+ENTRYPOINT ["java", "-jar", "/usr/src/app/app.jar"]
