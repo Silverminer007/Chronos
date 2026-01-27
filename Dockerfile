@@ -1,4 +1,4 @@
-FROM ghcr.io/graalvm/native-image-community:23 AS builder
+FROM ghcr.io/graalvm/native-image-community:25 AS builder
 LABEL authors="silverminer"
 
 WORKDIR /usr/src/app

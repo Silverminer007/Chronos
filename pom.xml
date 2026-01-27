@@ -16,9 +16,9 @@
 
     <properties>
         <chronos.version>dev-master</chronos.version>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
-        <java.version>23</java.version>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <image>ghcr.io/silverminer007/${project.artifactId}:${project.version}</image>
         <mysql.version>9.5.0</mysql.version>
