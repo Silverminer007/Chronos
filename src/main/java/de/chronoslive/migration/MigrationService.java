@@ -1,9 +1,6 @@
 package de.chronoslive.migration;
 
-import de.chronoslive.entitys.Date;
-import de.chronoslive.entitys.Feedback;
-import de.chronoslive.entitys.Group;
-import de.chronoslive.entitys.Person;
+import de.chronoslive.entitys.*;
 import de.chronoslive.migration.api.AppointmentClient;
 import de.chronoslive.migration.api.FriendshipClient;
 import de.chronoslive.migration.api.GroupClient;
@@ -11,6 +8,7 @@ import de.chronoslive.migration.api.UserClient;
 import de.chronoslive.migration.dto.*;
 import de.chronoslive.repositorys.DateRepository;
 import de.chronoslive.repositorys.GroupRepository;
+import de.chronoslive.repositorys.OrganisationRepository;
 import de.chronoslive.repositorys.PersonsRepository;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
@@ -31,17 +29,19 @@ public class MigrationService {
     private final PersonsRepository personsRepository;
     private final GroupRepository groupRepository;
     private final DateRepository dateRepository;
+    private final OrganisationRepository organisationRepository;
 
     private final UserClient userClient;
     private final FriendshipClient friendshipClient;
     private final GroupClient groupClient;
     private final AppointmentClient appointmentClient;
 
-    public MigrationService(KeycloakAdminService keycloakAdminService, PersonsRepository personsRepository, GroupRepository groupRepository, DateRepository dateRepository, UserClient userClient, FriendshipClient friendshipClient, GroupClient groupClient, AppointmentClient appointmentClient) {
+    public MigrationService(KeycloakAdminService keycloakAdminService, PersonsRepository personsRepository, GroupRepository groupRepository, DateRepository dateRepository, OrganisationRepository organisationRepository, UserClient userClient, FriendshipClient friendshipClient, GroupClient groupClient, AppointmentClient appointmentClient) {
         this.keycloakAdminService = keycloakAdminService;
         this.personsRepository = personsRepository;
         this.groupRepository = groupRepository;
         this.dateRepository = dateRepository;
+        this.organisationRepository = organisationRepository;
         this.userClient = userClient;
         this.friendshipClient = friendshipClient;
         this.groupClient = groupClient;
@@ -78,16 +78,23 @@ public class MigrationService {
             personUserIdMap.put(person.getId(), createdUser.id());
         }
 
+        List<Organisation> organizationList = this.organisationRepository.findAll();
+
+        for (Organisation organisation : organizationList) {
+            List<Person> members = organisation.getMembers();
+
+            FriendGroup friendGroup = new FriendGroup();
+            friendGroup.setUserIds(members.stream().map(Person::getId).map(personUserIdMap::get).toList());
+
+            LOG.info("Creating Friend Group {}", friendGroup);
+            this.friendshipClient.befriend(friendGroup);
+        }
+
         List<Group> groupList = this.groupRepository.findAll();
 
         for (Group group : groupList) {
             List<Person> members = group.getMembers();
             Person owner = group.getOrganisation().getAdmin();
-
-            FriendGroup friendGroup = new FriendGroup();
-            friendGroup.setUserIds(members.stream().map(Person::getId).toList());
-
-            this.friendshipClient.befriend(friendGroup);
 
             CreateGroupDto createGroupDto = new CreateGroupDto();
             createGroupDto.setOwnerId(owner.getId());
